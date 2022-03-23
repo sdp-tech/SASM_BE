@@ -10,6 +10,10 @@ djangorestframework = "*"
 django-rest-knox = "*"
 django-cors-headers = "*"
 django-debug-toolbar = "*"
+pyjwt = "*"
+djangorestframework-simplejwt = "*"
+django-allauth = "*"
+dj-rest-auth = "*"
 
 [dev-packages]
 
