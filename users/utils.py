@@ -1,10 +1,4 @@
-import re, bcrypt
-
-def check_password(val1, val2):
-    return bcrypt.checkpw(val1.encode('utf-8'), val2.encode('utf-8'))
-
-def hash_password(value):
-    return bcrypt.hashpw(value.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+import re
 
 def email_isvalid(value):
     try:
@@ -14,15 +8,6 @@ def email_isvalid(value):
         return value
     except Exception as e:
         print('예외가 발생했습니다.', e)
-
-def password_isvalid(value):
-    try:
-        if value:
-            if len(value) >= 8:
-                return value
-        raise Exception()
-    except Exception as e:
-        print('예외가 발생했습니다.')
 
 def username_isvalid(value):
     try:
