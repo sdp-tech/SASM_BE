@@ -31,3 +31,10 @@ class UserSerializer(serializers.ModelSerializer):
         if username_isvalid(obj):
             return obj
         raise serializers.ValidationError('닉네임은 한 글자 이상이어야 합니다.')
+
+    def create(self, validated_data):
+        password = validated_data.get("password")
+        user = super().create(validated_data)
+        user.set_password(password)
+        user.save()
+        return user
