@@ -6,7 +6,7 @@ from django.contrib.auth.models import UserManager, PermissionsMixin
 # Create your models here.
 class User(AbstractBaseUser, PermissionsMixin):
     """custom user model"""
-
+    username = None
     GENDER_MALE = "male"
     GENDER_FEMALE = "female"
     GENDER_OTHER = "other"
