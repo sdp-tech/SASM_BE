@@ -18,8 +18,7 @@ class UserLoginSerializer(serializers.Serializer):
         email = data.get("email", None)
         password = data.get("password", None)
         user = authenticate(email=email, password=password)
-
-        print(user)
+        
         if user is None:
             return {
                 'email': 'None'
