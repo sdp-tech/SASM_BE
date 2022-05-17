@@ -159,12 +159,12 @@ JWT_AUTH = {
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 #이메일 인증
-#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'lina19196@gmail.com'
 #os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = 'kal1994!!!'
-SERVER_EMAIL = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = 'kal9457486!'
+SERVER_EMAIL = 'lina19196@gmail.com'
 DEFAULT_FROM_MAIL = EMAIL_HOST_USER
