@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 #email 인증 관련
 from django.utils.encoding import force_str
 from rest_framework_jwt.settings import api_settings
+from django.utils.http import urlsafe_base64_decode
 import traceback
 jwt_decode_handler= api_settings.JWT_DECODE_HANDLER
 jwt_payload_get_user_id_handler = api_settings.JWT_PAYLOAD_GET_USER_ID_HANDLER
