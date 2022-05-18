@@ -10,13 +10,13 @@ from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.models import update_last_login
 
 #email 인증 관련
-from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
-from django.utils.http import urlsafe_base64_encode,urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.core.mail import EmailMessage
-from django.utils.encoding import force_bytes, force_text
+from django.utils.encoding import force_bytes, force_str
 
+#로그인 & 이메일 인증관련
 JWT_PAYLOAD_HANDLER = api_settings.JWT_PAYLOAD_HANDLER
 JWT_ENCODE_HANDLER = api_settings.JWT_ENCODE_HANDLER
 
@@ -55,15 +55,15 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data["password"])
         user.is_active = False
         user.save()
-        current_site = get_current_site()
         payload = JWT_PAYLOAD_HANDLER(user)
         jwt_token = JWT_ENCODE_HANDLER(payload)
         message = render_to_string('users/user_activate_email.html', {
             'user': user,
-            'domain': current_site.domain,
-            'uid': urlsafe_base64_encode(force_bytes(user.pk)).decode('utf-8'),
+            'domain': 'localhost:8000',
+            'uid': force_str(urlsafe_base64_encode(force_bytes(user.pk))),
             'token': jwt_token,
         })
+        print(message)
         mail_subject = '[SDP] 회원가입 인증 메일입니다'
         to_email = user.email
         email = EmailMessage(mail_subject, message, to = [to_email])
