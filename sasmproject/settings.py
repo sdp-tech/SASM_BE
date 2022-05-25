@@ -63,6 +63,7 @@ THIRD_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.kakao',
     'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.naver',
     'knox',
     'debug_toolbar',
     'corsheaders',
@@ -173,14 +174,30 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 
 REST_USE_JWT = True
 
-JWT_AUTH = {
-    "JWT_SECRET_KEY": SECRET_KEY, 
-    "JWT_ALGORITHM": "HS256", # 암호화 알고리즘
-    "JWT_ALLOW_REFRESH": True,
-    "JWT_EXPIRATION_DELTA": timedelta(days=7), # 유효기간
-    "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=28), # JWT 토큰 갱신 유효기간
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
+    'ROTATE_REFRESH_TOKENS': False,
 }
+
+# JWT_AUTH = {
+#     "JWT_SECRET_KEY": SECRET_KEY, 
+#     "JWT_ALGORITHM": "HS256", # 암호화 알고리즘
+#     "JWT_ALLOW_REFRESH": True,
+#     "JWT_EXPIRATION_DELTA": timedelta(days=7), # 유효기간
+#     "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=28), # JWT 토큰 갱신 유효기간
+# }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
+#이메일 인증
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'your_email'
+#os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = 'your_password'
+SERVER_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_MAIL = EMAIL_HOST_USER
