@@ -13,9 +13,16 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 import os
+import json
+import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+SECRET_BASE_FILE = os.path.join(BASE_DIR, 'secrets.json')
+secrets = json.loads(open(SECRET_BASE_FILE).read())
+for key, value in secrets.items():
+    setattr(sys.modules[__name__], key, value)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -38,6 +45,7 @@ DJANGO_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 ]
 PROJECT_APPS = [
     "users.apps.UsersConfig",
@@ -48,11 +56,21 @@ PROJECT_APPS = [
 THIRD_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.kakao',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.naver',
     'knox',
     'debug_toolbar',
     'corsheaders',
 ]
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_APPS
+
+SITE_ID = 1
 
 AUTH_USER_MODEL = "users.User"
 
@@ -148,13 +166,28 @@ REST_FRAMEWORK = {
     ],
 }
 
-JWT_AUTH = {
-    "JWT_SECRET_KEY": SECRET_KEY, 
-    "JWT_ALGORITHM": "HS256", # 암호화 알고리즘
-    "JWT_ALLOW_REFRESH": True,
-    "JWT_EXPIRATION_DELTA": timedelta(days=7), # 유효기간
-    "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=28), # JWT 토큰 갱신 유효기간
+# username 필드 사용 X email 필드 사용
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+REST_USE_JWT = True
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
+    'ROTATE_REFRESH_TOKENS': False,
 }
+
+# JWT_AUTH = {
+#     "JWT_SECRET_KEY": SECRET_KEY, 
+#     "JWT_ALGORITHM": "HS256", # 암호화 알고리즘
+#     "JWT_ALLOW_REFRESH": True,
+#     "JWT_EXPIRATION_DELTA": timedelta(days=7), # 유효기간
+#     "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=28), # JWT 토큰 갱신 유효기간
+# }
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
