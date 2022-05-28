@@ -14,6 +14,7 @@ from allauth.socialaccount.models import SocialAccount
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google import views as google_view
 from allauth.socialaccount.providers.kakao import views as kakao_view
+from allauth.socialaccount.providers.naver import views as naver_view
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from django.http import JsonResponse
 import requests
@@ -23,6 +24,7 @@ from django.utils.decorators import method_decorator
 import string
 import random
 
+# random state 생성하기
 state = getattr(settings, 'STATE')
 STATE_LENGTH = 15
 string_pool = string.ascii_letters + string.digits
@@ -72,12 +74,13 @@ def user_detail(request, pk):
     except User.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+
+# 로그인 함수
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def Login(request):
     if request.method == 'POST':
         serializer = UserLoginSerializer(data=request.data)
-
         if not serializer.is_valid(raise_exception=True):
             return Response({"message": "Request Body Error"}, status=status.HTTP_409_CONFLICT)
         if serializer.validated_data['email'] == "None":
@@ -88,7 +91,7 @@ def Login(request):
         }
         return Response(response, status=status.HTTP_200_OK)
 
-# 코드 요청
+# 카카오 소셜 로그인 - 코드 요청
 @method_decorator(csrf_exempt)
 def kakao_login(request):
     rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
@@ -96,7 +99,7 @@ def kakao_login(request):
         f"https://kauth.kakao.com/oauth/authorize?client_id={rest_api_key}&redirect_uri={KAKAO_CALLBACK_URI}&response_type=code"
     )
 
-# 토큰 요청
+# 카카오 소셜 로그인 - 토큰 요청
 @method_decorator(csrf_exempt)
 def kakao_callback(request):
     rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
@@ -121,8 +124,7 @@ def kakao_callback(request):
     # 이메일 외에도 프로필 이미지, 배경 이미지 url 등 가져올 수 있음
     
     email = kakao_account.get('email', None)
-    if email is None:
-        print("email None")
+
     try:
         user = User.objects.get(email=email)
         social_user = SocialAccount.objects.get(user=user)
@@ -170,6 +172,7 @@ class KakaoLogin(SocialLoginView):
     client_class = OAuth2Client
     callback_url = KAKAO_CALLBACK_URI
 
+# 구글 소셜 로그인
 def google_login(request):
     scope = "https://www.googleapis.com/auth/userinfo.email"
     client_id = getattr(settings, "SOCIAL_AUTH_GOOGLE_CLIENT_ID")
@@ -259,32 +262,77 @@ class GoogleLogin(SocialLoginView):
     callback_url = GOOGLE_CALLBACK_URI
     client_class = OAuth2Client
 
-#def naver_login(request):
-#    client_id = getattr(settings, "NAVER_CLIENT_ID")
-#    return redirect(
-#       f"https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id={client_id}&state={state}&redirect_uri={NAVER_CALLBACK_URI}"
-#    )
-#
-#def naver_callback(request):
-#    client_id = getattr(settings, 'NAVER_CLIENT_ID')
-#    client_secret = getattr(settings, "NAVER_SECRET_KEY")
-#    code = request.GET.get("code")
-#    
-#    token_req = requests.get(
-#        f"https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id={client_id}&client_secret={client_secret}&code={code}&state={state}"
-#    )
-#
-#    token_req_json = token_req.json()
-#    error = token_req_json.get("error")
-#    if error is not None:
-#        raise JSONDecodeError(error)
-#    access_token = token_req_json.get("access_token")
-#
-#    profile_request = requests.get('https://openapi.naver.com/v1/nid/me', headers={"Authorization": f'Bearer ${access_token}'})
-#
-#    profile_json = profile_request.json()
-#
-#    naver_account = profile_json.get('kakao_account')
+# 네이버 소셜 로그인
+def naver_login(request):
+    client_id = getattr(settings, "NAVER_CLIENT_ID")
+    return redirect(
+       f"https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id={client_id}&state={state}&redirect_uri={NAVER_CALLBACK_URI}"
+    )
+
+def naver_callback(request):
+    client_id = getattr(settings, 'NAVER_CLIENT_ID')
+    client_secret = getattr(settings, "NAVER_SECRET_KEY")
+    code = request.GET.get("code")
+    
+    token_req = requests.get(
+        f"https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id={client_id}&client_secret={client_secret}&code={code}&state={state}"
+    )
+
+    token_req_json = token_req.json()
+    error = token_req_json.get("error")
+    if error is not None:
+        raise JSONDecodeError(error)
+    access_token = token_req_json.get("access_token")
+
+    profile_request = requests.get("https://openapi.naver.com/v1/nid/me", headers={"Authorization" : f"Bearer {access_token}"},)
+    profile_json = profile_request.json()
+    email = profile_json.get('email', None)
+
+    try:
+        user = User.objects.get(email=email)
+        social_user = SocialAccount.objects.get(user=user)
+        if social_user is None:
+            return JsonResponse(
+                {'err_msg': 'email exists but not social user'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if social_user.provider != 'naver':
+            return JsonResponse(
+                {'err_msg': 'no matching social type'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        data = {'access_token': access_token, 'code': code}
+        accept = requests.post(
+            f"{BASE_URL}users/naver/login/finish", data=data
+        )
+        accept_status = accept.status_code
+        if accept_status != 200:
+            return JsonResponse(
+                {'err_msg': 'failed to signin'},
+                status=accept_status
+            )
+        accept_json = accept.json()
+        accept_json.pop('user', None)
+        return JsonResponse(accept_json)
+    except User.DoesNotExist:
+        data = {'access_token': access_token, 'code': code}
+        accept = requests.post(
+            f"{BASE_URL}users/naver/login/finish/", data=data
+        )
+        accept_status = accept.status_code
+        if accept_status != 200:
+            return JsonResponse(
+                {'err_msg': 'failed to signup'},
+                status=accept_status
+            )
+        accept_json = accept.json()
+        accept_json.pop('user', None)
+        return JsonResponse(accept_json)
+
+class NaverLogin(SocialLoginView):
+    adapter_class = naver_view.NaverOAuth2Adapter
+    client_class = OAuth2Client
+    callback_url = NAVER_CALLBACK_URI
 
 class UserActivateView(APIView):
     permission_classes = [AllowAny]
