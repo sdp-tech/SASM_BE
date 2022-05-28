@@ -18,4 +18,7 @@ urlpatterns = [
     path('naver/callback/', views.naver_callback, name='naver_callback'),
     path('naver/login/finish/', views.NaverLogin.as_view(), name='naver_login_todjango'),
     path('activate/<str:uid>/<str:token>',views.UserActivateView.as_view(), name ='activate'),
+    path('find_pw/',views.PwResetEmailSendView.as_view()),
+    path('pwchange/<str:uid>/<str:token>',views.PasswordChangeView.as_view(), name ='pwchange'),
+    path('findid/',views.findemail),
 ]
