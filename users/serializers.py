@@ -5,6 +5,9 @@ from .utils import (
     email_isvalid, 
     username_isvalid,
 )
+import traceback
+from rest_framework.response import Response 
+from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.models import update_last_login
@@ -12,9 +15,8 @@ from django.contrib.auth.models import update_last_login
 #email 인증 관련
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.core.mail import EmailMessage
 from django.utils.encoding import force_bytes, force_str
+from django.core.mail import EmailMessage
 
 #로그인 & 이메일 인증관련
 JWT_PAYLOAD_HANDLER = api_settings.JWT_PAYLOAD_HANDLER
@@ -98,3 +100,23 @@ class UserLoginSerializer(serializers.Serializer):
             'email': user.email,
             'token': jwt_token
         }
+
+#비밀번호 이메일 보낼 때 쓰는 거
+class PwEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=64)
+
+    def validate_email(self, value):
+        '''데이터베이스에 존재하는지 확인'''
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("존재하지 않는 이메일입니다.")
+        else:
+            return value
+
+#새로 이메일 입력 받을 때 쓰는거
+class PwChangeSerializer(serializers.Serializer):
+    password = serializers.CharField(required=True)
+    
+class EmailFindSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=64,required=True)
+    
+
