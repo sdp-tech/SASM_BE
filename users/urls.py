@@ -9,4 +9,7 @@ urlpatterns = [
     path("<int:pk>/", views.user_detail),
     path('login/', views.Login),
     path('activate/<str:uid>/<str:token>',views.UserActivateView.as_view(), name ='activate'),
+    path('find_pw/',views.PwResetEmailSendView.as_view()),
+    path('pwchange/<str:uid>/<str:token>',views.PasswordChangeView.as_view(), name ='pwchange'),
+    path('findid/',views.findemail),
 ]
