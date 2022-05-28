@@ -78,16 +78,17 @@ class UserLoginSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=255, read_only=True)
 
     def validate(self, data):
+        # email, password에 일치하는 user가 있는지 확인
         email = data.get("email", None)
         password = data.get("password", None)
         user = authenticate(email=email, password=password)
-        
         if user is None:
             return {
                 'email': 'None'
             }
 
         try:
+            # 토큰 발급
             payload = JWT_PAYLOAD_HANDLER(user)
             jwt_token = JWT_ENCODE_HANDLER(payload)
             update_last_login(None, user)
