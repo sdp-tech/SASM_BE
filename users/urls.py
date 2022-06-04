@@ -21,4 +21,5 @@ urlpatterns = [
     path('find_pw/',views.PwResetEmailSendView.as_view()),
     path('pwchange/<str:uid>/<str:token>',views.PasswordChangeView.as_view(), name ='pwchange'),
     path('findid/',views.findemail),
+    path('rep_check/',views.rep_check),
 ]

@@ -95,10 +95,17 @@ def user_detail(request, pk):
 @permission_classes([AllowAny])
 def Login(request):
     if request.method == 'POST':
+        print('data 넘어옴')
         serializer = UserLoginSerializer(data=request.data)
+        print(serializer)
+        
+
         if not serializer.is_valid(raise_exception=True):
             return Response({"message": "Request Body Error"}, status=status.HTTP_409_CONFLICT)
-        if serializer.validated_data['email'] == "None":
+        
+        print("gg",serializer.data)
+        # print("gg",serializer{data})
+        if serializer.data['email'] == "None":
             return Response({"message": 'fail'}, status=status.HTTP_200_OK)
         response = {
             'success': True,
@@ -430,7 +437,11 @@ class PasswordChangeView(APIView):
                     print(user.password)
                     print(serializer.data['password'])
                     if serializer.data['password']:
+                        user2 = authenticate(email=user.email, password=serializer.data['password'])
+                        if user2 != None :
+                            return Response('기존 비밀번호와 일치합니다',status=status.HTTP_400_BAD_REQUEST)
                         user.set_password(serializer.data.get("password"))
+                        print(user.password)
                         user.save()
                         response = {
                             'status': 'success',
@@ -439,7 +450,7 @@ class PasswordChangeView(APIView):
                             'data': []
                         }
                         return Response(response)
-                    return Response('기존 비밀번호와 일치합니다',status=status.HTTP_400_BAD_REQUEST)
+                    return Response('비밀번호를 다시 입력해주세요',status=status.HTTP_400_BAD_REQUEST)
                 return Response('인증에 실패하였습니다',status=status.HTTP_400_BAD_REQUEST)
             return Response('일치하는 유저가 없습니다',status=status.HTTP_400_BAD_REQUEST)           
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -455,3 +466,22 @@ def findemail(request):
         else:
             return Response('존재하지 않는 이메일입니다')
     return Response('이메일을 다시 입력하세요')
+
+#중복체크
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def rep_check(request):
+    serializer = RepetitionCheckSerializer(data=request.data)
+    if serializer.is_valid():
+        type = serializer.data['type']
+        if type == 'email':
+            if User.objects.filter(email=serializer.data['email']).exists():
+                return Response('존재하는 이메일입니다')
+            else :
+                return Response('존재하지 않는 이메일입니다',status=status.HTTP_200_OK)
+        elif type == 'nickname':
+            if User.objects.filter(nickname=serializer.data['nickname']).exists():
+                return Response('존재하는 닉네임입니다')
+            else:
+                return Response('존재하지 않는 닉네임입니다',status=status.HTTP_200_OK)
+    return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
