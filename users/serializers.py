@@ -119,5 +119,8 @@ class PwChangeSerializer(serializers.Serializer):
     
 class EmailFindSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=64,required=True)
-    
 
+class RepetitionCheckSerializer(serializers.Serializer):
+    type = serializers.CharField(required=True,max_length=64)
+    email = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    nickname = serializers.CharField(required=False, allow_blank=True, max_length=100)

@@ -196,3 +196,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST = 'smtp.gmail.com'
+
+#corheaders
+CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000')
+CORS_ALLOW_CREDENTIALS = True
