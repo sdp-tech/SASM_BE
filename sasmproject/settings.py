@@ -156,7 +156,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_URL = "/media/"
-MEDA_ROOT = os.path.join(BASE_DIR, "media")
+MEDiA_ROOT = os.path.join(BASE_DIR, "media")
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated",],
@@ -199,7 +199,7 @@ EMAIL_HOST_USER = 'lina19197@daum.net'
 EMAIL_HOST_PASSWORD = 'kal9457486'
 EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-REDIRECT_PAGE = 'https://yurimy.tistory.com'
+
 
 
 
