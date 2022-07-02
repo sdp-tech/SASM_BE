@@ -389,7 +389,7 @@ class UserActivateView(APIView):
 class PwResetEmailSendView(APIView):
     permission_classes = [AllowAny]
     
-    def put(self,request):
+    def post(self,request):
         serializer = PwEmailSerializer(data=request.data)
         try:
             if serializer.is_valid():
@@ -425,7 +425,7 @@ class PasswordChangeView(APIView):
     model = User
     permission_classes = [AllowAny]
 
-    def put(self, request, uid, token):
+    def post(self, request, uid, token):
         serializer = PwChangeSerializer(data=request.data)
         if serializer.is_valid():
             real_uid = force_str(urlsafe_base64_decode(uid))
@@ -457,9 +457,10 @@ class PasswordChangeView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 #이메일 찾기
-@api_view(["PUT"])
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def findemail(request):
+    print("!!",request)
     serializer = EmailFindSerializer(data=request.data)
     if serializer.is_valid():
         if User.objects.filter(email=serializer.data['email']).exists():
