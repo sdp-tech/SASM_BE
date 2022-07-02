@@ -37,6 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
             "birthdate",
             "email",
             "address",
+            "profile_image"
         )
         read_only_fields = ("id",)
 
