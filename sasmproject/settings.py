@@ -201,5 +201,6 @@ EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 REDIRECT_PAGE = 'https://yurimy.tistory.com'
 
-
-
+#corheaders
+CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000')
+CORS_ALLOW_CREDENTIALS = True
