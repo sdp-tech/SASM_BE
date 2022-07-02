@@ -193,10 +193,13 @@ SIMPLE_JWT = {
 
 #이메일 인증
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_PORT = 587
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = 'smtp.daum.net'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'lina19197@daum.net'
+EMAIL_HOST_PASSWORD = 'kal9457486'
+EMAIL_USE_SSL = True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+REDIRECT_PAGE = 'https://yurimy.tistory.com'
 
-#corheaders
-CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000')
-CORS_ALLOW_CREDENTIALS = True
+
+

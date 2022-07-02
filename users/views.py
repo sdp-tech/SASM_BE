@@ -374,10 +374,11 @@ class UserActivateView(APIView):
                 if int(real_uid) == int(user_id):
                     user.is_active = True
                     user.save()
-                    return Response(user.email + '계정이 활성화 되었습니다', status=status.HTTP_200_OK)
-                return Response('인증에 실패하였습니다', status=status.HTTP_400_BAD_REQUEST)
+                    print('dd')
+                    return redirect('http://stackoverflow.com/')
+                return Response('인증에 실패하였습니다1', status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response('인증에 실패하였습니다', status=status.HTTP_400_BAD_REQUEST)
+                return Response('인증에 실패하였습니다2', status=status.HTTP_400_BAD_REQUEST)
 
         except(TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
@@ -418,7 +419,7 @@ class PwResetEmailSendView(APIView):
             return Response('일치하는 유저가 없습니다',status=status.HTTP_400_BAD_REQUEST)
 
 #비밀번호 재설정
-#아직 원래 비밀번호랑 비교 하는거 없음
+
 class PasswordChangeView(APIView):
     
     model = User
