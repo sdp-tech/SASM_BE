@@ -2,6 +2,10 @@ from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserM
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import UserManager, PermissionsMixin
+from PIL import Image
+from PIL import ExifTags
+from io import BytesIO
+from django.core.files import File
 
 # Create your models here.
 class UserManager(BaseUserManager):
@@ -41,7 +45,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64,unique=True)
     address = models.CharField(max_length=100, blank=True)
-
+    profile_image = models.ImageField(upload_to='profile/%Y%m%d/', blank=True, null=True)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
@@ -51,8 +55,32 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
     objects = UserManager()
 
+    
+
     def __str__(self):
         return self.email
 
-    
+#    def save(self, *args, **kwargs):
+#        if self.profile_image:
+#            pilImage = Image.open(BytesIO(self.profile_image.read()))
+#            try:
+#                for orientation in ExifTags.TAGS.keys():
+#                    if ExifTags.TAGS[orientation] == 'Orientation':
+#                        break
+#                exif = dict(pilImage._gettextif().items())
+#
+#                if exif[orientation] == 3:
+#                    pilImage = pilImage.rotate(180, expand=True)
+#                elif exif[orientation] == 6:
+#                    pilImage = pilImage.rotate(270, expand=True)
+#                elif exif[orientation] == 8:
+#                    pilImage = pilImage.rotate(90, expand=True)
+#
+#                output = BytesIO()
+#                pilImage.save(output, format='JPEG', quality=100)
+#                output.seek(0)
+#                self.profile_image = File(output, self.profile_image.name)
+#            except:
+#                pass
+#        return super(User, self).save(*args, **kwargs)    
 
