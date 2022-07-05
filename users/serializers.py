@@ -1,16 +1,14 @@
-from django.contrib.auth import get_user_model
-from rest_framework import serializers
 from .models import User
 from .utils import (
     email_isvalid, 
     username_isvalid,
 )
-import traceback
-from rest_framework.response import Response 
-from rest_framework import status
+from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
-from rest_framework_jwt.settings import api_settings
 from django.contrib.auth.models import update_last_login
+from rest_framework import serializers
+from rest_framework_jwt.settings import api_settings
+
 
 #email 인증 관련
 from django.template.loader import render_to_string
