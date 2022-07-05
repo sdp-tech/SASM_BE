@@ -74,7 +74,7 @@ def Login(request):
 
 
 #이메일 찾기
-@api_view(["PUT"])
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def findemail(request):
     serializer = EmailFindSerializer(data=request.data)

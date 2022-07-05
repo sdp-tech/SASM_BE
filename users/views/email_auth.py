@@ -35,7 +35,7 @@ class UserActivateView(APIView):
                     user.is_active = True
                     user.save()
                     print('dd')
-                    return redirect('http://stackoverflow.com/')
+                    return redirect('http://localhost:3000/auth')
                 return Response('인증에 실패하였습니다1', status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response('인증에 실패하였습니다2', status=status.HTTP_400_BAD_REQUEST)

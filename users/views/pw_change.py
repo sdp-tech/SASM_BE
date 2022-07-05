@@ -19,7 +19,7 @@ jwt_payload_get_user_id_handler = api_settings.JWT_PAYLOAD_GET_USER_ID_HANDLER
 class PwResetEmailSendView(APIView):
     permission_classes = [AllowAny]
     
-    def put(self,request):
+    def post(self,request):
         serializer = PwEmailSerializer(data=request.data)
         try:
             if serializer.is_valid():
@@ -55,7 +55,7 @@ class PasswordChangeView(APIView):
     model = User
     permission_classes = [AllowAny]
 
-    def put(self, request, uid, token):
+    def post(self, request, uid, token):
         serializer = PwChangeSerializer(data=request.data)
         if serializer.is_valid():
             real_uid = force_str(urlsafe_base64_decode(uid))
