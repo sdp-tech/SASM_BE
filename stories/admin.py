@@ -15,7 +15,7 @@ class StoryAdmin(admin.ModelAdmin):
     """ """
 
     pass
-@admin.register(models.Comment)
+@admin.register(models.Paragraph)
 class CommentAdmin(admin.ModelAdmin):
     
     pass

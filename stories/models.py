@@ -7,8 +7,8 @@ class Photo(core_models.TimeStampedModel):
     """Photo Model Definition"""
 
     caption = models.CharField(max_length=80)
-    file = models.ImageField()
-    story = models.ForeignKey("Story", on_delete=models.CASCADE)
+    file = models.ImageField(upload_to='story/%Y%m%d/')
+    paragraph = models.ForeignKey("Paragraph", on_delete=models.CASCADE)
 
     def __str__(self):
         return self.caption
@@ -16,27 +16,26 @@ class Photo(core_models.TimeStampedModel):
 class Story(core_models.TimeStampedModel):
     """Room Model Definition"""
 
-    title = models.CharField(max_length=140)
-    description = models.TextField()
-    address = models.ForeignKey("places.Place", related_name = 'story', on_delete=models.CASCADE)
-    writer = models.ForeignKey("users.User", related_name = 'story', on_delete=models.CASCADE)
-    like_user_set = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="like_post_set"
-    )
-    like_count = models.PositiveIntegerField(default=0)
+    title = models.CharField(max_length=200)
+    story_review = models.CharField(max_length=200)
+    address = models.OneToOneField("places.Place", related_name = 'story', on_delete=models.CASCADE)
+    story_like_cnt = models.PositiveIntegerField(default=0)
+    story_likeuser_set = models.ManyToManyField("users.User",related_name = 'StoryLikeUser',blank=True)
+    short_cur = models.TextField(max_length=500)
+    tag = models.CharField(max_length=100)
+
     def __str__(self):
         return self.title
-    class Meta:
-        ordering = ["-id"]
+    
 
-class Comment(core_models.TimeStampedModel):
-    """Place Model Definition"""
+class Paragraph(core_models.TimeStampedModel):
+    """Paragraph Model Definition"""
+    subtitle = models.CharField(max_length=200)
     content = models.TextField()
-    writer = models.ForeignKey('users.User', related_name = 'comment', on_delete=models.CASCADE)
-    post = models.ForeignKey('stories.Story',related_name = 'comment', on_delete=models.CASCADE)
+    post = models.ForeignKey('stories.Story',related_name = 'paragraph', on_delete=models.CASCADE)
     
     def __str__(self):
-        return self.writer
+        return self.subtitle
     
     class Meta:
         ordering = ["-id"]
