@@ -49,13 +49,16 @@ class Place(core_models.TimeStampedModel):
     VEGAN3 = "오보"
     VEGAN4 = "페스코"
     VEGAN5 = "폴로"
+    VEGAN6 = "그 외"
     VEGAN_CHOICES = (
         (VEGAN1, "비건"),
         (VEGAN2, "락토"),
         (VEGAN3, "오보"),
         (VEGAN4, "페스코"),
         (VEGAN5, "폴로"),
+        (VEGAN6, "그 외"),
     )
+
     REUSE1 = "텀블러 할인"
     REUSE2 = "용기내"
     REUSE_CHOICES = (
@@ -66,7 +69,7 @@ class Place(core_models.TimeStampedModel):
     category = models.CharField(choices=PLACE_CHOICES, max_length=30, blank=True)
     vegan_category = models.CharField(choices=VEGAN_CHOICES, max_length=10, blank=True)
     reusable_category = models.CharField(choices=REUSE_CHOICES, max_length=10, blank=True)
-    pet_category = models.BooleanField(default=False, blank=True, null=True)
+    pet_category = models.BooleanField(default=False, blank=True)
     mon_hours = models.CharField(max_length=50)
     tues_hours = models.CharField(max_length=50)
     wed_hours = models.CharField(max_length=50)
@@ -80,7 +83,8 @@ class Place(core_models.TimeStampedModel):
     sub_address = models.CharField(max_length=200)
     place_like_cnt = models.PositiveIntegerField(default=0)
     place_likeuser_set = models.ManyToManyField('users.User',related_name = 'PlaceLikeUser',blank=True)
-    rep_pic = models.ImageField(upload_to='place_rep/%Y%m%d/', blank=True, null=True)
+    rep_pic = models.ImageField(upload_to='place_rep/%Y%m%d/', default='')
+    short_cur = models.TextField(max_length=500, default='')
 
     def __str__(self):
         return self.place_name

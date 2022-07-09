@@ -39,7 +39,7 @@ class PwResetEmailSendView(APIView):
                 mail_subject = '[SDP] 비밀번호 변경 메일입니다'
                 to_email = user.email
                 email = EmailMessage(mail_subject, message, to = [to_email])
-                email.send()    
+                email.send()
                 return Response( user.email+ '이메일 전송이 완료되었습니다',status=status.HTTP_200_OK)
             print(serializer.errors)
             return Response('일치하는 유저가 없습니다',status=status.HTTP_400_BAD_REQUEST)
