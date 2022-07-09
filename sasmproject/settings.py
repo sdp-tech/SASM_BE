@@ -24,6 +24,7 @@ secrets = json.loads(open(SECRET_BASE_FILE).read())
 for key, value in secrets.items():
     setattr(sys.modules[__name__], key, value)
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -107,20 +108,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'sasmproject.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sasm_db',
-        'USER' : 'root',
-        'PASSWORD' : 'mysql',
-        'HOST' : 'localhost',
-        'PORT' : '3306',
-    }
-}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -199,10 +186,8 @@ SIMPLE_JWT = {
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.daum.net'
 EMAIL_PORT = 465
-EMAIL_HOST_USER = 'lina19197@daum.net'
-EMAIL_HOST_PASSWORD = 'kal9457486'
 EMAIL_USE_SSL = True
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = secrets['EMAIL_HOST_USER']
 
 #corheaders
 CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000')
