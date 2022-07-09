@@ -21,8 +21,8 @@ class Story(core_models.TimeStampedModel):
     address = models.OneToOneField("places.Place", related_name = 'story', on_delete=models.CASCADE)
     story_like_cnt = models.PositiveIntegerField(default=0)
     story_likeuser_set = models.ManyToManyField("users.User",related_name = 'StoryLikeUser',blank=True)
-    short_cur = models.TextField(max_length=500)
     tag = models.CharField(max_length=100)
+    preview = models.CharField(max_length=150, blank=True)
 
     def __str__(self):
         return self.title
