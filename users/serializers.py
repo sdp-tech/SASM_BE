@@ -75,6 +75,7 @@ class UserLoginSerializer(serializers.Serializer):
     email = serializers.CharField(max_length=64)
     password = serializers.CharField(max_length=128, write_only=True)
     token = serializers.CharField(max_length=255, read_only=True)
+    nickname = serializers.CharField(max_length=20, read_only=True)
 
     def validate(self, data):
         # email, password에 일치하는 user가 있는지 확인

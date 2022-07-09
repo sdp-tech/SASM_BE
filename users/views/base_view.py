@@ -68,7 +68,8 @@ def Login(request):
             return Response({"message": 'fail'}, status=status.HTTP_200_OK)
         response = {
             'success': True,
-            'token': serializer.data['token']
+            'token': serializer.data['token'],
+            'nickname' : serializer.data['nickname']
         }
         return Response(response, status=status.HTTP_200_OK)
 

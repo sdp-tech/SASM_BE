@@ -151,3 +151,4 @@ cython_debug/
 #.idea/
 # mac
 .DS_Store
+secrets.json
