@@ -59,16 +59,11 @@ class Place(core_models.TimeStampedModel):
         (VEGAN6, "그 외"),
     )
 
-    REUSE1 = "텀블러 할인"
-    REUSE2 = "용기내"
-    REUSE_CHOICES = (
-        (REUSE1, "텀블러 할인"),
-        (REUSE2, "용기내"),
-    )
     place_name = models.CharField(max_length=100)
     category = models.CharField(choices=PLACE_CHOICES, max_length=30, blank=True)
     vegan_category = models.CharField(choices=VEGAN_CHOICES, max_length=10, blank=True)
-    reusable_category = models.CharField(choices=REUSE_CHOICES, max_length=10, blank=True)
+    tumblur_category = models.BooleanField(default=False, blank=True)
+    reusable_con_category = models.BooleanField(default=False, blank=True)
     pet_category = models.BooleanField(default=False, blank=True)
     mon_hours = models.CharField(max_length=50)
     tues_hours = models.CharField(max_length=50)
@@ -80,7 +75,6 @@ class Place(core_models.TimeStampedModel):
     place_review = models.CharField(max_length=200)
     sns_type = models.ManyToManyField("SNSType", related_name = 'sns')
     address = models.CharField(max_length=200)
-    sub_address = models.CharField(max_length=200)
     place_like_cnt = models.PositiveIntegerField(default=0)
     place_likeuser_set = models.ManyToManyField('users.User',related_name = 'PlaceLikeUser',blank=True)
     rep_pic = models.ImageField(upload_to='place_rep/%Y%m%d/', default='')
