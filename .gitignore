@@ -152,5 +152,5 @@ cython_debug/
 # mac
 .DS_Store
 
-
+media
 secrets.json
