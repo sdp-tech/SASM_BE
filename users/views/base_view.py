@@ -55,20 +55,19 @@ def user_detail(request, pk):
 @permission_classes([AllowAny])
 def Login(request):
     if request.method == 'POST':
-        print('data 넘어옴')
         serializer = UserLoginSerializer(data=request.data)
-        print(serializer)
+        #print(serializer)
         
         if not serializer.is_valid(raise_exception=True):
             return Response({"message": "Request Body Error"}, status=status.HTTP_409_CONFLICT)
         
-        print("gg",serializer.data)
         # print("gg",serializer{data})
         if serializer.data['email'] == "None":
             return Response({"message": 'fail'}, status=status.HTTP_200_OK)
         response = {
             'success': True,
-            'token': serializer.data['token']
+            'token': serializer.data['token'],
+            'nickname' : serializer.data['nickname']
         }
         return Response(response, status=status.HTTP_200_OK)
 
