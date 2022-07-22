@@ -12,6 +12,8 @@ django-cors-headers = "*"
 django-debug-toolbar = "*"
 bcrypt = "*"
 mysqlclient = "*"
+openpyxl = "*"
+pandas = "*"
 
 [dev-packages]
 

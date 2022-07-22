@@ -1,3 +1,4 @@
+from email.policy import default
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import UserManager, PermissionsMixin
@@ -40,7 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64,unique=True)
     address = models.CharField(max_length=100, blank=True)
-    profile_image = models.ImageField(upload_to='profile/%Y%m%d/', blank=True, null=True)
+    profile_image = models.ImageField(upload_to='profile/%Y%m%d/', blank=True, null=True, default="http://www.w3.org/2000/svg")
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
