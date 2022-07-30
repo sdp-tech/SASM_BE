@@ -155,3 +155,4 @@ cython_debug/
 
 secrets.json
 media
+SASM_DB.xlsx
