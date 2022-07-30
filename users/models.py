@@ -35,6 +35,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         (GENDER_FEMALE, "Female"),
         (GENDER_OTHER, "Other"),
     )
+    code = models.CharField(max_length=5, blank = True)
     gender = models.CharField(choices=GENDER_CHOICES, max_length=10, blank=True)
     nickname = models.CharField(max_length=20, blank=True)
     birthdate = models.DateField(blank=True, null=True)

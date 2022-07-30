@@ -106,7 +106,6 @@ class UserLoginSerializer(serializers.Serializer):
 #비밀번호 이메일 보낼 때 쓰는 거
 class PwEmailSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=64)
-
     def validate_email(self, value):
         '''데이터베이스에 존재하는지 확인'''
         if not User.objects.filter(email=value).exists():
@@ -116,6 +115,7 @@ class PwEmailSerializer(serializers.Serializer):
 
 #새로 이메일 입력 받을 때 쓰는거
 class PwChangeSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=5)
     password = serializers.CharField(required=True)
     
 class EmailFindSerializer(serializers.Serializer):

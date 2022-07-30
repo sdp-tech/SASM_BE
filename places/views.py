@@ -25,3 +25,4 @@ def place_like(request, id):
         place.place_like_cnt += 1
         place.save()
         return JsonResponse({'msg': 'click'})
+

@@ -58,7 +58,7 @@ class Place(core_models.TimeStampedModel):
         (VEGAN5, "폴로"),
         (VEGAN6, "그 외"),
     )
-
+    
     place_name = models.CharField(max_length=100)
     category = models.CharField(choices=PLACE_CHOICES, max_length=30, blank=True)
     vegan_category = models.CharField(choices=VEGAN_CHOICES, max_length=10, blank=True)
@@ -72,6 +72,7 @@ class Place(core_models.TimeStampedModel):
     fri_hours = models.CharField(max_length=50)
     sat_hours = models.CharField(max_length=50)
     sun_hours = models.CharField(max_length=50)
+    etc_hours = models.TextField(max_length=500)
     place_review = models.CharField(max_length=200)
     sns_type = models.ManyToManyField("SNSType", related_name = 'sns')
     address = models.CharField(max_length=200)
