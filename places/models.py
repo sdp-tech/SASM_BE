@@ -79,7 +79,8 @@ class Place(core_models.TimeStampedModel):
     place_likeuser_set = models.ManyToManyField('users.User',related_name = 'PlaceLikeUser',blank=True)
     rep_pic = models.ImageField(upload_to='place_rep/%Y%m%d/', default='')
     short_cur = models.TextField(max_length=500, default='')
-
+    left_coordinate = models.FloatField(blank=True, null=True)
+    right_coordinate = models.FloatField(blank=True, null=True)
     def __str__(self):
         return self.place_name
 
