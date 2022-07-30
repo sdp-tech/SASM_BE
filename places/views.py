@@ -38,7 +38,9 @@ def addr_to_lat_lon(addr):
     headers = {"Authorization": "KakaoAK " + rest_api_key}
     result = json.loads(str(requests.get(url, headers=headers).text))
     match_first = result['documents'][0]['address']
-    return float(match_first['x']), float(match_first['y'])
+    x=float(match_first['x'])
+    y=float(match_first['y'])
+    return (x, y)
 
 def save_place_db(request):
     df = pd.read_excel("SASM_DB.xlsx", engine="openpyxl")
@@ -60,6 +62,8 @@ def save_place_db(request):
             sun_hours=dbfram[13],
             place_review=dbfram[14],
             address=dbfram[15],
+            left_coordinate=addr_to_lat_lon(dbfram[15])[0],
+            right_coordinate=addr_to_lat_lon(dbfram[15])[1],
             short_cur=dbfram[16],
         )
         obj.save()
