@@ -23,7 +23,7 @@ class Story(core_models.TimeStampedModel):
     story_likeuser_set = models.ManyToManyField("users.User",related_name = 'StoryLikeUser',blank=True)
     tag = models.CharField(max_length=100)
     preview = models.CharField(max_length=150, blank=True)
-
+    views = models.PositiveIntegerField(default=0, verbose_name='조회수')
     def __str__(self):
         return self.title
     
