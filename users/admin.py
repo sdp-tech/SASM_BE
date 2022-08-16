@@ -6,5 +6,6 @@ from django.contrib import admin
 
 @admin.register(models.User)
 class CustomUserAdmin(admin.ModelAdmin):
+    pass
     """Custom User Admin"""
-    
+
