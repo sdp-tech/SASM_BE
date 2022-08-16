@@ -1,21 +1,24 @@
+import os
 from .models import User
 from .utils import (
     email_isvalid, 
     username_isvalid,
 )
+from django import template
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
+from django.contrib.staticfiles import finders
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
-
 
 #email 인증 관련
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes, force_str
-from django.core.mail import EmailMessage
-
+from django.core.mail import EmailMultiAlternatives
+from email.mime.image import MIMEImage
 #로그인 & 이메일 인증관련
 JWT_PAYLOAD_HANDLER = api_settings.JWT_PAYLOAD_HANDLER
 JWT_ENCODE_HANDLER = api_settings.JWT_ENCODE_HANDLER
@@ -58,17 +61,28 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         payload = JWT_PAYLOAD_HANDLER(user)
         jwt_token = JWT_ENCODE_HANDLER(payload)
-        message = render_to_string('users/user_activate_email.html', {
+        plaintext  = '...'
+        html_content = render_to_string('users/user_activate_email.html', {
             'user': user,
+            'nickname' : user.nickname,
             'domain': 'localhost:8000',
             'uid': force_str(urlsafe_base64_encode(force_bytes(user.pk))),
             'token': jwt_token,
         })
-        print(message)
+        print(html_content)
         mail_subject = '[SDP] 회원가입 인증 메일입니다'
         to_email = user.email
-        email = EmailMessage(mail_subject, message, to = [to_email])
-        email.send()
+        from_email = 'lina19197@daum.net'
+        msg = EmailMultiAlternatives(mail_subject,plaintext,from_email,[to_email])
+        msg.attach_alternative(html_content,"text/html")
+        imagefile = 'SASM_LOGO_BLACK.png'
+        file_path = os.path.join(settings.BASE_DIR,'static/img/SASM_LOGO_BLACK.png')
+        img_data = open(file_path,'rb').read()
+        image = MIMEImage(img_data)
+        image.add_header('Content-ID','<{}>'.format(imagefile))
+        msg.attach(image)
+        msg.send()
+        print('dd')
         return user
 
 class UserLoginSerializer(serializers.Serializer):
