@@ -68,6 +68,7 @@ THIRD_APPS = [
     'knox',
     'debug_toolbar',
     'corsheaders',
+    'drf_yasg',
 ]
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_APPS
 
