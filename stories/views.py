@@ -39,7 +39,7 @@ class StoryDetailView(generics.RetrieveAPIView):
         detail_story = get_object_or_404(self.get_queryset(), id=id)
 
         # 쿠키 초기화할 시간. 당일 자정
-        change_date = datetime.datetime.replace(timezone.datetime.now(), hour = 23, minute = 59, second = 0)
+        change_date = datetime.datetime.replace(timezone.datetime.now(), hour=23, minute=59, second=0)
         # %a: locale 요일(단축 표기), %b: locale 월 (단축 표기), %d: 10진수 날짜, %Y: 10진수 4자리 년도
         # strftime: 서식 지정 날짜 형식 변경.
         expires = datetime.datetime.strftime(change_date, "%a, %d-%b-%Y %H:%M:%S GMT")
