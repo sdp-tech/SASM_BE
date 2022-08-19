@@ -15,6 +15,8 @@ from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.management.utils import get_random_secret_key
 from rest_framework_jwt.settings import api_settings
+from django.core.mail import EmailMultiAlternatives
+from email.mime.image import MIMEImage
 
 jwt_decode_handler= api_settings.JWT_DECODE_HANDLER
 jwt_payload_get_user_id_handler = api_settings.JWT_PAYLOAD_GET_USER_ID_HANDLER
@@ -37,12 +39,13 @@ class PwResetEmailSendView(APIView):
             if serializer.is_valid():
                 user_email = serializer.data['email']
                 print(user_email)
-                user = User.objects.get(email = user_email)
+                user = User.objects.get(email=user_email)
                 print(user)
                 payload = JWT_PAYLOAD_HANDLER(user)
                 jwt_token = JWT_ENCODE_HANDLER(payload)
+                plaintext  = '...'
                 code = email_auth_string()
-                message = render_to_string('users/password_reset.html', {
+                html_content = render_to_string('users/password_reset.html', {
                     'user': user,
                     'domain': 'localhost:8000',
                     'uid': force_str(urlsafe_base64_encode(force_bytes(user.pk))),
@@ -50,19 +53,27 @@ class PwResetEmailSendView(APIView):
                     'code': code,
                 })
                 user.code = code
-                print(message)
-                mail_subject = '[SDP] 비밀번호 변경 메일입니다'
+                print(html_content)
+                mail_subject = '[SDP] 회원가입 인증 메일입니다'
                 to_email = user.email
-                email = EmailMessage(mail_subject, message, to = [to_email])
-                email.send()
+                from_email = 'lina19197@daum.net'
+                msg = EmailMultiAlternatives(mail_subject,plaintext,from_email, [to_email])
+                msg.attach_alternative(html_content, "text/html")
+                imagefile = 'SASM_LOGO_WHITE.png'
+                file_path = os.path.join(settings.BASE_DIR, 'static/img/SASM_LOGO_BLACK.png')
+                img_data = open(file_path,'rb').read()
+                image = MIMEImage(img_data)
+                image.add_header('Content-ID','<{}>'.format(imagefile))
+                msg.attach(image)
+                msg.send()
                 user.save()
-                return Response( user.email+ '이메일 전송이 완료되었습니다',status=status.HTTP_200_OK)
+                return Response(user.email+'이메일 전송이 완료되었습니다', status=status.HTTP_200_OK)
             print(serializer.errors)
-            return Response('일치하는 유저가 없습니다',status=status.HTTP_400_BAD_REQUEST)
+            return Response('일치하는 유저가 없습니다', status=status.HTTP_400_BAD_REQUEST)
         except( ValueError, OverflowError, User.DoesNotExist):
             user = None
             print(traceback.format_exc())
-            return Response('일치하는 유저가 없습니다',status=status.HTTP_400_BAD_REQUEST)
+            return Response('일치하는 유저가 없습니다', status=status.HTTP_400_BAD_REQUEST)
 
 #비밀번호 재설정
 

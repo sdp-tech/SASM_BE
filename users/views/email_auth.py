@@ -17,9 +17,10 @@ from rest_framework_jwt.settings import api_settings
 jwt_decode_handler= api_settings.JWT_DECODE_HANDLER
 jwt_payload_get_user_id_handler = api_settings.JWT_PAYLOAD_GET_USER_ID_HANDLER
 
-
-#회원가입 후 이메일로 유저 activate
 class UserActivateView(APIView):
+    '''
+        회원가입 후 이메일로 유저 activate 하는 API
+    '''
     permission_classes = [AllowAny]
     def get(self, request, uid, token):
         try:

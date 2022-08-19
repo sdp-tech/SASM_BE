@@ -10,27 +10,32 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView
 
-# 회원가입
 class SignupView(CreateAPIView):
+    '''
+    회원가입을 수행하는 API
+    '''
     model = get_user_model()
     serializer_class = UserSerializer
     permission_classes = [
         AllowAny, 
     ]
-
-#나의 정보 조회, 변경, 삭제       
+    
 class MeView(APIView):
+    '''
+        나의 정보를 조회, 변경, 삭제 하는 API
+        ---
+    '''
     permission_classes = [IsAuthenticated]
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
     def put(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer = UserSerializer(request.user,data=request.data,partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response()
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
         user = self.get_object(pk)
@@ -38,10 +43,12 @@ class MeView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-#관리자가 유저 정보 확인
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def user_detail(request, pk):
+    '''
+        관리자가 유저 정보를 확인하는 API
+    '''
     try:
         user = User.objects.get(pk=pk)
         return Response(UserSerializer(user).data)
@@ -59,11 +66,11 @@ def Login(request):
         #print(serializer)
         
         if not serializer.is_valid(raise_exception=True):
-            return Response({"message": "Request Body Error"}, status=status.HTTP_409_CONFLICT)
+            return Response({"message":"Request Body Error"},status=status.HTTP_409_CONFLICT)
         
         # print("gg",serializer{data})
         if serializer.data['email'] == "None":
-            return Response({"message": 'fail'}, status=status.HTTP_200_OK)
+            return Response({"message":'fail'},status=status.HTTP_200_OK)
         response = {
             'success': True,
             'token': serializer.data['token'],
@@ -72,7 +79,6 @@ def Login(request):
         return Response(response, status=status.HTTP_200_OK)
 
 
-#이메일 찾기
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def findemail(request):
@@ -84,10 +90,12 @@ def findemail(request):
             return Response('존재하지 않는 이메일입니다')
     return Response('이메일을 다시 입력하세요')
 
-#중복체크
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def rep_check(request):
+    '''
+    중복 체크를 수행하는 API
+    '''
     serializer = RepetitionCheckSerializer(data=request.data)
     if serializer.is_valid():
         type = serializer.data['type']

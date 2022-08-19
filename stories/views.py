@@ -35,7 +35,7 @@ class StoryDetailView(generics.RetrieveAPIView):
     queryset = Story.objects.all()
     serializer_class = StorySerializer
 
-    def retrieve(self, request, id=None):
+    def retrieve(self, request, id):
         detail_story = get_object_or_404(self.get_queryset(), id=id)
 
         # 쿠키 초기화할 시간. 당일 자정
@@ -46,8 +46,8 @@ class StoryDetailView(generics.RetrieveAPIView):
 
         # response를 미리 받기
         serializer = self.get_serializer(detail_story)
-        response = Response(serializer.data, status=status.HTTP_200_OK)
-       
+        response = JsonResponse(serializer.data, status=status.HTTP_200_OK)
+        print(response)
 
         # 쿠키 읽기, 생성하기
         if request.COOKIES.get('hit') is not None:
