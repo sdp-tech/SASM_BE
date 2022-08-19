@@ -32,6 +32,9 @@ def story_like(request, id):
         return JsonResponse({'msg': 'click'})
 
 class StoryDetailView(generics.RetrieveAPIView):
+    '''
+    조회수 중복 방지 - 쿠키 사용
+    '''
     queryset = Story.objects.all()
     serializer_class = StorySerializer
 
