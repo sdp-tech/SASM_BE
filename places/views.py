@@ -1,10 +1,15 @@
-from .models import Place
+from places.serializers import PlaceSerializer
+from .models import Place, Photo
 from users.models import User
 
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework import status
 
 import json
 import requests
@@ -45,6 +50,7 @@ def addr_to_lat_lon(addr):
 def save_place_db(request):
     df = pd.read_excel("SASM_DB.xlsx", engine="openpyxl")
     df = df.fillna('')
+    i=1
     for dbfram in df.itertuples():
         obj = Place.objects.create(
             place_name=dbfram[1],
@@ -66,6 +72,29 @@ def save_place_db(request):
             left_coordinate=addr_to_lat_lon(dbfram[16])[0],
             right_coordinate=addr_to_lat_lon(dbfram[16])[1],
             short_cur=dbfram[17],
-        )
+            rep_pic = dbfram[18],
+            )
         obj.save()
+        num = 19
+        for j in range(3):
+            img = Photo.objects.create(
+                image = dbfram[num],
+                place_id=i,
+                )
+            num+=1
+            img.save()
+        i+=1
     return JsonResponse({'msg': 'success'})
+
+class PlaceDetailView(APIView):
+    '''
+        place의 detail 정보를 주는 API
+    '''
+    serializer_class = PlaceSerializer
+    permission_classes=[
+        AllowAny,
+    ]
+    def get(self,request,pk):
+        place = Place.objects.get(id=pk)
+        response = Response(PlaceSerializer(place).data, status=status.HTTP_200_OK)
+        return response
