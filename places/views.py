@@ -60,11 +60,12 @@ def save_place_db(request):
             fri_hours=dbfram[11],
             sat_hours=dbfram[12],
             sun_hours=dbfram[13],
-            place_review=dbfram[14],
-            address=dbfram[15],
-            left_coordinate=addr_to_lat_lon(dbfram[15])[0],
-            right_coordinate=addr_to_lat_lon(dbfram[15])[1],
-            short_cur=dbfram[16],
+            etc_hours=dbfram[14],
+            place_review=dbfram[15],
+            address=dbfram[16],
+            left_coordinate=addr_to_lat_lon(dbfram[16])[0],
+            right_coordinate=addr_to_lat_lon(dbfram[16])[1],
+            short_cur=dbfram[17],
         )
         obj.save()
     return JsonResponse({'msg': 'success'})
