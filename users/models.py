@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import UserManager, PermissionsMixin
 
 # Create your models here.
+#username으로 email을 사용하기 위해 UserManager의 함수를 overrinding 한다.
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         if not email:

@@ -18,17 +18,17 @@ urlpatterns = [
 # API 문서에 작성될 소개 내용
 schema_view = get_schema_view(
     openapi.Info(
-        title='API 문서 제목',
-        default_version='API 버전',
+        title='SASM OPEN API',
+        default_version='v1',
         description=
         '''
-        API 문서 설명
+        안녕하세요. SASM의 OPEN API 문서 페이지 입니다.
 
         작성자 : ...
         ''',
         terms_of_service='',
-        contact=openapi.Contact(name='이름', email='이메일'),
-        license=openapi.License(name='API 문서 이름')
+        contact=openapi.Contact(name='SDP_OFFICIAL', email='sdpygl@gmail.com'),
+        license=openapi.License(name='SDP_OFFICIAL')
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
