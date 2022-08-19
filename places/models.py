@@ -16,6 +16,7 @@ class AbstractItem(core_models.TimeStampedModel):
 class Photo(core_models.TimeStampedModel):
     """Photo Model Definition"""
 
+    image = models.URLField(max_length=3000)
     file = models.ImageField(upload_to='place/%Y%m%d/')
     place = models.ForeignKey("Place", on_delete=models.CASCADE)
 
@@ -78,7 +79,7 @@ class Place(core_models.TimeStampedModel):
     address = models.CharField(max_length=200)
     place_like_cnt = models.PositiveIntegerField(default=0)
     place_likeuser_set = models.ManyToManyField('users.User',related_name = 'PlaceLikeUser',blank=True)
-    rep_pic = models.ImageField(upload_to='place_rep/%Y%m%d/', default='')
+    rep_pic = models.URLField(max_length=3000, default='')
     short_cur = models.TextField(max_length=500, default='')
     left_coordinate = models.FloatField(blank=True, null=True)
     right_coordinate = models.FloatField(blank=True, null=True)
