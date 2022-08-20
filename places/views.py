@@ -10,6 +10,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.pagination import PageNumberPagination
 
 import json
 import requests
@@ -24,7 +26,6 @@ def place_like(request, id):
     place = get_object_or_404(Place, id=id)
     user = request.user
     profile = User.objects.get(email=user)
-
     check_like = place.place_likeuser_set.filter(id=profile.id)
 
     if check_like.exists():
@@ -86,14 +87,30 @@ def save_place_db(request):
         i+=1
     return JsonResponse({'msg': 'success'})
 
-class PlaceDetailView(APIView):
+class BasicPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+
+class PlaceDetailView(viewsets.ModelViewSet):
     '''
         place의 detail 정보를 주는 API
     '''
+    queryset = Place.objects.all()
     serializer_class = PlaceSerializer
     permission_classes=[
         AllowAny,
     ]
+    pagination_class=BasicPagination
+    
+    def list(self,request):
+        qs = self.get_queryset()
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
+        else:
+            serializer = self.get_serializer(page, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def get(self,request,pk):
         place = Place.objects.get(id=pk)
         response = Response(PlaceSerializer(place).data, status=status.HTTP_200_OK)
