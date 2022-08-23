@@ -12,6 +12,7 @@ from django.contrib.auth.models import update_last_login
 from django.contrib.staticfiles import finders
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
+from rest_framework_simplejwt.tokens import RefreshToken
 
 #email 인증 관련
 from django.template.loader import render_to_string
@@ -88,34 +89,38 @@ class UserSerializer(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.Serializer):
     email = serializers.CharField(max_length=64)
     password = serializers.CharField(max_length=128, write_only=True)
-    token = serializers.CharField(max_length=255, read_only=True)
     nickname = serializers.CharField(max_length=20, read_only=True)
 
+    class Meta(object):
+        model = User
+        fields = ('email', 'password', 'nickname')
     def validate(self, data):
         # email, password에 일치하는 user가 있는지 확인
         email = data.get("email", None)
         password = data.get("password", None)
-        user = authenticate(email=email, password=password)
-        if user is None:
-            return {
-                'email': 'None'
-            }
-
-        try:
-            # 토큰 발급
-            payload = JWT_PAYLOAD_HANDLER(user)
-            jwt_token = JWT_ENCODE_HANDLER(payload)
-            update_last_login(None, user)
         
-        except User.DoesNotExist:
-            raise serializers.ValidationError(
-                'User with given email and password does not exist'
-            )
-        return {
+        if User.objects.filter(email=email).exists():
+            user = User.objects.get(email=email)
+
+            if not user.check_password(password):
+                raise serializers.ValidationError("Email과 password가 틀렸습니다.")
+
+        else:
+            raise serializers.ValidationError("존재하지 않는 email입니다.")
+
+        # token 발급
+        token = RefreshToken.for_user(user=user)
+        data = {
             'email': user.email,
-            'token': jwt_token,
-            'nickname':user.nickname
+            'refresh': str(token),
+            'access': str(token.access_token),
+            'nickname': user.nickname
         }
+        # update_last_login(None, user)
+        
+        print("                         ")
+        print(data)
+        return data
 
 #비밀번호 이메일 보낼 때 쓰는 거
 class PwEmailSerializer(serializers.Serializer):

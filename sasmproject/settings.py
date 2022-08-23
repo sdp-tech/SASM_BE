@@ -169,18 +169,12 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 REST_USE_JWT = True
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
     'ROTATE_REFRESH_TOKENS': False,
 }
 
-# JWT_AUTH = {
-#     "JWT_SECRET_KEY": SECRET_KEY, 
-#     "JWT_ALGORITHM": "HS256", # 암호화 알고리즘
-#     "JWT_ALLOW_REFRESH": True,
-#     "JWT_EXPIRATION_DELTA": timedelta(days=7), # 유효기간
-#     "JWT_REFRESH_EXPIRATION_DELTA": timedelta(days=28), # JWT 토큰 갱신 유효기간
-# }
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field

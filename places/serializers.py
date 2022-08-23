@@ -3,7 +3,6 @@ from rest_framework import serializers
 from places import models as place_models
 
 class PlaceSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = place_models.Place
         fields = [
