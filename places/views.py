@@ -88,7 +88,7 @@ def save_place_db(request):
     return JsonResponse({'msg': 'success'})
 
 class BasicPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 20
     page_size_query_param = 'page_size'
 
 class PlaceDetailView(viewsets.ModelViewSet):
@@ -101,7 +101,7 @@ class PlaceDetailView(viewsets.ModelViewSet):
         AllowAny,
     ]
     pagination_class=BasicPagination
-    
+
     def list(self,request):
         qs = self.get_queryset()
         page = self.paginate_queryset(qs)
