@@ -74,7 +74,7 @@ def save_place_db(request):
             right_coordinate=addr_to_lat_lon(dbfram[16])[1],
             short_cur=dbfram[17],
             rep_pic = dbfram[18],
-        )
+            )
         obj.save()
         num = 19
         for j in range(3):
