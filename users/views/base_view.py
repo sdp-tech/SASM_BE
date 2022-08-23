@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, GenericAPIView
+
 
 class SignupView(CreateAPIView):
     '''
@@ -58,23 +59,22 @@ def user_detail(request, pk):
 
 
 # 로그인 함수
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def Login(request):
-    if request.method == 'POST':
-        serializer = UserLoginSerializer(data=request.data)
-        #print(serializer)
+class LoginView(GenericAPIView):
+    serializer_class = UserLoginSerializer
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
         
         if not serializer.is_valid(raise_exception=True):
             return Response({"message":"Request Body Error"},status=status.HTTP_409_CONFLICT)
-        
-        # print("gg",serializer{data})
-        if serializer.data['email'] == "None":
+
+        if serializer.validated_data['email'] == "None":
             return Response({"message":'fail'},status=status.HTTP_200_OK)
+
         response = {
             'success': True,
-            'token': serializer.data['token'],
-            'nickname' : serializer.data['nickname']
+            'access': serializer.validated_data['access'],
+            'refresh': serializer.validated_data['refresh'],
+            'nickname' : serializer.validated_data['nickname']
         }
         return Response(response, status=status.HTTP_200_OK)
 
