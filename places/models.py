@@ -18,7 +18,7 @@ class Photo(core_models.TimeStampedModel):
 
     image = models.URLField(max_length=3000)
     file = models.ImageField(upload_to='place/%Y%m%d/')
-    place = models.ForeignKey("Place", on_delete=models.CASCADE)
+    place = models.ForeignKey("Place", related_name='photos',on_delete=models.CASCADE)
 
 class SNSType(AbstractItem):
     
@@ -88,5 +88,5 @@ class Place(core_models.TimeStampedModel):
 
 class SNSUrl(models.Model):
     sns_type_url = models.ForeignKey('places.SNSType', related_name ='sns_type_forurl',on_delete=models.CASCADE,null=True)
-    sns_place = models.ForeignKey('places.Place', related_name ='sns_url_place', on_delete=models.CASCADE,null=True)
+    sns_place = models.ForeignKey('places.Place', related_name ='sns', on_delete=models.CASCADE,null=True)
     sns_url = models.URLField(max_length=200,null=True)
