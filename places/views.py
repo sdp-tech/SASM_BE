@@ -1,4 +1,5 @@
 from places.serializers import PlaceSerializer
+from users.serializers import UserSerializer
 from .models import Place, Photo
 from users.models import User
 
@@ -7,11 +8,12 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
 
 import json
 import requests
@@ -20,24 +22,6 @@ import pandas as pd
 # Create your views here.
 
 rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
-
-@login_required
-def place_like(request, id):
-    place = get_object_or_404(Place, id=id)
-    user = request.user
-    profile = User.objects.get(email=user)
-    check_like = place.place_likeuser_set.filter(id=profile.id)
-
-    if check_like.exists():
-        place.place_likeuser_set.remove(profile)
-        place.place_like_cnt -= 1
-        place.save()
-        return JsonResponse({'msg': 'cancel'})
-    else:
-        place.place_likeuser_set.add(profile)
-        place.place_like_cnt += 1
-        place.save()
-        return JsonResponse({'msg': 'click'})
 
 def addr_to_lat_lon(addr):
     url = 'https://dapi.kakao.com/v2/local/search/address.json?query={address}'.format(address=addr)
@@ -115,3 +99,39 @@ class PlaceDetailView(viewsets.ModelViewSet):
         place = Place.objects.get(id=pk)
         response = Response(PlaceSerializer(place).data, status=status.HTTP_200_OK)
         return response
+    
+    
+
+class PlaceLikeView(viewsets.ModelViewSet):
+    serializer_class=UserSerializer
+    queryset = User.objects.all()
+    permission_classes=[
+        IsAuthenticated,
+    ]
+    def get(self,request,pk):
+        place = get_object_or_404(Place, pk=pk)
+        like_id = place.place_likeuser_set.all()
+        users = User.objects.filter(id__in=like_id)
+        serializer = UserSerializer(users, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, pk):
+        place = get_object_or_404(Place, pk=pk)
+        if request.user.is_authenticated:
+            user = request.user
+            profile = User.objects.get(email=user)
+            check_like = place.place_likeuser_set.filter(pk=profile.pk)
+
+            if check_like.exists():
+                place.place_likeuser_set.remove(profile)
+                place.place_like_cnt -= 1
+                place.save()
+                return Response(status.HTTP_204_NO_CONTENT)
+            else:
+                place.place_likeuser_set.add(profile)
+                place.place_like_cnt += 1
+                place.save()
+                return Response(status.HTTP_201_CREATED)
+        else:
+            return Response(status.HTTP_204_NO_CONTENT)
+        
