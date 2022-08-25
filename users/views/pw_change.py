@@ -47,6 +47,7 @@ class PwResetEmailSendView(APIView):
                 code = email_auth_string()
                 html_content = render_to_string('users/password_reset.html', {
                     'user': user,
+                    'nickname' : user.nickname,
                     'domain': 'localhost:8000',
                     'uid': force_str(urlsafe_base64_encode(force_bytes(user.pk))),
                     'token': jwt_token,
@@ -54,13 +55,13 @@ class PwResetEmailSendView(APIView):
                 })
                 user.code = code
                 print(html_content)
-                mail_subject = '[SDP] 회원가입 인증 메일입니다'
+                mail_subject = '[SDP] 비밀번호 변경 메일입니다'
                 to_email = user.email
                 from_email = 'lina19197@daum.net'
                 msg = EmailMultiAlternatives(mail_subject,plaintext,from_email, [to_email])
                 msg.attach_alternative(html_content, "text/html")
                 imagefile = 'SASM_LOGO_WHITE.png'
-                file_path = os.path.join(settings.BASE_DIR, 'static/img/SASM_LOGO_BLACK.png')
+                file_path = os.path.join(settings.BASE_DIR, 'static/img/SASM_LOGO_WHITE.png')
                 img_data = open(file_path,'rb').read()
                 image = MIMEImage(img_data)
                 image.add_header('Content-ID','<{}>'.format(imagefile))
