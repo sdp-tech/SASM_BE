@@ -1,4 +1,4 @@
-from places.serializers import PlaceSerializer
+from places.serializers import PlaceSerializer,PlaceDetailSerializer
 from users.serializers import UserSerializer
 from .models import Place, Photo
 from users.models import User
@@ -97,7 +97,7 @@ class PlaceDetailView(viewsets.ModelViewSet):
 
     def get(self,request,pk):
         place = Place.objects.get(id=pk)
-        response = Response(PlaceSerializer(place).data, status=status.HTTP_200_OK)
+        response = Response(PlaceDetailSerializer(place).data, status=status.HTTP_200_OK)
         return response
     
     
