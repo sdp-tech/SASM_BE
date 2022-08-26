@@ -8,9 +8,10 @@ urlpatterns = [
     path("signup/",base_view.SignupView.as_view()),
     path("me/",base_view.MeView.as_view()),
     path("<int:pk>/",base_view.user_detail),
-    path('login/',base_view.LoginView.as_view()),
-    path('login/refresh/', TokenRefreshView.as_view()), 
+    path('login/',base_view.LoginView.as_view(),name='login'),
+    path('login/refresh/', TokenRefreshView.as_view(),name='token_refresh'), 
     # 위 url에 refresh token 넣어서 POST 보내면 access token 갱신 가능
+    path('logout/', base_view.LogoutView.as_view(),name='logout'),
     path('findid/',base_view.findemail),
     path('rep_check/',base_view.rep_check),
     path('kakao/login/',login_kakao.kakao_login,name='kakao_login'),

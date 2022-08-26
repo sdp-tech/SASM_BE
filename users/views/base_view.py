@@ -57,9 +57,10 @@ def user_detail(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-
-# 로그인 함수
 class LoginView(GenericAPIView):
+    '''
+        로그인 API
+    '''
     serializer_class = UserLoginSerializer
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -78,6 +79,22 @@ class LoginView(GenericAPIView):
         }
         return Response(response, status=status.HTTP_200_OK)
 
+class LogoutView(GenericAPIView):
+    '''
+        로그아웃 API
+    '''
+    serializer_class = UserLogoutSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response = {
+            'msg': 'success'
+        }
+        return Response(response, status=status.HTTP_204_NO_CONTENT)
 
 @api_view(["POST"])
 @permission_classes([AllowAny])

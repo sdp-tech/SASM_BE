@@ -12,7 +12,7 @@ from django.contrib.auth.models import update_last_login
 from django.contrib.staticfiles import finders
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
 #email 인증 관련
 from django.template.loader import render_to_string
@@ -117,10 +117,27 @@ class UserLoginSerializer(serializers.Serializer):
             'nickname': user.nickname
         }
         # update_last_login(None, user)
-        
-        print("                         ")
-        print(data)
         return data
+
+class UserLogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    
+    default_error_messages = {
+        'bad_token': ('Token is expired or invalid')
+    }
+    
+    def validate(self, attrs):
+        print(attrs)
+        self.token = attrs['refresh']
+
+        return attrs
+
+    def save(self, **kwargs):
+        try:
+            RefreshToken(self.token).blacklist()
+        except TokenError:
+            self.fail('bad_token')
+
 
 #비밀번호 이메일 보낼 때 쓰는 거
 class PwEmailSerializer(serializers.Serializer):
