@@ -170,7 +170,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 REST_USE_JWT = True
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=2),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
     'ROTATE_REFRESH_TOKENS': False, # true면 토큰 갱신 시 refresh도 같이 갱신
     'BLACKLIST_AFTER_ROTATION': True,
