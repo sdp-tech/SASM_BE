@@ -1,10 +1,27 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from places import models as place_models
+from places.models import Place, Photo, SNSUrl
+
+class PhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Photo
+        fields = [
+            'image',
+        ]
+
+class SNSUrlSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SNSUrl
+        fields = [
+            'sns_type_url',
+            'sns_url',
+        ]
 
 class PlaceSerializer(serializers.ModelSerializer):
+    photos = PhotoSerializer(many=True,read_only=True)
+    sns = SNSUrlSerializer(many=True,read_only=True)
     class Meta:
-        model = place_models.Place
+        model = Place
         fields = [
             'id',
             'place_name',
@@ -27,4 +44,6 @@ class PlaceSerializer(serializers.ModelSerializer):
             'short_cur',
             'left_coordinate',
             'right_coordinate',
+            'photos',
+            'sns',
             ]
