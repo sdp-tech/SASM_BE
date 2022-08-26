@@ -47,3 +47,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             'photos',
             'sns',
             ]
+
+
+class PlaceLikeSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
