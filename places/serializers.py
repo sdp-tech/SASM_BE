@@ -71,11 +71,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'photos',
             'sns',
             ]
-    def get_open_hours(self,obj):
-        '''
-        오늘 요일만 보내주기 위한 함수
-        '''
-        days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
-        a = datetime.datetime.today().weekday()
-        place = Place.objects.filter(id=obj.id).values(days[a])[0]
-        return place[days[a]]
+
+class PlaceLikeSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
