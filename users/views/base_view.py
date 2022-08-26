@@ -1,6 +1,6 @@
 from places.serializers import PlaceSerializer
 from ..models import User
-from users.serializers import UserSerializer, UserLoginSerializer,EmailFindSerializer,RepetitionCheckSerializer
+from users.serializers import UserSerializer, UserLoginSerializer,EmailFindSerializer,RepetitionCheckSerializer, UserLogoutSerializer
 from django.contrib.auth import get_user_model
 
 from rest_framework import status
@@ -72,6 +72,7 @@ class LoginView(GenericAPIView):
         로그인 API
     '''
     serializer_class = UserLoginSerializer
+    permission_classes = (AllowAny,)
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         
