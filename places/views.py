@@ -99,8 +99,6 @@ class PlaceDetailView(viewsets.ModelViewSet):
         place = Place.objects.get(id=pk)
         response = Response(PlaceDetailSerializer(place).data, status=status.HTTP_200_OK)
         return response
-    
-    
 
 class PlaceLikeView(viewsets.ModelViewSet):
     serializer_class=UserSerializer
@@ -117,6 +115,7 @@ class PlaceLikeView(viewsets.ModelViewSet):
 
     def post(self, request, pk):
         place = get_object_or_404(Place, pk=pk)
+        print(request.user)
         if request.user.is_authenticated:
             user = request.user
             profile = User.objects.get(email=user)
