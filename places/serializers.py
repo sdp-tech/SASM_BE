@@ -1,3 +1,4 @@
+import datetime
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from places.models import Place, Photo, SNSUrl
@@ -16,8 +17,37 @@ class SNSUrlSerializer(serializers.ModelSerializer):
             'sns_type_url',
             'sns_url',
         ]
-
 class PlaceSerializer(serializers.ModelSerializer):
+    open_hours = serializers.SerializerMethodField()
+    class Meta:
+        model = Place
+        fields = [
+            'id',
+            'place_name',
+            'category',
+            'vegan_category',
+            'tumblur_category',
+            'reusable_con_category',
+            'pet_category',
+            'open_hours',
+            'etc_hours',
+            'place_review',
+            'address',
+            'rep_pic',
+            'short_cur',
+            'left_coordinate',
+            'right_coordinate',
+            ]
+    def get_open_hours(self,obj):
+        '''
+        오늘 요일만 보내주기 위한 함수
+        '''
+        days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
+        a = datetime.datetime.today().weekday()
+        place = Place.objects.filter(id=obj.id).values(days[a])[0]
+        return place[days[a]]
+class PlaceDetailSerializer(serializers.ModelSerializer):
+    open_hours = serializers.SerializerMethodField()
     photos = PhotoSerializer(many=True,read_only=True)
     sns = SNSUrlSerializer(many=True,read_only=True)
     class Meta:
@@ -30,13 +60,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             'tumblur_category',
             'reusable_con_category',
             'pet_category',
-            'mon_hours',
-            'tues_hours',
-            'wed_hours',
-            'thurs_hours',
-            'fri_hours',
-            'sat_hours',
-            'sun_hours',
+            'open_hours',
             'etc_hours',
             'place_review',
             'address',
@@ -48,6 +72,6 @@ class PlaceSerializer(serializers.ModelSerializer):
             'sns',
             ]
 
-
 class PlaceLikeSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+
