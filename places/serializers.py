@@ -54,6 +54,7 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
+        access_token = self.context['request'].META.get('HTTP_AUTHORIZATION')
         place = Place.objects.get(id=obj.id)
         re_user =  self.context['request'].user.id
         like_id = place.place_likeuser_set.all()
@@ -80,6 +81,13 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'pet_category',
             'open_hours',
             'etc_hours',
+            'mon_hours',
+            'tues_hours',
+            'wed_hours',
+            'thurs_hours',
+            'fri_hours',
+            'sat_hours',
+            'sun_hours',
             'place_review',
             'address',
             'rep_pic',
@@ -89,6 +97,14 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'photos',
             'sns',
             ]
+    def get_open_hours(self,obj):
+        '''
+        오늘 요일만 보내주기 위한 함수
+        '''
+        days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
+        a = datetime.datetime.today().weekday()
+        place = Place.objects.filter(id=obj.id).values(days[a])[0]
+        return place[days[a]]
 
 class PlaceLikeSerializer(serializers.Serializer):
     id = serializers.IntegerField()
