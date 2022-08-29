@@ -115,7 +115,6 @@ class PlaceLikeView(viewsets.ModelViewSet):
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
-        access_token = request.META.get('HTTP_AUTHORIZATION')
 
         if not serializer.is_valid(raise_exception=True):
             return Response({"msg": "serializer is not valid"})

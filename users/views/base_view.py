@@ -15,7 +15,6 @@ class UserLikeView(APIView):
     user가 좋아요 한 장소 정보를 가져오는 API
     '''
     def post(self,request):
-        access_token = request.META.get('HTTP_AUTHORIZATION')
         user = request.user
         #역참조 이용
         like_place = user.PlaceLikeUser.all()
