@@ -1,25 +1,43 @@
 from places.serializers import PlaceSerializer
 from ..models import User
+from places.models import Place
 from users.serializers import UserSerializer, UserLoginSerializer,EmailFindSerializer,RepetitionCheckSerializer, UserLogoutSerializer
 from django.contrib.auth import get_user_model
 
 from rest_framework import status
+from rest_framework import viewsets
 from rest_framework.response import Response 
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, GenericAPIView
+from rest_framework.pagination import PageNumberPagination
 
-class UserLikeView(APIView):
+class LikePagination(PageNumberPagination):
+    page_size = 6
+    #page_size_query_param = 'page_size'
+
+class UserLikeView(viewsets.ModelViewSet):
     '''
     user가 좋아요 한 장소 정보를 가져오는 API
     '''
+    queryset = Place.objects.all()
+    serializer_class = PlaceSerializer
+    permission_classes=[
+        IsAuthenticated
+    ]
+    pagination_class=LikePagination
+
     def post(self,request):
         user = request.user
         #역참조 이용
         like_place = user.PlaceLikeUser.all()
+        page = self.paginate_queryset(like_place)
         #context 값 넘겨주기
-        serializer = PlaceSerializer(like_place,many=True,context={'request': request})
+        if page is not None:
+            serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request}).data) 
+        else:
+            serializer = self.get_serializer(page, many=True,context={'request': request})
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 class SignupView(CreateAPIView):
