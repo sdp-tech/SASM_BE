@@ -1,4 +1,4 @@
-from places.serializers import PlaceSerializer,PlaceDetailSerializer, PlaceLikeSerializer
+from places.serializers import PlaceSerializer,PlaceDetailSerializer
 from users.serializers import UserSerializer
 from .models import Place, Photo
 from users.models import User
