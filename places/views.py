@@ -101,7 +101,7 @@ class PlaceDetailView(viewsets.ModelViewSet):
         return response
 
 class PlaceLikeView(viewsets.ModelViewSet):
-    serializer_class=PlaceLikeSerializer
+    serializer_class=PlaceSerializer
     queryset = Place.objects.all()
     permission_classes=[
         IsAuthenticated,
@@ -114,12 +114,8 @@ class PlaceLikeView(viewsets.ModelViewSet):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-
-        if not serializer.is_valid(raise_exception=True):
-            return Response({"msg": "serializer is not valid"})
-            
-        place = get_object_or_404(Place, pk=serializer.validated_data['id'])
+        id = request.data['id']
+        place = get_object_or_404(Place, pk=id)
         if request.user.is_authenticated:
             user = request.user
             profile = User.objects.get(email=user)

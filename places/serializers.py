@@ -1,7 +1,7 @@
 import datetime
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from places.models import Place, Photo, SNSUrl
+from places.models import Place, Photo, SNSType, SNSUrl
 from users.models import User
 
 class PhotoSerializer(serializers.ModelSerializer):
@@ -104,6 +104,4 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
         place = Place.objects.filter(id=obj.id).values(days[a])[0]
         return place[days[a]]
 
-class PlaceLikeSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
 
