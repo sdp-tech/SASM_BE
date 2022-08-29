@@ -54,12 +54,10 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
-        access_token = self.context['request'].META.get('HTTP_AUTHORIZATION')
         place = Place.objects.get(id=obj.id)
         re_user =  self.context['request'].user.id
         like_id = place.place_likeuser_set.all()
         users = User.objects.filter(id__in=like_id)
-        #print(users.filter(id=re_user).exists())
         if users.filter(id=re_user).exists():
             return 'ok'
         else:
