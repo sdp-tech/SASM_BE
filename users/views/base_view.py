@@ -15,10 +15,12 @@ class UserLikeView(APIView):
     user가 좋아요 한 장소 정보를 가져오는 API
     '''
     def post(self,request):
+        access_token = request.META.get('HTTP_AUTHORIZATION')
         user = request.user
         #역참조 이용
         like_place = user.PlaceLikeUser.all()
-        serializer = PlaceSerializer(like_place,many=True)
+        #context 값 넘겨주기
+        serializer = PlaceSerializer(like_place,many=True,context={'request': request})
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 class SignupView(CreateAPIView):
