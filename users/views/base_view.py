@@ -82,6 +82,7 @@ class LoginView(GenericAPIView):
         if serializer.validated_data['email'] == "None":
             return Response({"message":'fail'},status=status.HTTP_200_OK)
 
+        print("login 확인", serializer.validated_data['access'])
         response = {
             'success': True,
             'access': serializer.validated_data['access'],
@@ -96,16 +97,15 @@ class LogoutView(GenericAPIView):
     '''
     serializer_class = UserLogoutSerializer
     permission_classes = (IsAuthenticated,)
-
+    queryset = User.objects.all()
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         response = {
             'msg': 'success'
-        }
-        return Response(response, status=status.HTTP_204_NO_CONTENT)
+           }
+        return Response(response, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
