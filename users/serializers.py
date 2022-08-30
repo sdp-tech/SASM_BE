@@ -13,6 +13,7 @@ from django.contrib.staticfiles import finders
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from rest_framework_simplejwt.exceptions import InvalidToken
 
 #email 인증 관련
 from django.template.loader import render_to_string
@@ -123,7 +124,7 @@ class UserLogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
     
     default_error_messages = {
-        'bad_token': ('Token is expired or invalid')
+        'token_not_valid': ('Token is invalid or expired')
     }
 
     def validate(self, attrs):
@@ -135,7 +136,7 @@ class UserLogoutSerializer(serializers.Serializer):
         try:
             RefreshToken(self.token).blacklist()
         except TokenError:
-            self.fail('bad_token')
+            raise InvalidToken()
 
 
 #비밀번호 이메일 보낼 때 쓰는 거
