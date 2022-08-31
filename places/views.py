@@ -15,17 +15,23 @@ from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 
+import os
 import json
 import requests
 import pandas as pd
+import geopandas as gpd
+#from tqdm import tqdm
+import haversine as hs
+from haversine import Unit
 
 # Create your views here.
 
-rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
+kakao_rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
+#google_rest_api_key = getattr(settings, 'GOOGLE')
 
 def addr_to_lat_lon(addr):
     url = 'https://dapi.kakao.com/v2/local/search/address.json?query={address}'.format(address=addr)
-    headers = {"Authorization": "KakaoAK " + rest_api_key}
+    headers = {"Authorization": "KakaoAK " + kakao_rest_api_key}
     result = json.loads(str(requests.get(url, headers=headers).text))
     match_first = result['documents'][0]['address']
     x=float(match_first['x'])
@@ -75,6 +81,7 @@ class BasicPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
 
+#def MyLocation()
 class PlaceDetailView(viewsets.ModelViewSet):
     '''
         place의 detail 정보를 주는 API
@@ -85,7 +92,8 @@ class PlaceDetailView(viewsets.ModelViewSet):
         AllowAny,
     ]
     pagination_class=BasicPagination
-
+    
+    
     def list(self,request):
         qs = self.get_queryset()
         page = self.paginate_queryset(qs)
