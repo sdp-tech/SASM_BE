@@ -2,7 +2,7 @@ from django.contrib import admin
 from . import models
 
 # Register your models here.
-@admin.register(models.Photo)
+@admin.register(models.StoryPhoto)
 class PhotoAdmin(admin.ModelAdmin):
 
     """ """
@@ -14,8 +14,4 @@ class StoryAdmin(admin.ModelAdmin):
 
     """ """
 
-    pass
-@admin.register(models.Paragraph)
-class CommentAdmin(admin.ModelAdmin):
-    
     pass

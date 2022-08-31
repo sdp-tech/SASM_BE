@@ -1,6 +1,6 @@
 from places.serializers import PlaceSerializer,PlaceDetailSerializer
 from users.serializers import UserSerializer
-from .models import Place, Photo
+from .models import Place, PlacePhoto
 from users.models import User
 
 from django.conf import settings
@@ -68,7 +68,7 @@ def save_place_db(request):
         obj.save()
         num = 19
         for j in range(3):
-            img = Photo.objects.create(
+            img = PlacePhoto.objects.create(
                 image = dbfram[num],
                 place_id=i,
                 )

@@ -28,7 +28,7 @@ class UserLikeView(viewsets.ModelViewSet):
     ]
     pagination_class=LikePagination
 
-    def post(self,request):
+    def get(self,request):
         user = request.user
         #역참조 이용
         like_place = user.PlaceLikeUser.all()

@@ -1,23 +1,25 @@
 import datetime
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from places.models import Place, Photo, SNSType, SNSUrl
+from places.models import Place, PlacePhoto, SNSType
 from users.models import User
 
 class PhotoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Photo
+        model = PlacePhoto
         fields = [
             'image',
         ]
 
 class SNSUrlSerializer(serializers.ModelSerializer):
+    # sns_name = serializers.SerializerMethodField()
     class Meta:
-        model = SNSUrl
+        model = SNSType
         fields = [
-            'sns_type_url',
-            'sns_url',
+            'name',
+            'url',
         ]
+
 class PlaceSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()

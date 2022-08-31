@@ -37,13 +37,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         (GENDER_FEMALE, "Female"),
         (GENDER_OTHER, "Other"),
     )
-    code = models.CharField(max_length=5, blank = True)
+    code = models.CharField(max_length=5, blank=True)
     gender = models.CharField(choices=GENDER_CHOICES, max_length=10, blank=True)
     nickname = models.CharField(max_length=20, blank=True)
-    birthdate = models.DateField(blank=True, null=True)
+    birthdate = models.DateField(blank=True)
     email = models.EmailField(max_length=64,unique=True)
     address = models.CharField(max_length=100, blank=True)
-    profile_image = models.ImageField(upload_to='profile/%Y%m%d/', blank=True, null=True, default="http://www.w3.org/2000/svg")
+    profile_image = models.ImageField(upload_to='profile/%Y%m%d/', blank=True, default='')
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)

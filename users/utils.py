@@ -16,3 +16,7 @@ def username_isvalid(value):
         raise Exception('닉네임은 2 자리 이상이어야 합니다.')
     except Exception as e:
         print('예외가 발생했습니다.', e)
+# def execute(self, sql, params=None):
+# 				# 실행되는 모든 sql을 만드는 sql문과 params를 출력
+#         print(sql, params)
+#         return self._execute_with_wrappers(sql, params, many=False, executor=self._execute)

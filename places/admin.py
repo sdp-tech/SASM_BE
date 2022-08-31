@@ -2,7 +2,7 @@ from django.contrib import admin
 from . import models
 # Register your models here.
 
-@admin.register(models.Photo)
+@admin.register(models.PlacePhoto)
 class PhotoAdmin(admin.ModelAdmin):
 
     """ """
@@ -12,11 +12,11 @@ class PhotoAdmin(admin.ModelAdmin):
 class SNsAdmin(admin.ModelAdmin):
     pass
 
-@admin.register(models.SNSUrl)
-class SNsAdmin(admin.ModelAdmin):
-    pass
-
 
 @admin.register(models.Place)
+class PlaceAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(models.SNSUrl)
 class PlaceAdmin(admin.ModelAdmin):
     pass
