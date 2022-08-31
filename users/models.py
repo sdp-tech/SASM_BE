@@ -40,7 +40,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     code = models.CharField(max_length=5, blank=True)
     gender = models.CharField(choices=GENDER_CHOICES, max_length=10, blank=True)
     nickname = models.CharField(max_length=20, blank=True)
-    birthdate = models.DateField(blank=True)
+    birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64,unique=True)
     address = models.CharField(max_length=100, blank=True)
     profile_image = models.ImageField(upload_to='profile/%Y%m%d/', default='https://sasm-bucket.s3.ap-northeast-2.amazonaws.com/users/SASM+user+profile+image.png')

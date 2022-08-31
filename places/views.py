@@ -1,6 +1,8 @@
+from asyncio.windows_events import NULL
+from cmd import IDENTCHARS
 from places.serializers import PlaceSerializer,PlaceDetailSerializer
 from users.serializers import UserSerializer
-from .models import Place, PlacePhoto
+from .models import Place, PlacePhoto, SNSType, SNSUrl
 from users.models import User
 
 from django.conf import settings
@@ -19,15 +21,28 @@ import os
 import json
 import requests
 import pandas as pd
-import geopandas as gpd
-#from tqdm import tqdm
-import haversine as hs
-from haversine import Unit
+import boto3
+from urllib import parse
+# import geopandas as gpd
+# #from tqdm import tqdm
+# import haversine as hs
+# from haversine import Unit
 
 # Create your views here.
-
+aws_access_key_id = getattr(settings,'AWS_ACCESS_KEY_ID')
+aws_secret_access_key = getattr(settings,'AWS_SECRET_ACCESS_KEY')
 kakao_rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
 #google_rest_api_key = getattr(settings, 'GOOGLE')
+def get_s3(place,num):
+    s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key)
+    obj_list = s3.list_objects(Bucket='sasm-bucket',Prefix='places/')
+    content_list = obj_list['Contents']
+    for content in content_list:
+        if place+'_'+num in content['Key']:
+            result = content['Key']
+            break
+    return result
 
 def addr_to_lat_lon(addr):
     url = 'https://dapi.kakao.com/v2/local/search/address.json?query={address}'.format(address=addr)
@@ -41,8 +56,11 @@ def addr_to_lat_lon(addr):
 def save_place_db(request):
     df = pd.read_excel("SASM_DB.xlsx", engine="openpyxl")
     df = df.fillna('')
-    i=1
     for dbfram in df.itertuples():
+        place_name = dbfram[1]
+        print(place_name)
+        url = get_s3(place_name, "대표사진")
+        encode_url = parse.quote(url)
         obj = Place.objects.create(
             place_name=dbfram[1],
             category=dbfram[2],
@@ -63,18 +81,44 @@ def save_place_db(request):
             left_coordinate=addr_to_lat_lon(dbfram[16])[0],
             right_coordinate=addr_to_lat_lon(dbfram[16])[1],
             short_cur=dbfram[17],
-            rep_pic = dbfram[18],
+            phone_num=dbfram[18],
+            rep_pic = 'https://sasm-bucket.s3.ap-northeast-2.amazonaws.com/{rep_url}'.format(rep_url=encode_url),
             )
         obj.save()
-        num = 19
-        for j in range(3):
+        id = obj.id
+        for j in range(1,4):
+            url = get_s3(place_name, str(j))
+            encode_url = parse.quote(url)
             img = PlacePhoto.objects.create(
-                image = dbfram[num],
-                place_id=i,
+                image = 'https://sasm-bucket.s3.ap-northeast-2.amazonaws.com/{photo_url}'.format(photo_url=encode_url),
+                place_id=id,
                 )
-            num+=1
             img.save()
-        i+=1
+        # k = 19
+        # while(True):
+        #     try:
+        #         sns_type = dbfram[k]
+        #         if SNSType.objects.filter(name=sns_type).exists():
+        #             obj = SNSUrl.objects.create(
+        #                 snstype=SNSType.objects.get(name=sns_type).id,
+        #                 url = dbfram[k+1],
+        #                 place_id=id,
+        #             )
+        #             obj.save()
+        #         else:
+        #             obj = SNSType.objects.create(
+        #                 name = sns_type,
+        #             )
+        #             obj.save()
+        #             obj = SNSUrl.objects.create(
+        #                 snstype=SNSType.objects.get(name=sns_type).id,
+        #                 url = dbfram[k+1],
+        #                 place_id=id,
+        #             )
+        #             obj.save()
+        #         k+=2
+        #     except:
+        #         break
     return JsonResponse({'msg': 'success'})
 
 class BasicPagination(PageNumberPagination):

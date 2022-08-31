@@ -64,7 +64,11 @@ class MeView(APIView):
         serializer = UserSerializer(request.user,data=request.data['info'],partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"nickname": serializer.validated_data['nickname']})
+        
+            if 'nickname' in serializer.validated_data: #nickname이 변경되었을 경우
+                return Response({"nickname": serializer.validated_data['nickname']})
+            else:
+                return Response(status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
@@ -72,6 +76,7 @@ class MeView(APIView):
         user = self.get_object(pk)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 @api_view(["GET"])
