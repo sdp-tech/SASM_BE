@@ -45,6 +45,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             'left_coordinate',
             'right_coordinate',
             'place_like',
+            'distance',
             ]
     def get_open_hours(self,obj):
         '''

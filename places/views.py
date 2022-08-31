@@ -140,14 +140,12 @@ class PlaceDetailView(viewsets.ModelViewSet):
         left = request.data['left']
         right = request.data['right']
         my_location = (float(left), float(right))
-        id = self.queryset.first().id
-        while(id != (self.queryset.last().id)+1):
-            place = self.queryset.get(id=id)
+        for place in self.queryset:
             place_location = (place.left_coordinate, place.right_coordinate)
             place.distance = hs.haversine(my_location, place_location)
-            id += 1
+            place.save()
         
-        qs = self.get_queryset(ordering = ['distance'])
+        qs = self.get_queryset().order_by('distance')
         
         page = self.paginate_queryset(qs)
         if page is not None:
