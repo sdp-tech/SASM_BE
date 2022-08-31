@@ -8,28 +8,69 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 
 from rest_framework import generics
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 import datetime
 
-@login_required
-def story_like(request, id):
-    story = get_object_or_404(Story, id=id)
-    user = request.user
-    profile = User.objects.get(email=user)
-    check_like = story.story_likeuser_set.filter(id=profile.id)
+# @login_required
+# def story_like(request, id):
+#     story = get_object_or_404(Story, id=id)
+#     user = request.user
+#     profile = User.objects.get(email=user)
+#     check_like = story.story_likeuser_set.filter(id=profile.id)
 
-    if check_like.exists():
-        story.story_likeuser_set.remove(profile)
-        story.story_like_cnt -= 1
-        story.save()
-        return JsonResponse({'msg': 'cancel'})
-    else:
-        story.story_likeuser_set.add(profile)
-        story.story_like_cnt += 1
-        story.save()
-        return JsonResponse({'msg': 'click'})
+#     if check_like.exists():
+#         story.story_likeuser_set.remove(profile)
+#         story.story_like_cnt -= 1
+#         story.save()
+#         return JsonResponse({'msg': 'cancel'})
+#     else:
+#         story.story_likeuser_set.add(profile)
+#         story.story_like_cnt += 1
+#         story.save()
+#         return JsonResponse({'msg': 'click'})
+class StoryLikeView(viewsets.ModelViewSet):
+    '''
+    스토리에 대한 좋아요 정보를 가져오는 API
+    '''
+    queryset = Story.objects.all()
+    serializer_class = StorySerializer
+    permission_classes=[
+        IsAuthenticated
+    ]
+    def post(self, request):
+        id = request.data['id']
+        story = get_object_or_404(Story, pk=id)
+        if request.user.is_authenticated:
+            user = request.user
+            profile = User.objects.get(email=user)
+            check_like = story.story_likeuser_set.filter(pk=profile.pk)
+
+            if check_like.exists():
+                story.story_likeuser_set.remove(profile)
+                story.story_like_cnt -= 1
+                story.save()
+                return Response(status.HTTP_204_NO_CONTENT)
+            else:
+                story.story_likeuser_set.add(profile)
+                story.story_like_cnt += 1
+                story.save()
+                return Response(status.HTTP_201_CREATED)
+        else:
+            return Response(status.HTTP_204_NO_CONTENT)
+
+class StoryListView(generics.ListCreateAPIView):
+    queryset = Story.objects.all()
+    serializer_class = StorySerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request):
+        queryset = self.get_queryset()
+        serializer = StorySerializer(queryset, many=True,context={'request': request})
+        return Response(serializer.data)
 
 class StoryDetailView(generics.RetrieveAPIView):
     '''
@@ -37,6 +78,15 @@ class StoryDetailView(generics.RetrieveAPIView):
     '''
     queryset = Story.objects.all()
     serializer_class = StorySerializer
+    permission_classes = [AllowAny]
+    def list(self,request):
+        qs = self.get_queryset()
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
+        else:
+            serializer = self.get_serializer(page, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, id):
         detail_story = get_object_or_404(self.get_queryset(), id=id)

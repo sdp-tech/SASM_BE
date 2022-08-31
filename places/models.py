@@ -75,6 +75,6 @@ class Place(core_models.TimeStampedModel):
     left_coordinate = models.FloatField(blank=True)
     right_coordinate = models.FloatField(blank=True)
     phone_num = models.CharField(max_length=20, blank=True)
-
+    distance = models.FloatField(default=0)
     def __str__(self):
         return self.place_name
