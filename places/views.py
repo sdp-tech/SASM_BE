@@ -1,5 +1,3 @@
-from asyncio.windows_events import NULL
-from cmd import IDENTCHARS
 from places.serializers import PlaceSerializer,PlaceDetailSerializer
 from users.serializers import UserSerializer
 from .models import Place, PlacePhoto, SNSType, SNSUrl
@@ -23,10 +21,10 @@ import requests
 import pandas as pd
 import boto3
 from urllib import parse
-# import geopandas as gpd
-# #from tqdm import tqdm
-# import haversine as hs
-# from haversine import Unit
+import geopandas as gpd
+# from tqdm import tqdm
+import haversine as hs
+from haversine import Unit
 
 # Create your views here.
 aws_access_key_id = getattr(settings,'AWS_ACCESS_KEY_ID')
@@ -78,8 +76,8 @@ def save_place_db(request):
             etc_hours=dbfram[14],
             place_review=dbfram[15],
             address=dbfram[16],
-            left_coordinate=addr_to_lat_lon(dbfram[16])[0],
-            right_coordinate=addr_to_lat_lon(dbfram[16])[1],
+            right_coordinate=addr_to_lat_lon(dbfram[16])[0],
+            left_coordinate=addr_to_lat_lon(dbfram[16])[1],
             short_cur=dbfram[17],
             phone_num=dbfram[18],
             rep_pic = 'https://sasm-bucket.s3.ap-northeast-2.amazonaws.com/{rep_url}'.format(rep_url=encode_url),
@@ -138,8 +136,19 @@ class PlaceDetailView(viewsets.ModelViewSet):
     pagination_class=BasicPagination
     
     
-    def list(self,request):
-        qs = self.get_queryset()
+    def post(self,request):
+        left = request.data['left']
+        right = request.data['right']
+        my_location = (float(left), float(right))
+        id = self.queryset.first().id
+        while(id != (self.queryset.last().id)+1):
+            place = self.queryset.get(id=id)
+            place_location = (place.left_coordinate, place.right_coordinate)
+            place.distance = hs.haversine(my_location, place_location)
+            id += 1
+        
+        qs = self.get_queryset(ordering = ['distance'])
+        
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 

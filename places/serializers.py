@@ -4,6 +4,8 @@ from rest_framework import serializers
 from places.models import Place, PlacePhoto, SNSType
 from users.models import User
 
+import haversine as hs
+
 class PhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlacePhoto
@@ -23,6 +25,7 @@ class SNSUrlSerializer(serializers.ModelSerializer):
 class PlaceSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()
+   
     class Meta:
         model = Place
         fields = [
@@ -63,7 +66,9 @@ class PlaceSerializer(serializers.ModelSerializer):
         if users.filter(id=re_user).exists():
             return 'ok'
         else:
-            return 'none'
+            return 'none'   
+        
+        
 
 class PlaceDetailSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
