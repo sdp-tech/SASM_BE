@@ -60,10 +60,11 @@ class MeView(APIView):
         return Response(UserSerializer(request.user).data)
 
     def put(self, request):
-        serializer = UserSerializer(request.user,data=request.data,partial=True)
+        # 프론트에서 info라는 이름의 배열에 수정된 정보가 담겨서 옴
+        serializer = UserSerializer(request.user,data=request.data['info'],partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"nickname": serializer.validated_data['nickname']})
+            return Response()
         else:
             return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
