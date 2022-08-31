@@ -13,7 +13,7 @@ class SNSType(core_models.TimeStampedModel):
 
     def __str__(self):
         return self.name
-
+    
 class PlacePhoto(core_models.TimeStampedModel):
     """PlacePhoto Model Definition"""
     image = models.URLField(max_length=200)
