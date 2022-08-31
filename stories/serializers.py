@@ -16,4 +16,5 @@ class StorySerializer(serializers.ModelSerializer):
             'tag',
             'preview',
             'views',
+            'story_url',
             ]
