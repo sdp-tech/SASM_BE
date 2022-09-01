@@ -1,12 +1,12 @@
 import datetime
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from places.models import Place, PlacePhoto, SNSType
+from places.models import Place, PlacePhoto, SNSUrl
 from users.models import User
 
 import haversine as hs
 
-class PhotoSerializer(serializers.ModelSerializer):
+class PlacePhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlacePhoto
         fields = [
@@ -16,16 +16,16 @@ class PhotoSerializer(serializers.ModelSerializer):
 class SNSUrlSerializer(serializers.ModelSerializer):
     # sns_name = serializers.SerializerMethodField()
     class Meta:
-        model = SNSType
+        model = SNSUrl
         fields = [
-            'name',
+            #'name',
             'url',
         ]
 
 class PlaceSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()
-   
+    
     class Meta:
         model = Place
         fields = [
@@ -73,7 +73,8 @@ class PlaceSerializer(serializers.ModelSerializer):
 
 class PlaceDetailSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
-    photos = PhotoSerializer(many=True,read_only=True)
+    #nested serialzier -> related_names 설정 확인
+    photos = PlacePhotoSerializer(many=True,read_only=True)
     sns = SNSUrlSerializer(many=True,read_only=True)
     class Meta:
         model = Place

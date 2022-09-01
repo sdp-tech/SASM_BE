@@ -21,7 +21,7 @@ import requests
 import pandas as pd
 import boto3
 from urllib import parse
-import geopandas as gpd
+# import geopandas as gpd
 # from tqdm import tqdm
 import haversine as hs
 from haversine import Unit
