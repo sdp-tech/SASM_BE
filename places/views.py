@@ -1,5 +1,3 @@
-from asyncio.windows_events import NULL
-from cmd import IDENTCHARS
 from places.serializers import PlaceSerializer,PlaceDetailSerializer
 from users.serializers import UserSerializer
 from .models import Place, PlacePhoto, SNSType, SNSUrl
@@ -23,10 +21,10 @@ import requests
 import pandas as pd
 import boto3
 from urllib import parse
-# import geopandas as gpd
-# #from tqdm import tqdm
-# import haversine as hs
-# from haversine import Unit
+import geopandas as gpd
+# from tqdm import tqdm
+import haversine as hs
+from haversine import Unit
 
 # Create your views here.
 aws_access_key_id = getattr(settings,'AWS_ACCESS_KEY_ID')
@@ -138,8 +136,17 @@ class PlaceDetailView(viewsets.ModelViewSet):
     pagination_class=BasicPagination
     
     
-    def list(self,request):
-        qs = self.get_queryset()
+    def post(self,request):
+        left = request.data['left']
+        right = request.data['right']
+        my_location = (float(left), float(right))
+        for place in self.queryset:
+            place_location = (place.left_coordinate, place.right_coordinate)
+            place.distance = hs.haversine(my_location, place_location)
+            place.save()
+        
+        qs = self.get_queryset().order_by('distance')
+        
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
