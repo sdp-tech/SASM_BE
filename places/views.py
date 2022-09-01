@@ -123,10 +123,9 @@ class BasicPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
 
-#def MyLocation()
-class PlaceDetailView(viewsets.ModelViewSet):
+class PlaceListView(viewsets.ModelViewSet):
     '''
-        place의 detail 정보를 주는 API
+        place의 list의 정보를 주는 API
     '''
     queryset = Place.objects.all()
     serializer_class = PlaceSerializer
@@ -134,7 +133,6 @@ class PlaceDetailView(viewsets.ModelViewSet):
         AllowAny,
     ]
     pagination_class=BasicPagination
-    
     
     def post(self,request):
         left = request.data['left']
@@ -144,7 +142,9 @@ class PlaceDetailView(viewsets.ModelViewSet):
             place_location = (place.left_coordinate, place.right_coordinate)
             place.distance = hs.haversine(my_location, place_location)
             place.save()
+        return Response(status=status.HTTP_200_OK)
         
+    def get(self, request):
         qs = self.get_queryset().order_by('distance')
         
         page = self.paginate_queryset(qs)
@@ -154,6 +154,15 @@ class PlaceDetailView(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class PlaceDetailView(viewsets.ModelViewSet):
+    '''
+        place의 detail 정보를 주는 API
+    '''
+    queryset = Place.objects.all()
+    serializer_class = PlaceSerializer
+    permission_classes=[
+        AllowAny,
+    ]
     def get(self,request,pk):
         place = Place.objects.get(id=pk)
         response = Response(PlaceDetailSerializer(place).data, status=status.HTTP_200_OK)
