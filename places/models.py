@@ -17,7 +17,7 @@ class SNSType(core_models.TimeStampedModel):
 class PlacePhoto(core_models.TimeStampedModel):
     """PlacePhoto Model Definition"""
     image = models.URLField(max_length=200)
-    place = models.ForeignKey("Place",on_delete=models.CASCADE)
+    place = models.ForeignKey("Place",related_name='photos',on_delete=models.CASCADE)
 
 class Place(core_models.TimeStampedModel):
     """Place Model Definition"""
