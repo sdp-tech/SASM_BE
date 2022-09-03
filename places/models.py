@@ -65,7 +65,7 @@ class Place(core_models.TimeStampedModel):
     fri_hours = models.CharField(max_length=100)
     sat_hours = models.CharField(max_length=100)
     sun_hours = models.CharField(max_length=100)
-    etc_hours = models.TextField(max_length=500)
+    etc_hours = models.TextField(max_length=500, blank=True)
     place_review = models.CharField(max_length=200)
     address = models.CharField(max_length=200)
     place_like_cnt = models.PositiveIntegerField(default=0)
