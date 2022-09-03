@@ -7,6 +7,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -201,4 +202,16 @@ class PlaceLikeView(viewsets.ModelViewSet):
                 return Response(status.HTTP_201_CREATED)
         else:
             return Response(status.HTTP_204_NO_CONTENT)
-        
+
+class PlaceSearchView(viewsets.ModelViewSet):
+    serializer_class=PlaceDetailSerializer
+    queryset = Place.objects.all()
+    permission_classes=[
+        AllowAny,
+    ]
+    def post(self,request):
+        searchword = request.data['search']
+        search_list = Place.objects.filter(Q(place_name__icontains=searchword))
+        print(search_list)
+        serializer = self.get_serializer(search_list, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -24,12 +24,13 @@ class UserLikeView(viewsets.ModelViewSet):
     queryset = Place.objects.all()
     serializer_class = PlaceSerializer
     permission_classes=[
-        IsAuthenticated
+        IsAuthenticated,
     ]
     pagination_class=LikePagination
 
     def get(self,request):
         user = request.user
+        print(user)
         #역참조 이용
         like_place = user.PlaceLikeUser.all()
         page = self.paginate_queryset(like_place)
