@@ -1,6 +1,6 @@
 from .models import Story
 from users.models import User
-from .serializers import StorySerializer
+from .serializers import StoryListSerializer, StoryDetailSerializer
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -38,7 +38,7 @@ class StoryLikeView(viewsets.ModelViewSet):
     스토리에 대한 좋아요 정보를 가져오는 API
     '''
     queryset = Story.objects.all()
-    serializer_class = StorySerializer
+    serializer_class = StoryDetailSerializer
     permission_classes=[
         IsAuthenticated
     ]
@@ -72,7 +72,7 @@ class StoryListView(viewsets.ModelViewSet):
         Story의 list 정보를 주는 API
     '''
     queryset = Story.objects.all()
-    serializer_class = StorySerializer
+    serializer_class = StoryListSerializer
     permission_classes = [
         AllowAny,
     ]
@@ -93,7 +93,7 @@ class StoryDetailView(generics.RetrieveAPIView):
     조회수 중복 방지 - 쿠키 사용
     '''
     queryset = Story.objects.all()
-    serializer_class = StorySerializer
+    serializer_class = StoryDetailSerializer
     permission_classes = [AllowAny]
     def list(self,request):
         qs = self.get_queryset()
