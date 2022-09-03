@@ -1,4 +1,4 @@
-from .views import PlaceDetailView, save_place_db, PlaceLikeView, PlaceListView
+from .views import PlaceDetailView, save_place_db, PlaceLikeView, PlaceListView, PlaceSearchView
 from django.urls import path
 
 urlpatterns =[
@@ -8,4 +8,5 @@ urlpatterns =[
     path('place_list/',PlaceListView.as_view({'get':'get'}), name='place_list'),
     path('place_like/',PlaceLikeView.as_view({'post':'post'}), name='place_like'),
     path('place_like_user/<int:pk>/',PlaceLikeView.as_view({'get':'get'}), name='place_like'),
+    path('place_search/',PlaceSearchView.as_view({'post':'post'}), name='place_search'),
 ]
