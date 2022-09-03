@@ -12,6 +12,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 
 import datetime
 
@@ -62,15 +63,30 @@ class StoryLikeView(viewsets.ModelViewSet):
         else:
             return Response(status.HTTP_204_NO_CONTENT)
 
-class StoryListView(generics.ListCreateAPIView):
+class BasicPagination(PageNumberPagination):
+    page_size = 4
+    page_size_query_param = 'page_size'
+    
+class StoryListView(viewsets.ModelViewSet):
+    '''
+        Story의 list 정보를 주는 API
+    '''
     queryset = Story.objects.all()
     serializer_class = StorySerializer
-    permission_classes = [AllowAny]
-
+    permission_classes = [
+        AllowAny,
+    ]
+    pagination_class = BasicPagination
+    
     def list(self, request):
-        queryset = self.get_queryset()
-        serializer = StorySerializer(queryset, many=True,context={'request': request})
-        return Response(serializer.data)
+        qs = self.get_queryset()
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
+        else:
+            serializer = self.get_serializer(page, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class StoryDetailView(generics.RetrieveAPIView):
     '''
