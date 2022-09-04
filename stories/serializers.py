@@ -64,6 +64,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         tumblur = place.tumblur_category
         if tumblur == True:
             tumblur = '텀블러 사용 가능'
+        else:
             tumblur = ''
         reusable = place.reusable_con_category
         if reusable == True:
@@ -94,7 +95,6 @@ class StoryListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'title',
-            'story_review',
             'preview',
             'place_name',
             'category',
@@ -126,6 +126,7 @@ class StoryListSerializer(serializers.ModelSerializer):
         tumblur = place.tumblur_category
         if tumblur == True:
             tumblur = '텀블러 사용 가능'
+        else:
             tumblur = ''
         reusable = place.reusable_con_category
         if reusable == True:
