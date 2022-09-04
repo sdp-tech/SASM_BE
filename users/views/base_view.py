@@ -1,6 +1,8 @@
 from places.serializers import PlaceSerializer
+from stories.serializers import StoryDetailSerializer
 from ..models import User
 from places.models import Place
+from stories.models import Story
 from users.serializers import UserSerializer, UserLoginSerializer,EmailFindSerializer,RepetitionCheckSerializer, UserLogoutSerializer
 from django.contrib.auth import get_user_model
 
@@ -13,11 +15,11 @@ from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, GenericAPIView
 from rest_framework.pagination import PageNumberPagination
 
-class LikePagination(PageNumberPagination):
+class PlaceLikePagination(PageNumberPagination):
     page_size = 6
     #page_size_query_param = 'page_size'
 
-class UserLikeView(viewsets.ModelViewSet):
+class UserPlaceLikeView(viewsets.ModelViewSet):
     '''
     user가 좋아요 한 장소 정보를 가져오는 API
     '''
@@ -26,7 +28,7 @@ class UserLikeView(viewsets.ModelViewSet):
     permission_classes=[
         IsAuthenticated,
     ]
-    pagination_class=LikePagination
+    pagination_class=PlaceLikePagination
 
     def get(self,request):
         user = request.user
@@ -34,6 +36,33 @@ class UserLikeView(viewsets.ModelViewSet):
         #역참조 이용
         like_place = user.PlaceLikeUser.all()
         page = self.paginate_queryset(like_place)
+        #context 값 넘겨주기
+        if page is not None:
+            serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request}).data) 
+        else:
+            serializer = self.get_serializer(page, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class StoryLikePagination(PageNumberPagination):
+    page_size = 4
+    #page_size_query_param = 'page_size'
+    
+class UserStoryLikeView(viewsets.ModelViewSet):
+    '''
+    user가 좋아요 한 스토리 정보를 가져오는 API
+    '''
+    queryset = Story.objects.all()
+    serializer_class = StoryDetailSerializer
+    permission_classes=[
+        IsAuthenticated,
+    ]
+    pagination_class=StoryLikePagination
+
+    def get(self,request):
+        user = request.user
+        #역참조 이용
+        like_story = user.StoryLikeUser.all()
+        page = self.paginate_queryset(like_story)
         #context 값 넘겨주기
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request}).data) 
