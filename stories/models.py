@@ -25,7 +25,8 @@ class Story(core_models.TimeStampedModel):
     preview = models.CharField(max_length=150, blank=True)
     views = models.PositiveIntegerField(default=0, verbose_name='조회수')
     story_url = models.URLField(max_length=200)
-
+    rep_pic = models.URLField(max_length=300, blank=True)
+    
     def __str__(self):
         return self.title
 

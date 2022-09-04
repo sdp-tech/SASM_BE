@@ -109,6 +109,7 @@ class StoryListSerializer(serializers.ModelSerializer):
             'category',
             'semi_category',
             'views',
+            'rep_pic',
             ]
     def get_place_name(self, obj):
         '''
