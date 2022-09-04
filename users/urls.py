@@ -27,5 +27,6 @@ urlpatterns = [
     path('activate/<str:uid>/<str:token>',email_auth.UserActivateView.as_view(),name ='activate'),
     path('find_pw/',pw_change.PwResetEmailSendView.as_view()),
     path('pwchange/<str:uid>/<str:token>',pw_change.PasswordChangeView.as_view(),name ='pwchange'),
-    path('like_place/',base_view.UserLikeView.as_view({'get': 'get'}),name='like_place'),
+    path('like_place/',base_view.UserPlaceLikeView.as_view({'get': 'get'}),name='like_place'),
+    path('like_story/',base_view.UserStoryLikeView.as_view({'get': 'get'}),name='like_story'),
 ]
