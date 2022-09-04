@@ -38,7 +38,7 @@ class UserLikeView(viewsets.ModelViewSet):
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request}).data) 
         else:
-            serializer = self.get_serializer(page, many=True,context={'request': request})
+            serializer = self.get_serializer(page, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class SignupView(CreateAPIView):

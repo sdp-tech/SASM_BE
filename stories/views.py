@@ -1,3 +1,4 @@
+from webbrowser import get
 from .models import Story
 from users.models import User
 from .serializers import StoryListSerializer, StoryDetailSerializer
@@ -95,18 +96,10 @@ class StoryDetailView(generics.RetrieveAPIView):
     queryset = Story.objects.all()
     serializer_class = StoryDetailSerializer
     permission_classes = [AllowAny]
-    def list(self,request):
-        qs = self.get_queryset()
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
-        else:
-            serializer = self.get_serializer(page, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, id):
-        detail_story = get_object_or_404(self.get_queryset(), id=id)
-
+        detail_story = get_object_or_404(self.get_queryset(),pk=id)
+        story = self.get_queryset().filter(pk=id)
         # 쿠키 초기화할 시간. 당일 자정
         change_date = datetime.datetime.replace(timezone.datetime.now(), hour=23, minute=59, second=0)
         # %a: locale 요일(단축 표기), %b: locale 월 (단축 표기), %d: 10진수 날짜, %Y: 10진수 4자리 년도
@@ -114,8 +107,8 @@ class StoryDetailView(generics.RetrieveAPIView):
         expires = datetime.datetime.strftime(change_date, "%a, %d-%b-%Y %H:%M:%S GMT")
 
         # response를 미리 받기
-        serializer = self.get_serializer(detail_story)
-        response = JsonResponse(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(story, many=True, context={'request': request})
+        response = Response(serializer.data, status=status.HTTP_200_OK)
         print(response)
 
         # 쿠키 읽기, 생성하기
@@ -133,6 +126,6 @@ class StoryDetailView(generics.RetrieveAPIView):
             detail_story.save()
             return response
 
-        serializer = self.get_serializer(detail_story)
+        serializer = self.get_serializer(story, many=True, context={'request': request})
         response = Response(serializer.data, status=status.HTTP_200_OK)
         return response
