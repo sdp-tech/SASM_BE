@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-
+from django.db.models import Q
 from rest_framework import generics
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -79,9 +79,11 @@ class StoryListView(viewsets.ModelViewSet):
     ]
     pagination_class = BasicPagination
     
-    def list(self, request):
+    def get(self, request):
         qs = self.get_queryset()
-        page = self.paginate_queryset(qs)
+        search = request.GET.get('search','')
+        search_list = qs.filter(Q(title__icontains=search))
+        page = self.paginate_queryset(search_list)
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
         else:
@@ -96,7 +98,7 @@ class StoryDetailView(generics.RetrieveAPIView):
     queryset = Story.objects.all()
     serializer_class = StoryDetailSerializer
     permission_classes = [AllowAny]
-
+    #get
     def retrieve(self, request):
         id = request.GET['id']
         detail_story = get_object_or_404(self.get_queryset(),pk=id)
