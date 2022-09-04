@@ -31,7 +31,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'story_url',
             'story_like',
             'category',
-            'address',
+            'semi_category',
             'place_name',
             'views',
             ]
@@ -60,23 +60,36 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             스토리의 세부 category를 알려 주기 위한 함수
         '''
         place = Story.objects.get(id=obj.id).address
+        result = []
         vegan = place.vegan_category
+        if vegan != '':
+            result.append(vegan)
         tumblur = place.tumblur_category
         if tumblur == True:
             tumblur = '텀블러 사용 가능'
-        else:
-            tumblur = ''
+            result.append(tumblur)
+        # else:
+        #     tumblur = ''
         reusable = place.reusable_con_category
         if reusable == True:
             reusable = '용기내 가능'
-        else:
-            reusable = ''
+            result.append(reusable)
+        # else:
+        #     reusable = ''
         pet = place.pet_category
         if pet == True:
             pet = '반려동물 출입 가능'
-        else:
-            pet=''
-        return {vegan, tumblur, reusable, pet}
+            result.append(pet)
+        # else:
+        #     pet=''
+        cnt = len(result)
+        ret_result = ""
+        for i in range(cnt):
+            if i == cnt - 1:
+                ret_result = ret_result + result[i]
+            else:
+                ret_result = ret_result + result[i] + ', '
+        return ret_result
     
     def get_place_name(self, obj):
         '''
@@ -122,20 +135,33 @@ class StoryListSerializer(serializers.ModelSerializer):
             스토리의 세부 category를 알려 주기 위한 함수
         '''
         place = Story.objects.get(id=obj.id).address
+        result = []
         vegan = place.vegan_category
+        if vegan != '':
+            result.append(vegan)
         tumblur = place.tumblur_category
         if tumblur == True:
             tumblur = '텀블러 사용 가능'
-        else:
-            tumblur = ''
+            result.append(tumblur)
+        # else:
+        #     tumblur = ''
         reusable = place.reusable_con_category
         if reusable == True:
             reusable = '용기내 가능'
-        else:
-            reusable = ''
+            result.append(reusable)
+        # else:
+        #     reusable = ''
         pet = place.pet_category
         if pet == True:
             pet = '반려동물 출입 가능'
-        else:
-            pet=''
-        return {vegan, tumblur, reusable, pet}
+            result.append(pet)
+        # else:
+        #     pet=''
+        cnt = len(result)
+        ret_result = ""
+        for i in range(cnt):
+            if i == cnt - 1:
+                ret_result = ret_result + result[i]
+            else:
+                ret_result = ret_result + result[i] + ', '
+        return ret_result
