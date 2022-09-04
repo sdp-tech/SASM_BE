@@ -97,7 +97,8 @@ class StoryDetailView(generics.RetrieveAPIView):
     serializer_class = StoryDetailSerializer
     permission_classes = [AllowAny]
 
-    def retrieve(self, request, id):
+    def retrieve(self, request):
+        id = request.GET['id']
         detail_story = get_object_or_404(self.get_queryset(),pk=id)
         story = self.get_queryset().filter(pk=id)
         # 쿠키 초기화할 시간. 당일 자정

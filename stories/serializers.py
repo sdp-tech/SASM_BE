@@ -68,20 +68,14 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         if tumblur == True:
             tumblur = '텀블러 사용 가능'
             result.append(tumblur)
-        # else:
-        #     tumblur = ''
         reusable = place.reusable_con_category
         if reusable == True:
             reusable = '용기내 가능'
             result.append(reusable)
-        # else:
-        #     reusable = ''
         pet = place.pet_category
         if pet == True:
             pet = '반려동물 출입 가능'
             result.append(pet)
-        # else:
-        #     pet=''
         cnt = len(result)
         ret_result = ""
         for i in range(cnt):
@@ -110,6 +104,7 @@ class StoryListSerializer(serializers.ModelSerializer):
             'title',
             'preview',
             'place_name',
+            'story_like',
             'category',
             'semi_category',
             'views',
@@ -122,6 +117,19 @@ class StoryListSerializer(serializers.ModelSerializer):
         place = story.address
         return place.place_name
     
+    def get_story_like(self,obj):
+        '''
+        스토리의 좋아요 여부를 알려주기 위한 함수
+        '''
+        story = Story.objects.get(id=obj.id)
+        re_user =  self.context['request'].user.id
+        like_id = story.story_likeuser_set.all()
+        users = User.objects.filter(id__in=like_id)
+        if users.filter(id=re_user).exists():
+            return 'ok'
+        else:
+            return 'none'
+        
     def get_category(self, obj):
         '''
             스토리의 category를 알려 주기 위한 함수
@@ -143,20 +151,14 @@ class StoryListSerializer(serializers.ModelSerializer):
         if tumblur == True:
             tumblur = '텀블러 사용 가능'
             result.append(tumblur)
-        # else:
-        #     tumblur = ''
         reusable = place.reusable_con_category
         if reusable == True:
             reusable = '용기내 가능'
             result.append(reusable)
-        # else:
-        #     reusable = ''
         pet = place.pet_category
         if pet == True:
             pet = '반려동물 출입 가능'
             result.append(pet)
-        # else:
-        #     pet=''
         cnt = len(result)
         ret_result = ""
         for i in range(cnt):
