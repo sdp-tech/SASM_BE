@@ -1,3 +1,4 @@
+from unicodedata import category
 from places.serializers import PlaceSerializer,PlaceDetailSerializer
 from users.serializers import UserSerializer
 from .models import Place, PlacePhoto, SNSType, SNSUrl
@@ -33,15 +34,21 @@ aws_secret_access_key = getattr(settings,'AWS_SECRET_ACCESS_KEY')
 kakao_rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
 #google_rest_api_key = getattr(settings, 'GOOGLE')
 def get_s3(place,num):
-    s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key)
-    obj_list = s3.list_objects(Bucket='sasm-bucket',Prefix='places/')
-    content_list = obj_list['Contents']
-    for content in content_list:
-        if place+'_'+num in content['Key']:
-            result = content['Key']
-            break
-    return result
+    try:
+        s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key)
+        obj_list = s3.list_objects(Bucket='sasm-bucket',Prefix='places/')
+        content_list = obj_list['Contents']
+        for content in content_list:
+            if str(content['Key']).find(str(place)+'_'+num) != -1:
+                result = content['Key']
+                break
+        print(place)
+        print(result)
+        return result
+    except Exception as e:
+        print('에러',e)
+
 
 def addr_to_lat_lon(addr):
     url = 'https://dapi.kakao.com/v2/local/search/address.json?query={address}'.format(address=addr)
@@ -57,9 +64,8 @@ def save_place_db(request):
     df = df.fillna('')
     for dbfram in df.itertuples():
         place_name = dbfram[1]
-        print(place_name)
-        url = get_s3(place_name, "대표사진")
-        encode_url = parse.quote(url)
+        url = get_s3(place_name, "rep")
+        encode_url = parse.quote(str(url))
         obj = Place.objects.create(
             place_name=dbfram[1],
             category=dbfram[2],
@@ -146,9 +152,13 @@ class PlaceListView(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
         
     def get(self, request):
+        '''
+        search 값을 parameter로 받아와서 검색, 아무것도 없으면 전체 리스트 반환
+        '''
         qs = self.get_queryset().order_by('distance')
-        
-        page = self.paginate_queryset(qs)
+        search = request.GET.get('search','')
+        search_list = qs.filter(Q(place_name__icontains=search))
+        page = self.paginate_queryset(search_list)
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
         else:
@@ -203,15 +213,4 @@ class PlaceLikeView(viewsets.ModelViewSet):
         else:
             return Response(status.HTTP_204_NO_CONTENT)
 
-class PlaceSearchView(viewsets.ModelViewSet):
-    serializer_class=PlaceDetailSerializer
-    queryset = Place.objects.all()
-    permission_classes=[
-        AllowAny,
-    ]
-    def post(self,request):
-        searchword = request.data['search']
-        search_list = Place.objects.filter(Q(place_name__icontains=searchword))
-        print(search_list)
-        serializer = self.get_serializer(search_list, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    

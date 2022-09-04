@@ -4,10 +4,21 @@ from stories.models import Story
 from users.models import User
 from places.models import Place
 
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Place
+        fields = [
+            'vegan_category',
+            'tumblur_category',
+            'reusable_con_category',
+            'pet_category',
+        ]
+
 class StoryDetailSerializer(serializers.ModelSerializer):
     story_like = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
-    semi_category = serializers.SerializerMethodField()
+    #onetoonefield에서는 이렇게 참조해와야한다. story의 변수명으로.
+    address = CategorySerializer(required=True)
     place_name = serializers.SerializerMethodField()
     class Meta:
         model = Story
@@ -19,8 +30,9 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'story_url',
             'story_like',
             'category',
-            'semi_category',
+            'address',
             'place_name',
+            'views',
             ]
     def get_story_like(self,obj):
         '''
@@ -42,16 +54,34 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         place = story.address
         return place.category
     
-    def get_semi_category(self, obj):
-        '''
-            스토리의 세부 category를 알려 주기 위한 함수
-        '''
-        place = Story.objects.get(id=obj.id).address
-        vegan = place.vegan_category
-        tumblur = place.tumblur_category
-        reusable = place.reusable_con_category
-        pet = place.pet_category
-        return {vegan, tumblur, reusable, pet}
+    # def get_semi_category(self, obj):
+    #     '''
+    #         스토리의 세부 category를 알려 주기 위한 함수
+    #     '''
+    #     place = Story.objects.get(id=obj.id).address
+    #     vegan = place.vegan_category
+    #     tumblur = place.tumblur_category
+    #     if tumblur == True:
+    #         tumblur = '텀블러 사용 가능'
+    #     elif tumblur == False:
+    #         tumblur = '텀블러 사용 불가능'
+    #     else:
+    #         tumblur = ''
+    #     reusable = place.reusable_con_category
+    #     if reusable == True:
+    #         reusable = '용기내 가능'
+    #     elif reusable == False:
+    #         reusable = '텀블러 사용 불가능'
+    #     else:
+    #         reusable = ''
+    #     pet = place.pet_category
+    #     if pet == True:
+    #         pet = '반려동물 출입 가능'
+    #     elif pet == False:
+    #         pet = '반려동물 출입 불가능'
+    #     else:
+    #         pet=''
+    #     return {vegan, tumblur, reusable, pet}
     
     def get_place_name(self, obj):
         '''
@@ -59,7 +89,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         '''        
         story = Story.objects.get(id=obj.id)
         place = story.address
-        return place
+        return place.place_name
         
 class StoryListSerializer(serializers.ModelSerializer):
     story_like = serializers.SerializerMethodField()
@@ -75,7 +105,8 @@ class StoryListSerializer(serializers.ModelSerializer):
             'preview',
             'story_like',
             'place_name',
-            'place_category',
+            'category',
+            'semi_category',
             ]
     def get_story_like(self,obj):
         '''
@@ -95,7 +126,7 @@ class StoryListSerializer(serializers.ModelSerializer):
         '''        
         story = Story.objects.get(id=obj.id)
         place = story.address
-        return place
+        return place.place_name
     
     def get_category(self, obj):
         '''
@@ -112,6 +143,24 @@ class StoryListSerializer(serializers.ModelSerializer):
         place = Story.objects.get(id=obj.id).address
         vegan = place.vegan_category
         tumblur = place.tumblur_category
+        if tumblur == True:
+            tumblur = '텀블러 사용 가능'
+        elif tumblur == False:
+            tumblur = '텀블러 사용 불가능'
+        else:
+            tumblur = ''
         reusable = place.reusable_con_category
+        if reusable == True:
+            reusable = '용기내 가능'
+        elif reusable == False:
+            reusable = '텀블러 사용 불가능'
+        else:
+            reusable = ''
         pet = place.pet_category
+        if pet == True:
+            pet = '반려동물 출입 가능'
+        elif pet == False:
+            pet = '반려동물 출입 불가능'
+        else:
+            pet=''
         return {vegan, tumblur, reusable, pet}
