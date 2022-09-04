@@ -95,6 +95,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         
 class StoryListSerializer(serializers.ModelSerializer):
     place_name = serializers.SerializerMethodField()
+    story_like = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     semi_category = serializers.SerializerMethodField()
     class Meta:
