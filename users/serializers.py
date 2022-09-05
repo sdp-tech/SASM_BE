@@ -28,6 +28,7 @@ JWT_ENCODE_HANDLER = api_settings.JWT_ENCODE_HANDLER
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_image = serializers.ImageField(use_url=True)
     password = serializers.CharField(write_only=True)
     profile_img_url = serializers.SerializerMethodField()
     class Meta:
@@ -41,7 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
             "birthdate",
             "email",
             "address",
-            #"profile_image",
+            "profile_image",
             "profile_img_url",
         )
         read_only_fields = ("id",)
