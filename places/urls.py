@@ -8,5 +8,4 @@ urlpatterns =[
     path('place_search/',PlaceListView.as_view({'get':'get'}), name='place_search'),
     path('place_like/',PlaceLikeView.as_view({'post':'post'}), name='place_like'),
     path('place_like_user/<int:pk>/',PlaceLikeView.as_view({'get':'get'}), name='place_like'),
-
 ]
