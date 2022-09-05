@@ -158,7 +158,16 @@ class PlaceListView(viewsets.ModelViewSet):
         qs = self.get_queryset().order_by('distance')
         search = request.GET.get('search','')
         search_list = qs.filter(Q(place_name__icontains=search))
-        page = self.paginate_queryset(search_list)
+        array = request.query_params.getlist('filter[]','')
+        query = None 
+        for a in array: 
+            if query is None: 
+                query = Q(category=a) 
+            else: 
+                query = query | Q(category=a)
+        print(query)
+        place = search_list.filter(query)
+        page = self.paginate_queryset(place)
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
         else:
@@ -212,5 +221,3 @@ class PlaceLikeView(viewsets.ModelViewSet):
                 return Response(status.HTTP_201_CREATED)
         else:
             return Response(status.HTTP_204_NO_CONTENT)
-
-    
