@@ -158,16 +158,18 @@ class PlaceListView(viewsets.ModelViewSet):
         qs = self.get_queryset().order_by('distance')
         search = request.GET.get('search','')
         search_list = qs.filter(Q(place_name__icontains=search))
-        array = request.query_params.getlist('filter[]','')
+        array = request.query_params.getlist('filter[]', '배열')
         query = None 
-        for a in array: 
-            if query is None: 
-                query = Q(category=a) 
-            else: 
-                query = query | Q(category=a)
-        print(query)
-        place = search_list.filter(query)
-        page = self.paginate_queryset(place)
+        if array != '배열':
+            for a in array: 
+                if query is None: 
+                    query = Q(category=a) 
+                else: 
+                    query = query | Q(category=a)
+            place = search_list.filter(query)
+            page = self.paginate_queryset(place)
+        else:
+            page = self.paginate_queryset(search_list)
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
         else:
