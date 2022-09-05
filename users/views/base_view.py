@@ -89,9 +89,9 @@ class MeView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
-    def put(self, request):
-        # 프론트에서 info라는 이름의 배열에 수정된 정보가 담겨서 옴
-        serializer = UserSerializer(request.user,data=request.data['info'],partial=True)
+    def post(self, request):
+        
+        serializer = UserSerializer(request.user,data=request.data,partial=True)
         if serializer.is_valid():
             serializer.save()
         
