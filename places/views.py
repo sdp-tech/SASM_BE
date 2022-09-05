@@ -158,7 +158,7 @@ class PlaceListView(viewsets.ModelViewSet):
         qs = self.get_queryset().order_by('distance')
         search = request.GET.get('search','')
         search_list = qs.filter(Q(place_name__icontains=search))
-        array = request.query_params.getlist('filter[]','')
+        array = request.query_params.getlist('filter','')
         query = None 
         for a in array: 
             if query is None: 
