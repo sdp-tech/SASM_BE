@@ -70,6 +70,7 @@ THIRD_APPS = [
     'debug_toolbar',
     'corsheaders',
     'drf_yasg',
+    'storages',
 ]
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_APPS
 
@@ -145,14 +146,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated",],
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -192,3 +185,31 @@ DEFAULT_FROM_EMAIL = secrets['EMAIL_HOST_USER']
 #corheaders
 CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000')
 CORS_ALLOW_CREDENTIALS = True
+
+#aws s3
+# AWS 정보
+AWS_STORAGE_BUCKET_NAME = secrets['AWS_STORAGE_BUCKET_NAME']
+AWS_ACCESS_KEY_ID = secrets['AWS_ACCESS_KEY_ID']
+AWS_SECRET_ACCESS_KEY = secrets['AWS_SECRET_ACCESS_KEY']
+
+AWS_S3_CUSTOM_DOMAIN = '{}.s3.amazonaws.com'.format(AWS_STORAGE_BUCKET_NAME)
+
+# 이거없어서 엄청 헤맴.. (AWS_S3_HOST, AWS_QUERYSTRING_AUTH )
+AWS_S3_HOST = 's3.ap-northeast-2.amazonaws.com'
+AWS_QUERYSTRING_AUTH = False
+
+# static files setting
+STATICFILES_LOCATION = 'static'
+STATICFILES_STORAGE = 'sasmproject.custom_storages.StaticStorage'
+STATIC_URL = 'https://{}/{}/'.format(AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
+
+# media files setting
+MEDIAFILES_LOCATION = 'media'
+MEDIA_URL = 'https://{}/{}/'.format(AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
+DEFAULT_FILE_STORAGE = 'sasmproject.custom_storages.MediaStorage'
+
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
