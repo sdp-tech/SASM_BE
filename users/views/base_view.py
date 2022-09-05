@@ -1,5 +1,5 @@
 from places.serializers import PlaceSerializer
-from stories.serializers import StoryDetailSerializer
+from stories.serializers import StoryListSerializer
 from ..models import User
 from places.models import Place
 from stories.models import Story
@@ -52,7 +52,7 @@ class UserStoryLikeView(viewsets.ModelViewSet):
     user가 좋아요 한 스토리 정보를 가져오는 API
     '''
     queryset = Story.objects.all()
-    serializer_class = StoryDetailSerializer
+    serializer_class = StoryListSerializer
     permission_classes=[
         IsAuthenticated,
     ]
