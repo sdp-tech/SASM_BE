@@ -34,6 +34,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'semi_category',
             'place_name',
             'views',
+            'html_content',
             ]
     def get_story_like(self,obj):
         '''
