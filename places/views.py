@@ -141,20 +141,17 @@ class PlaceListView(viewsets.ModelViewSet):
     ]
     pagination_class=BasicPagination
     
-    def post(self,request):
-        left = request.data['left']
-        right = request.data['right']
+    def get(self, request):
+        '''
+        search 값을 parameter로 받아와서 검색, 아무것도 없으면 전체 리스트 반환
+        '''
+        left = request.GET.get('left','')
+        right = request.GET.get('right','')
         my_location = (float(left), float(right))
         for place in self.queryset:
             place_location = (place.left_coordinate, place.right_coordinate)
             place.distance = hs.haversine(my_location, place_location)
             place.save()
-        return Response(status=status.HTTP_200_OK)
-        
-    def get(self, request):
-        '''
-        search 값을 parameter로 받아와서 검색, 아무것도 없으면 전체 리스트 반환
-        '''
         qs = self.get_queryset().order_by('distance')
         search = request.GET.get('search','')
         search_list = qs.filter(Q(place_name__icontains=search))
