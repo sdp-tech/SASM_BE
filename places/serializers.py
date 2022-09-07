@@ -22,6 +22,16 @@ class SNSUrlSerializer(serializers.ModelSerializer):
             'url',
         ]
 
+class MapMarkerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Place
+        fields = [
+            'id',
+            'place_name',
+            'left_coordinate',
+            'right_coordinate',
+        ]
+    
 class PlaceSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()

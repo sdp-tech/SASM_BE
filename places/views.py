@@ -1,5 +1,5 @@
 from unicodedata import category
-from places.serializers import PlaceSerializer,PlaceDetailSerializer
+from places.serializers import PlaceSerializer,PlaceDetailSerializer, MapMarkerSerializer
 from users.serializers import UserSerializer
 from .models import Place, PlacePhoto, SNSType, SNSUrl
 from users.models import User
@@ -126,6 +126,21 @@ def save_place_db(request):
         #         break
     return JsonResponse({'msg': 'success'})
 
+class MapMarkerView(viewsets.ModelViewSet):
+    '''
+        map marker 표시를 위해 모든 장소를 주는 API
+    '''
+    queryset = Place.objects.all()
+    serializer_class = MapMarkerSerializer
+    permission_classes=[
+        AllowAny,
+    ]
+    
+    def get(self, request):
+        serializer = MapMarkerSerializer(self.queryset, many=True)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        return response
+    
 class BasicPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
@@ -145,8 +160,8 @@ class PlaceListView(viewsets.ModelViewSet):
         '''
         search 값을 parameter로 받아와서 검색, 아무것도 없으면 전체 리스트 반환
         '''
-        left = request.GET.get('left','')
-        right = request.GET.get('right','')
+        left = request.GET.get('left', '')
+        right = request.GET.get('right', '')
         my_location = (float(left), float(right))
         for place in self.queryset:
             place_location = (place.left_coordinate, place.right_coordinate)
