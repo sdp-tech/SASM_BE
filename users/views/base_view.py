@@ -1,3 +1,4 @@
+from functools import partial
 from places.serializers import PlaceSerializer
 from stories.serializers import StoryListSerializer
 from ..models import User
@@ -70,7 +71,14 @@ class UserStoryLikeView(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class SignupView(CreateAPIView):
+#serializer에 partial=True를 주기위한 Mixin
+class SetPartialMixin:
+    def get_serializer_class(self, *args, **kwargs):
+        serializer_class = super().get_serializer_class(*args, **kwargs)
+        return partial(serializer_class, partial=True)
+
+#SetPartialMixin 상속
+class SignupView(SetPartialMixin,CreateAPIView):
     '''
     회원가입을 수행하는 API
     '''
@@ -79,7 +87,6 @@ class SignupView(CreateAPIView):
     permission_classes = [
         AllowAny, 
     ]
-    
 class MeView(APIView):
     '''
         나의 정보를 조회, 변경, 삭제 하는 API
@@ -90,7 +97,7 @@ class MeView(APIView):
         return Response(UserSerializer(request.user).data)
 
     def post(self, request):
-        
+        print(request.data)
         serializer = UserSerializer(request.user,data=request.data,partial=True)
         if serializer.is_valid():
             serializer.save()
