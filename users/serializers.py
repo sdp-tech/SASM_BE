@@ -30,7 +30,6 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(use_url=True)
     password = serializers.CharField(write_only=True)
-    profile_img_url = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = (
@@ -43,13 +42,8 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "address",
             "profile_image",
-            "profile_img_url",
         )
         read_only_fields = ("id",)
-    
-    def get_profile_img_url(self,obj):
-        user = User.objects.get(email=obj)
-        return str(user.profile_image)
         
     def validate_email(self, obj):
         if email_isvalid(obj):

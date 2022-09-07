@@ -32,7 +32,6 @@ def email_auth_string():
 #비밀번호 재설정 이메일 보내기
 class PwResetEmailSendView(APIView):
     permission_classes = [AllowAny]
-    
     def post(self,request):
         serializer = PwEmailSerializer(data=request.data)
         try:
@@ -54,6 +53,7 @@ class PwResetEmailSendView(APIView):
                     'code': code,
                 })
                 user.code = code
+                user.save()
                 print(html_content)
                 mail_subject = '[SDP] 비밀번호 변경 메일입니다'
                 to_email = user.email
@@ -67,7 +67,8 @@ class PwResetEmailSendView(APIView):
                 image.add_header('Content-ID','<{}>'.format(imagefile))
                 msg.attach(image)
                 msg.send()
-                user.save()
+                print('전송완료')
+                
                 return Response(user.email+'이메일 전송이 완료되었습니다', status=status.HTTP_200_OK)
             print(serializer.errors)
             return Response('일치하는 유저가 없습니다', status=status.HTTP_400_BAD_REQUEST)
@@ -82,6 +83,11 @@ class PasswordChangeView(APIView):
     
     model = User
     permission_classes = [AllowAny]
+    def get(self,request,uid,token):
+        try:
+            return redirect('https://www.naver.com/')
+        except:
+            return Response('잘못된 연결입니다',status=status.HTTP_400_BAD_REQUEST) 
     def post(self, request, uid, token):
         serializer = PwChangeSerializer(data=request.data)
         if serializer.is_valid():
