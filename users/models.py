@@ -43,7 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64,unique=True)
     address = models.CharField(max_length=100, blank=True)
-    profile_image = models.ImageField(upload_to='profile/%Y%m%d/', default='https://sasm-bucket.s3.ap-northeast-2.amazonaws.com/users/SASM+user+profile+image.png')
+    profile_image = models.ImageField(upload_to='profile/%Y%m%d/', default='user_profile_image.png')
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
