@@ -1,7 +1,9 @@
 from webbrowser import get
 from .models import Story
+from places.models import Place
 from users.models import User
 from .serializers import StoryListSerializer, StoryDetailSerializer
+from places.serializers import MapMarkerSerializer
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -107,6 +109,7 @@ class StoryDetailView(generics.RetrieveAPIView):
         serializer = self.get_serializer(story, many=True, context={'request': request})
         response = Response(serializer.data, status=status.HTTP_200_OK)
         print(response)
+    
 
         # 쿠키 읽기, 생성하기
         if request.COOKIES.get('hit') is not None:
@@ -126,3 +129,20 @@ class StoryDetailView(generics.RetrieveAPIView):
         serializer = self.get_serializer(story, many=True, context={'request': request})
         response = Response(serializer.data, status=status.HTTP_200_OK)
         return response
+
+class GoToMapView(viewsets.ModelViewSet):
+    '''
+        Map으로 연결하는 API
+    '''
+    queryset = Story.objects.all()
+    serializer_class = MapMarkerSerializer
+    permission_classes = [
+        AllowAny,
+    ]
+    
+    def get(self, request):
+        story_id = request.GET['id']
+        story = self.queryset.get(id=story_id)
+        place = story.address
+        serializer = self.get_serializer(place)
+        return Response(serializer.data, status=status.HTTP_200_OK)
