@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.response import Response 
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-
+from rest_framework import viewsets
 #email 인증 관련
 import traceback
 from django.shortcuts import redirect
@@ -79,37 +79,35 @@ class PwResetEmailSendView(APIView):
 
 #비밀번호 재설정
 
-class PasswordChangeView(APIView):
+class PasswordChangeView(viewsets.ModelViewSet):
     
-    model = User
+    queryset = User.objects.all()
+    serializer_class = PwChangeSerializer
     permission_classes = [AllowAny]
-    def get(self,request,uid,token):
+    def get(self,request):
         try:
             return redirect('http://localhost:3000/auth/find/SetNewPassword/')
         except:
             return Response('잘못된 연결입니다',status=status.HTTP_400_BAD_REQUEST) 
-    def post(self, request, uid, token):
+    def post(self, request):
         serializer = PwChangeSerializer(data=request.data)
         if serializer.is_valid():
-            real_uid = force_str(urlsafe_base64_decode(uid))
-            user = User.objects.get(pk=real_uid)
-            if user.code == serializer.data['code']:
-                print(serializer.data['password'])
-                if serializer.data['password']:
-                    user2 = authenticate(email=user.email, password=serializer.data['password'])
-                    if user2 != None :
-                        return Response('기존 비밀번호와 일치합니다',status=status.HTTP_400_BAD_REQUEST)
-                    user.set_password(serializer.data.get("password"))
-                    new_code = get_random_secret_key()
-                    user.code = new_code[0:5]
-                    user.save()
-                    response = {
-                        'status': 'success',
-                        'code': status.HTTP_200_OK,
-                        'message': 'Password updated successfully',
-                        'data': []
-                    }
-                    return Response(response)
-                return Response('비밀번호를 다시 입력해주세요',status=status.HTTP_400_BAD_REQUEST)
-            return Response('일치하는 유저가 없습니다',status=status.HTTP_400_BAD_REQUEST)           
+            code = serializer.data['code']
+            user = User.objects.get(code = code)
+            if serializer.data['password']:
+                user2 = authenticate(email=user.email, password=serializer.data['password'])
+                if user2 != None :
+                    return Response('기존 비밀번호와 일치합니다',status=status.HTTP_400_BAD_REQUEST)
+                user.set_password(serializer.data.get("password"))
+                new_code = get_random_secret_key()
+                user.code = new_code[0:5]
+                user.save()
+                response = {
+                    'status': 'success',
+                    'code': status.HTTP_200_OK,
+                    'message': 'Password updated successfully',
+                    'data': []
+                }
+                return Response(response)
+            return Response('비밀번호를 다시 입력해주세요',status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
