@@ -74,9 +74,10 @@ class StoryListView(viewsets.ModelViewSet):
         if array != '배열':
             for a in array: 
                 if query is None: 
-                    query = Q(category=a) 
+                    query = Q(address__category=a) 
                 else: 
-                    query = query | Q(category=a)
+                    query = query | Q(address__category=a)
+            print(query)
             story = search_list.filter(query)
             page = self.paginate_queryset(story)
         else:
