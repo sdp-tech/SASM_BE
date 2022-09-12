@@ -85,7 +85,7 @@ class PasswordChangeView(APIView):
     permission_classes = [AllowAny]
     def get(self,request,uid,token):
         try:
-            return redirect('https://www.naver.com/')
+            return redirect('http://localhost:3000/auth/find/SetNewPassword/')
         except:
             return Response('잘못된 연결입니다',status=status.HTTP_400_BAD_REQUEST) 
     def post(self, request, uid, token):
