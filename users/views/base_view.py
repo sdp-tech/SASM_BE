@@ -6,6 +6,7 @@ from places.models import Place
 from stories.models import Story
 from users.serializers import UserSerializer, UserLoginSerializer,EmailFindSerializer,RepetitionCheckSerializer, UserLogoutSerializer
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from rest_framework import status
 from rest_framework import viewsets
@@ -36,7 +37,18 @@ class UserPlaceLikeView(viewsets.ModelViewSet):
         print(user)
         #역참조 이용
         like_place = user.PlaceLikeUser.all()
-        page = self.paginate_queryset(like_place)
+        array = request.query_params.getlist('filter[]', '배열')
+        query = None
+        if array != '배열':
+            for a in array: 
+                if query is None: 
+                    query = Q(category=a) 
+                else: 
+                    query = query | Q(category=a)
+            place = like_place.filter(query)
+            page = self.paginate_queryset(place)
+        else:
+            page = self.paginate_queryset(like_place)
         #context 값 넘겨주기
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request}).data) 
@@ -63,7 +75,18 @@ class UserStoryLikeView(viewsets.ModelViewSet):
         user = request.user
         #역참조 이용
         like_story = user.StoryLikeUser.all()
-        page = self.paginate_queryset(like_story)
+        array = request.query_params.getlist('filter[]', '배열')
+        query = None
+        if array != '배열':
+            for a in array: 
+                if query is None: 
+                    query = Q(category=a) 
+                else: 
+                    query = query | Q(category=a)
+            story = like_story.filter(query)
+            page = self.paginate_queryset(story)
+        else:
+            page = self.paginate_queryset(like_story)
         #context 값 넘겨주기
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request}).data) 
