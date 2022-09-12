@@ -235,3 +235,6 @@ class PlaceLikeView(viewsets.ModelViewSet):
                 return Response(status.HTTP_201_CREATED)
         else:
             return Response(status.HTTP_204_NO_CONTENT)
+
+    
+    
