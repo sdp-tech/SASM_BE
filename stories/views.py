@@ -66,8 +66,9 @@ class StoryListView(viewsets.ModelViewSet):
     
     def get(self, request):
         qs = self.get_queryset()
+        
         search = request.GET.get('search','')
-        search_list = qs.filter(Q(title__icontains=search))
+        search_list = qs.filter(Q(title__icontains=search)|Q(address__place_name__icontains=search))
         array = request.query_params.getlist('filter[]', '배열')
         query = None
         if array != '배열':
