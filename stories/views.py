@@ -66,7 +66,18 @@ class StoryListView(viewsets.ModelViewSet):
         qs = self.get_queryset()
         search = request.GET.get('search','')
         search_list = qs.filter(Q(title__icontains=search))
-        page = self.paginate_queryset(search_list)
+        array = request.query_params.getlist('filter[]', '배열')
+        query = None
+        if array != '배열':
+            for a in array: 
+                if query is None: 
+                    query = Q(category=a) 
+                else: 
+                    query = query | Q(category=a)
+            story = search_list.filter(query)
+            page = self.paginate_queryset(story)
+        else:
+            page = self.paginate_queryset(search_list)
         if page is not None:
             serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
         else:
