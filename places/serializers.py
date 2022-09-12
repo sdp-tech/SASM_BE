@@ -4,6 +4,8 @@ from rest_framework import serializers
 from places.models import Place, PlacePhoto, SNSUrl
 from users.models import User
 
+from django.core.exceptions import ObjectDoesNotExist
+
 import haversine as hs
 
 class PlacePhotoSerializer(serializers.ModelSerializer):
@@ -87,6 +89,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
     #nested serialzier -> related_names 설정 확인
     photos = PlacePhotoSerializer(many=True,read_only=True)
     sns = SNSUrlSerializer(many=True,read_only=True)
+    story_id = serializers.SerializerMethodField()
     class Meta:
         model = Place
         fields = [
@@ -114,6 +117,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'right_coordinate',
             'photos',
             'sns',
+            'story_id'
             ]
     def get_open_hours(self,obj):
         '''
@@ -123,5 +127,15 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
         a = datetime.datetime.today().weekday()
         place = Place.objects.filter(id=obj.id).values(days[a])[0]
         return place[days[a]]
-
+    
+    def get_story_id(self, obj):
+        '''
+            스토리 id를 보내 주기 위한 함수
+        '''
+        place = Place.objects.get(id=obj.id)
+        try:
+            place.story
+            return place.story.id
+        except ObjectDoesNotExist:
+            pass
 
