@@ -60,8 +60,8 @@ class PwResetEmailSendView(APIView):
                 from_email = 'lina19197@daum.net'
                 msg = EmailMultiAlternatives(mail_subject,plaintext,from_email, [to_email])
                 msg.attach_alternative(html_content, "text/html")
-                imagefile = 'SASM_LOGO_WHITE.png'
-                file_path = os.path.join(settings.BASE_DIR, 'static/img/SASM_LOGO_WHITE.png')
+                imagefile = 'SASM_LOGO_BLACK.png'
+                file_path = os.path.join(settings.BASE_DIR, 'static/img/SASM_LOGO_BLACK.png')
                 img_data = open(file_path,'rb').read()
                 image = MIMEImage(img_data)
                 image.add_header('Content-ID','<{}>'.format(imagefile))
