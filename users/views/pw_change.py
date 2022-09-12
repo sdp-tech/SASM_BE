@@ -93,21 +93,23 @@ class PasswordChangeView(viewsets.ModelViewSet):
         serializer = PwChangeSerializer(data=request.data)
         if serializer.is_valid():
             code = serializer.data['code']
-            user = User.objects.get(code = code)
-            if serializer.data['password']:
-                user2 = authenticate(email=user.email, password=serializer.data['password'])
-                if user2 != None :
-                    return Response('기존 비밀번호와 일치합니다',status=status.HTTP_400_BAD_REQUEST)
-                user.set_password(serializer.data.get("password"))
-                new_code = get_random_secret_key()
-                user.code = new_code[0:5]
-                user.save()
-                response = {
-                    'status': 'success',
-                    'code': status.HTTP_200_OK,
-                    'message': 'Password updated successfully',
-                    'data': []
-                }
-                return Response(response)
-            return Response('비밀번호를 다시 입력해주세요',status=status.HTTP_400_BAD_REQUEST)
+            if User.objects.filter(code = code).exists():
+                user = User.objects.get(code = code)
+                if serializer.data['password']:
+                    user2 = authenticate(email=user.email, password=serializer.data['password'])
+                    if user2 != None :
+                        return Response('기존 비밀번호와 일치합니다',status=status.HTTP_400_BAD_REQUEST)
+                    user.set_password(serializer.data.get("password"))
+                    new_code = get_random_secret_key()
+                    user.code = new_code[0:5]
+                    user.save()
+                    response = {
+                        'status': 'success',
+                        'code': status.HTTP_200_OK,
+                        'message': 'Password updated successfully',
+                        'data': []
+                    }
+                    return Response(response)
+                return Response('비밀번호를 다시 입력해주세요',status=status.HTTP_400_BAD_REQUEST)
+            return Response('코드가 일치하지 않습니다',status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
