@@ -90,6 +90,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
     photos = PlacePhotoSerializer(many=True,read_only=True)
     sns = SNSUrlSerializer(many=True,read_only=True)
     story_id = serializers.SerializerMethodField()
+    place_like = serializers.SerializerMethodField()
     class Meta:
         model = Place
         fields = [
@@ -117,7 +118,8 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'right_coordinate',
             'photos',
             'sns',
-            'story_id'
+            'story_id',
+            'place_like',
             ]
     def get_open_hours(self,obj):
         '''
@@ -139,3 +141,15 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
         except ObjectDoesNotExist:
             pass
 
+    def get_place_like(self,obj):
+        '''
+        장소의 좋아요 여부를 알려주기 위한 함수
+        '''
+        place = Place.objects.get(id=obj.id)
+        re_user =  self.context['request'].user.id
+        like_id = place.place_likeuser_set.all()
+        users = User.objects.filter(id__in=like_id)
+        if users.filter(id=re_user).exists():
+            return 'ok'
+        else:
+            return 'none' 

@@ -199,7 +199,7 @@ class PlaceDetailView(viewsets.ModelViewSet):
     ]
     def get(self,request,pk):
         place = Place.objects.get(id=pk)
-        response = Response(PlaceDetailSerializer(place).data, status=status.HTTP_200_OK)
+        response = Response(PlaceDetailSerializer(place,context={'request': request}).data, status=status.HTTP_200_OK)
         return response
 
 class PlaceLikeView(viewsets.ModelViewSet):
