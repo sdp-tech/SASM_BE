@@ -193,11 +193,12 @@ class PlaceDetailView(viewsets.ModelViewSet):
         place의 detail 정보를 주는 API
     '''
     queryset = Place.objects.all()
-    serializer_class = PlaceSerializer
+    serializer_class = PlaceDetailSerializer
     permission_classes=[
         AllowAny,
     ]
-    def get(self,request,pk):
+    def get(self,request):
+        pk = request.GET.get('id', '')
         place = Place.objects.get(id=pk)
         response = Response(PlaceDetailSerializer(place,context={'request': request}).data, status=status.HTTP_200_OK)
         return response
