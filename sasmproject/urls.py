@@ -14,6 +14,7 @@ urlpatterns = [
     path('users/', include('dj_rest_auth.urls')),
     path('users/', include('allauth.urls')),
     path('places/', include('places.urls')),
+    path('sdp_admin/', include('sdp_admin.urls')),
 ]
 # API 문서에 작성될 소개 내용
 schema_view = get_schema_view(
