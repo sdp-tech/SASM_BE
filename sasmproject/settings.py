@@ -34,7 +34,7 @@ SECRET_KEY = 'django-insecure-f45=x^bapsz5k-2q3r0oe4^28lf-+%p0m5zbpfww8mz5p92c9%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 CORS_ORIGIN_WHITELIST = ["http://localhost:3000"]
 # Application definition
@@ -53,6 +53,7 @@ PROJECT_APPS = [
     "places.apps.PlacesConfig",
     "stories.apps.StoriesConfig",
     "core.apps.CoreConfig",
+    "sdp_admin.apps.SdpAdminConfig",
 ]
 THIRD_APPS = [
     'rest_framework',
@@ -111,7 +112,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'sasmproject.wsgi.application'
 
 
-
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
@@ -147,7 +147,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated",],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated", ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.TokenAuthentication",
@@ -166,27 +166,26 @@ REST_USE_JWT = True
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
-    'ROTATE_REFRESH_TOKENS': False, # true면 토큰 갱신 시 refresh도 같이 갱신
+    'ROTATE_REFRESH_TOKENS': False,  # true면 토큰 갱신 시 refresh도 같이 갱신
     'BLACKLIST_AFTER_ROTATION': True,
 }
-
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
-#이메일 인증
+# 이메일 인증
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.daum.net'
 EMAIL_PORT = 465
 EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = secrets['EMAIL_HOST_USER']
 
-#corheaders
-CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000')
+# corheaders
+CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000', 'http://localhost:3000')
 CORS_ALLOW_CREDENTIALS = True
 
-#aws s3
+# aws s3
 # AWS 정보
 AWS_STORAGE_BUCKET_NAME = secrets['AWS_STORAGE_BUCKET_NAME']
 AWS_ACCESS_KEY_ID = secrets['AWS_ACCESS_KEY_ID']
@@ -201,7 +200,8 @@ AWS_QUERYSTRING_AUTH = False
 # static files setting
 STATICFILES_LOCATION = 'static'
 STATICFILES_STORAGE = 'sasmproject.custom_storages.StaticStorage'
-STATIC_URL = 'https://{}/{}/'.format(AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
+STATIC_URL = 'https://{}/{}/'.format(AWS_S3_CUSTOM_DOMAIN,
+                                     STATICFILES_LOCATION)
 
 # media files setting
 MEDIAFILES_LOCATION = 'media'
