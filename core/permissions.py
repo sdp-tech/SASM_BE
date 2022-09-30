@@ -1,6 +1,10 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission
 
 
-class ReadOnly(BasePermission):
+class IsSdpStaff(BasePermission):
     def has_permission(self, request, view):
-        return request.method in SAFE_METHODS
+        if request.user.is_authenticated:
+            if request.user.is_sdp:
+                return True
+        else:
+            return False
