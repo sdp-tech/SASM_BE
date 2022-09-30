@@ -1,14 +1,13 @@
-from django.urls import path
-from .views import stories_views
-from .views import places_views
+from django.urls import path, include
+from rest_framework import urls, renderers
+from rest_framework.routers import DefaultRouter
+from .views.places_views import PlacesViewSet
 
 app_name = 'sdp_admin'
 
+router = DefaultRouter()
+router.register(r'places', PlacesViewSet, basename="places")
+
 urlpatterns = [
-    # stories_views
-    path('stories/', stories_views.stories_list),
-    path('stories/<int:pk>', stories_views.stories_detail),
-    # places_views
-    path('places/', places_views.places_list),
-    path('places/<int:pk>', places_views.places_detail),
+    path('', include(router.urls)),
 ]

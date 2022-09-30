@@ -1,54 +1,77 @@
-from django.http import HttpResponse, JsonResponse
+import io
+import time
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django.core.files.images import ImageFile
+from django.http import HttpResponse, JsonResponse
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
+from rest_framework import status
+from rest_framework import renderers
+from rest_framework.response import Response
+from rest_framework.generics import CreateAPIView
 from rest_framework.parsers import JSONParser
+from rest_framework import mixins
+from rest_framework import generics
+
 from places.models import SNSUrl, SNSType, PlacePhoto, Place
 from places.serializers import PlacePhotoSerializer, SNSUrlSerializer, MapMarkerSerializer, PlaceSerializer, PlaceDetailSerializer 
+from core.permissions import IsSdpStaff
 
 
-@csrf_exempt
-def places_list(request):
+class PlacePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+
+
+class PlacesViewSet(viewsets.ModelViewSet):
     """
     모든 장소를 리스트, 또는 새로운 장소 생성
-    """
-    if request.method == 'GET':
-        places = Place.objects.all()
-        serializer = PlaceSerializer(
-            places, many=True, context={'request': request})
-        return JsonResponse(serializer.data, safe=False)
-
-    elif request.method == 'POST':
-        data = JSONParser().parse(request)
-        serializer = PlaceDetailSerializer(
-            data=data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, status=400)
-
-
-@csrf_exempt
-def places_detail(request, pk):
-    """
     장소 가져오기, 업데이트 또는 삭제
     """
-    try:
-        place = Place.objects.get(pk=pk)
-    except Place.DoesNotExist:
-        return HttpResponse(status=404)
 
-    if request.method == 'GET':
-        serializer = PlaceDetailSerializer(place, context={'request': request})
-        return JsonResponse(serializer.data)
+    queryset = Place.objects.all()
+    serializer_class = PlaceSerializer
+    permission_classes = [IsAuthenticated, IsSdpStaff]
+    pagination_class = PlacePagination
 
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        serializer = PlaceDetailSerializer(
-            place, data=data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data)
-        return JsonResponse(serializer.errors, status=400)
+    @action(detail=False, methods=['post'])
+    def photos(self, request):
+        file_obj = request.FILES['file']
+        ext = file_obj.name.split(".")[-1]
 
-    elif request.method == 'DELETE':
-        place.delete()
-        return HttpResponse(status=204)
+        if ext not in ["jpg", "png", "gif", "jpeg", ]:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Wrong file format'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            caption = request.POST['caption']
+            place_name = request.POST['place_name']
+
+            file_path = '{}/{}.{}'.format(place_name,
+                                        'target' + str(int(time.time())), ext)
+            image = ImageFile(io.BytesIO(file_obj.read()), name=file_path)
+            
+            photo = PlacePhoto(caption=caption, image=image)
+            photo.save()
+        except:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Unknown'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = PlacePhotoSerializer(photo)
+        print(serializer.data['image'])
+        return JsonResponse({
+            'status': 'success',
+            'data': {'location': serializer.data['image']},
+        }, status=status.HTTP_201_CREATED)
+
+class PlacesPhotoViewSet(CreateAPIView):
+    queryset = PlacePhoto.objects.all()
+    serializer_class = PlacePhotoSerializer
