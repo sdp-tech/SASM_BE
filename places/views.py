@@ -41,7 +41,7 @@ def get_s3(place,num):
         obj_list = s3.list_objects(Bucket='sasm-bucket',Prefix='media/places/{}'.format(place))
         content_list = obj_list['Contents']
         for content in content_list:
-            if str(content['Key']).find(str(num)) != -1:
+            if str(content['Key']).find('{}/'.format(place) + str(num) + '.') != -1:
                 result = content['Key']
                 break
         print(place)
