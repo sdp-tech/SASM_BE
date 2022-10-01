@@ -4,7 +4,9 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import UserManager, PermissionsMixin
 
 # Create your models here.
-#username으로 email을 사용하기 위해 UserManager의 함수를 overrinding 한다.
+# username으로 email을 사용하기 위해 UserManager의 함수를 overrinding 한다.
+
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         if not email:
@@ -26,6 +28,7 @@ class UserManager(BaseUserManager):
             raise ValueError(('Superuser must have is_superuser=True.'))
         return self.create_user(email, password, **extra_fields)
 
+
 class User(AbstractBaseUser, PermissionsMixin):
     """custom user model"""
     username = None
@@ -38,16 +41,19 @@ class User(AbstractBaseUser, PermissionsMixin):
         (GENDER_OTHER, "Other"),
     )
     code = models.CharField(max_length=5, blank=True)
-    gender = models.CharField(choices=GENDER_CHOICES, max_length=10, blank=True)
+    gender = models.CharField(choices=GENDER_CHOICES,
+                              max_length=10, blank=True)
     nickname = models.CharField(max_length=20, blank=True)
     birthdate = models.DateField(blank=True, null=True)
-    email = models.EmailField(max_length=64,unique=True)
+    email = models.EmailField(max_length=64, unique=True)
     address = models.CharField(max_length=100, blank=True)
-    profile_image = models.ImageField(upload_to='profile/%Y%m%d/', default='user_profile_image.png')
+    profile_image = models.ImageField(
+        upload_to='profile/%Y%m%d/', default='user_profile_image.png')
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    is_sdp = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
