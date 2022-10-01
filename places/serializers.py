@@ -30,8 +30,8 @@ class MapMarkerSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'place_name',
-            'left_coordinate',
-            'right_coordinate',
+            'latitude',
+            'longitude',
         ]
     
 class PlaceSerializer(serializers.ModelSerializer):
@@ -54,10 +54,9 @@ class PlaceSerializer(serializers.ModelSerializer):
             'address',
             'rep_pic',
             'short_cur',
-            'left_coordinate',
-            'right_coordinate',
+            'latitude',
+            'longitude',
             'place_like',
-            'distance',
             ]
 
 
@@ -115,8 +114,8 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'address',
             'rep_pic',
             'short_cur',
-            'left_coordinate',
-            'right_coordinate',
+            'latitude',
+            'longitude',
             'photos',
             'sns',
             'story_id',

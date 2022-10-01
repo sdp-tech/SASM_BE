@@ -19,6 +19,7 @@ from rest_framework.decorators import action
 
 import os
 import json
+import time
 import requests
 import pandas as pd
 import boto3
@@ -37,15 +38,16 @@ def get_s3(place,num):
     try:
         s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key)
-        obj_list = s3.list_objects(Bucket='sasm-bucket',Prefix='places/')
+        obj_list = s3.list_objects(Bucket='sasm-bucket',Prefix='media/places/{}'.format(place))
         content_list = obj_list['Contents']
         for content in content_list:
-            if str(content['Key']).find(str(place)+'_'+num) != -1:
+            if str(content['Key']).find(str(num)) != -1:
                 result = content['Key']
                 break
         print(place)
         print(result)
-        return result
+        ext = result.split(".")[-1]
+        return ext
     except Exception as e:
         print('에러',e)
 
@@ -64,8 +66,8 @@ def save_place_db(request):
     df = df.fillna('')
     for dbfram in df.itertuples():
         place_name = dbfram[1]
-        url = get_s3(place_name, "rep")
-        encode_url = parse.quote(str(url))
+        ext = get_s3(place_name, "rep")
+        
         obj = Place.objects.create(
             place_name=dbfram[1],
             category=dbfram[2],
@@ -83,19 +85,19 @@ def save_place_db(request):
             etc_hours=dbfram[14],
             place_review=dbfram[15],
             address=dbfram[16],
-            right_coordinate=addr_to_lat_lon(dbfram[16])[0],
-            left_coordinate=addr_to_lat_lon(dbfram[16])[1],
+            longitude=addr_to_lat_lon(dbfram[16])[0],
+            latitude=addr_to_lat_lon(dbfram[16])[1],
             short_cur=dbfram[17],
             phone_num=dbfram[18],
-            rep_pic = 'https://sasm-bucket.s3.ap-northeast-2.amazonaws.com/{rep_url}'.format(rep_url=encode_url),
+            rep_pic = 'places/{}/rep.{}'.format(place_name, ext),
             )
         obj.save()
         id = obj.id
         for j in range(1,4):
-            url = get_s3(place_name, str(j))
-            encode_url = parse.quote(url)
+            ext = get_s3(place_name, str(j))
+            
             img = PlacePhoto.objects.create(
-                image = 'https://sasm-bucket.s3.ap-northeast-2.amazonaws.com/{photo_url}'.format(photo_url=encode_url),
+                image = 'places/{}/{}.{}'.format(place_name, str(j), ext),
                 place_id=id,
                 )
             img.save()
@@ -160,14 +162,14 @@ class PlaceListView(viewsets.ModelViewSet):
         '''
         search 값을 parameter로 받아와서 검색, 아무것도 없으면 전체 리스트 반환
         '''
-        left = request.GET.get('left', '')
-        right = request.GET.get('right', '')
-        my_location = (float(left), float(right))
-        for place in self.queryset:
-            place_location = (place.left_coordinate, place.right_coordinate)
-            place.distance = hs.haversine(my_location, place_location)
-            place.save()
-        qs = self.get_queryset().order_by('distance')
+        # left = request.GET.get('left', '')
+        # right = request.GET.get('right', '')
+        # my_location = (float(left), float(right))
+        # for place in self.queryset:
+        #     place_location = (place.left_coordinate, place.right_coordinate)
+        #     place.distance = hs.haversine(my_location, place_location)
+        #     place.save()
+        qs = self.get_queryset().order_by('id')
         search = request.GET.get('search','')
         search_list = qs.filter(Q(place_name__icontains=search))
         array = request.query_params.getlist('filter[]', '배열')
