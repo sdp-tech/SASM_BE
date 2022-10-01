@@ -44,14 +44,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         (GENDER_OTHER, "Other"),
     )
     code = models.CharField(max_length=5, blank=True)
-<<<<<<< HEAD
-    gender = models.CharField(choices=GENDER_CHOICES, max_length=10, blank=True)
-    nicknarme = models.CharField(max_length=20, blank=True)
-=======
     gender = models.CharField(choices=GENDER_CHOICES,
                               max_length=10, blank=True)
     nickname = models.CharField(max_length=20, blank=True)
->>>>>>> 1a1b26c89a8aff5a03dd199467db70ce80cd9432
     birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64, unique=True)
     address = models.CharField(max_length=100, blank=True)
