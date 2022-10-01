@@ -10,8 +10,8 @@ from django.contrib.auth.models import UserManager, PermissionsMixin
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         if not email:
-            raise ValueError(('Superuser must have is_superuser=True.'))
-        email = self.normalizae_email(email)
+            raise ValueError(('THe Email must be set'))
+        email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save()
@@ -27,11 +27,8 @@ class UserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(('Superuser must have is_superuser=True.'))
         return self.create_user(email, password, **extra_fields)
-<<<<<<< HEAD
-=======
 
 
->>>>>>> 1a1b26c89a8aff5a03dd199467db70ce80cd9432
 class User(AbstractBaseUser, PermissionsMixin):
     """custom user model"""
     username = None
@@ -60,6 +57,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+    objects = UserManager()
 
     def __str__(self):
         return self.email

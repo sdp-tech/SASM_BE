@@ -59,7 +59,8 @@ class PlaceSerializer(serializers.ModelSerializer):
             'place_like',
             'distance',
             ]
-    
+
+
     def get_open_hours(self,obj):
         '''
         오늘 요일만 보내주기 위한 함수

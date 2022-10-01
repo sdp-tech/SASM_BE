@@ -1,6 +1,5 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-
 from .views.stories_views import StoryViewSet
 from .views.places_views import PlacesViewSet
 
@@ -14,3 +13,7 @@ router.register(r'places', PlacesViewSet, basename="places")
 urlpatterns = [
     path('', include(router.urls)),
 ]
+
+
+urlpatterns = format_suffix_patterns(urlpatterns)
+

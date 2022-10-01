@@ -16,24 +16,28 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.parsers import JSONParser
 from rest_framework import mixins
 from rest_framework import generics
+from functools import partial
 
 from places.models import SNSUrl, SNSType, PlacePhoto, Place
 from places.serializers import PlacePhotoSerializer, SNSUrlSerializer, MapMarkerSerializer, PlaceSerializer, PlaceDetailSerializer 
 from core.permissions import IsSdpStaff
 
-
+class SetPartialMixin:
+    def get_serializer_class(self, *args, **kwargs):
+        serializer_class = super().get_serializer_class(*args, **kwargs)
+        return partial(serializer_class, partial=True)
 class PlacePagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
 
 
-class PlacesViewSet(viewsets.ModelViewSet):
+class PlacesViewSet(SetPartialMixin, viewsets.ModelViewSet):
     """
     모든 장소를 리스트, 또는 새로운 장소 생성
     장소 가져오기, 업데이트 또는 삭제
     """
 
-    queryset = Place.objects.all()
+    queryset = Place.objects.all().order_by('id')
     serializer_class = PlaceSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
     pagination_class = PlacePagination
