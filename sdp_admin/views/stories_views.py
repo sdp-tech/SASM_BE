@@ -90,4 +90,8 @@ class StoryPhotoViewSet(CreateAPIView):
 #         if serializer.is_valid():
 #             serializer.save()
 #             return JsonResponse(serializer.data, status=201)
+<<<<<<< HEAD
 #         return JsonResponse(serializer.errors, status=400)
+=======
+#         return JsonResponse(serializer.errors, status=400)
+>>>>>>> 1a1b26c89a8aff5a03dd199467db70ce80cd9432

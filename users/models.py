@@ -4,7 +4,9 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import UserManager, PermissionsMixin
 
 # Create your models here.
-#username으로 email을 사용하기 위해 UserManager의 함수를 overrinding 한다.
+# username으로 email을 사용하기 위해 UserManager의 함수를 overrinding 한다.
+
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         if not email:
@@ -25,6 +27,11 @@ class UserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(('Superuser must have is_superuser=True.'))
         return self.create_user(email, password, **extra_fields)
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 1a1b26c89a8aff5a03dd199467db70ce80cd9432
 class User(AbstractBaseUser, PermissionsMixin):
     """custom user model"""
     username = None
@@ -37,8 +44,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         (GENDER_OTHER, "Other"),
     )
     code = models.CharField(max_length=5, blank=True)
+<<<<<<< HEAD
     gender = models.CharField(choices=GENDER_CHOICES, max_length=10, blank=True)
     nicknarme = models.CharField(max_length=20, blank=True)
+=======
+    gender = models.CharField(choices=GENDER_CHOICES,
+                              max_length=10, blank=True)
+    nickname = models.CharField(max_length=20, blank=True)
+>>>>>>> 1a1b26c89a8aff5a03dd199467db70ce80cd9432
     birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64, unique=True)
     address = models.CharField(max_length=100, blank=True)

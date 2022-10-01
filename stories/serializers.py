@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from stories.models import Story
+from stories.models import Story, StoryPhoto
 from users.models import User
 from places.models import Place
 
@@ -14,13 +14,15 @@ from places.models import Place
 #             'pet_category',
 #         ]
 
+
 class StoryDetailSerializer(serializers.ModelSerializer):
     story_like = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
-    #onetoonefield에서는 이렇게 참조해와야한다. story의 변수명으로.
+    # onetoonefield에서는 이렇게 참조해와야한다. story의 변수명으로.
     #address = CategorySerializer(required=True)
     semi_category = serializers.SerializerMethodField()
     place_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Story
         fields = [
@@ -28,26 +30,27 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             'title',
             'story_review',
             'tag',
-            'story_url',
             'story_like',
             'category',
             'semi_category',
             'place_name',
             'views',
             'html_content',
-            ]
-    def get_story_like(self,obj):
+        ]
+
+    def get_story_like(self, obj):
         '''
         스토리의 좋아요 여부를 알려주기 위한 함수
         '''
         story = Story.objects.get(id=obj.id)
-        re_user =  self.context['request'].user.id
+        re_user = self.context['request'].user.id
         like_id = story.story_likeuser_set.all()
         users = User.objects.filter(id__in=like_id)
         if users.filter(id=re_user).exists():
             return 'ok'
         else:
             return 'none'
+
     def get_category(self, obj):
         '''
             스토리의 category를 알려 주기 위한 함수
@@ -55,7 +58,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         story = Story.objects.get(id=obj.id)
         place = story.address
         return place.category
-    
+
     def get_semi_category(self, obj):
         '''
             스토리의 세부 category를 알려 주기 위한 함수
@@ -85,20 +88,22 @@ class StoryDetailSerializer(serializers.ModelSerializer):
             else:
                 ret_result = ret_result + result[i] + ', '
         return ret_result
-    
+
     def get_place_name(self, obj):
         '''
             스토리에 매핑되는 장소 이름을 알려 주기 위한 함수
-        '''        
+        '''
         story = Story.objects.get(id=obj.id)
         place = story.address
         return place.place_name
-        
+
+
 class StoryListSerializer(serializers.ModelSerializer):
     place_name = serializers.SerializerMethodField()
     story_like = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     semi_category = serializers.SerializerMethodField()
+
     class Meta:
         model = Story
         fields = [
@@ -111,28 +116,29 @@ class StoryListSerializer(serializers.ModelSerializer):
             'semi_category',
             'views',
             'rep_pic',
-            ]
+        ]
+
     def get_place_name(self, obj):
         '''
             스토리에 매핑되는 장소 이름을 알려 주기 위한 함수
-        '''        
+        '''
         story = Story.objects.get(id=obj.id)
         place = story.address
         return place.place_name
-    
-    def get_story_like(self,obj):
+
+    def get_story_like(self, obj):
         '''
         스토리의 좋아요 여부를 알려주기 위한 함수
         '''
         story = Story.objects.get(id=obj.id)
-        re_user =  self.context['request'].user.id
+        re_user = self.context['request'].user.id
         like_id = story.story_likeuser_set.all()
         users = User.objects.filter(id__in=like_id)
         if users.filter(id=re_user).exists():
             return 'ok'
         else:
             return 'none'
-        
+
     def get_category(self, obj):
         '''
             스토리의 category를 알려 주기 위한 함수
@@ -140,7 +146,7 @@ class StoryListSerializer(serializers.ModelSerializer):
         story = Story.objects.get(id=obj.id)
         place = story.address
         return place.category
-    
+
     def get_semi_category(self, obj):
         '''
             스토리의 세부 category를 알려 주기 위한 함수
