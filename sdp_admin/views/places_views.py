@@ -76,12 +76,6 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             'data': {'location': serializer.data['image']},
         }, status=status.HTTP_201_CREATED)
 
-    def post(self, request):
-        print("Hello")
-
-        
-
-
-class PlacePhotoViewSet(CreateAPIView):
+class PlacesPhotoViewSet(CreateAPIView):
     queryset = PlacePhoto.objects.all()
     serializer_class = PlacePhotoSerializer
