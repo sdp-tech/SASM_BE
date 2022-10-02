@@ -4,8 +4,11 @@ from core import models as core_models
 # Create your models here.
 class SNSUrl(models.Model):
     url = models.URLField(max_length=200)
-    place = models.ManyToManyField("Place",related_name='place_sns_url')
+    place = models.ForeignKey("Place",related_name='place_sns_url',on_delete=models.CASCADE)
     snstype = models.ForeignKey("SNSType",on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.place.place_name
 
 class SNSType(core_models.TimeStampedModel):
     
