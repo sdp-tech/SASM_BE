@@ -118,7 +118,7 @@ def save_place_db(request):
                     )
                     obj2.save()
                     obj3 = SNSUrl.objects.create(
-                        snstype_id=obj1.id,
+                        snstype_id=obj2.id,
                         url = dbfram[k+1],
                         place_id=id,
                     )
