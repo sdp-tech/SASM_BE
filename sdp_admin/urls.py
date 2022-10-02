@@ -7,7 +7,7 @@ app_name = 'sdp_admin'
 
 router = DefaultRouter()
 router.register(r'stories', StoryViewSet, basename="stories")
-router.register(r'places', PlacesViewSet, basename="places")
+router.register(r'places', PlaceViewSet, basename="places")
 
 
 urlpatterns = [
