@@ -94,38 +94,38 @@ def save_place_db(request):
         obj.save()
         id = obj.id
         for j in range(1,4):
-            ext = get_s3(place_name, str(j))
-            
+            ext = get_s3(place_name, str(j))            
             img = PlacePhoto.objects.create(
                 image = 'places/{}/{}.{}'.format(place_name, str(j), ext),
                 place_id=id,
                 )
             img.save()
-        # k = 19
-        # while(True):
-        #     try:
-        #         sns_type = dbfram[k]
-        #         if SNSType.objects.filter(name=sns_type).exists():
-        #             obj = SNSUrl.objects.create(
-        #                 snstype=SNSType.objects.get(name=sns_type).id,
-        #                 url = dbfram[k+1],
-        #                 place_id=id,
-        #             )
-        #             obj.save()
-        #         else:
-        #             obj = SNSType.objects.create(
-        #                 name = sns_type,
-        #             )
-        #             obj.save()
-        #             obj = SNSUrl.objects.create(
-        #                 snstype=SNSType.objects.get(name=sns_type).id,
-        #                 url = dbfram[k+1],
-        #                 place_id=id,
-        #             )
-        #             obj.save()
-        #         k+=2
-        #     except:
-        #         break
+        
+        k = 19
+        while(True):
+            if(k<25 and len(dbfram[k])!=0):
+                sns_type = dbfram[k]
+                if SNSType.objects.filter(name=sns_type).exists():
+                    obj1 = SNSUrl.objects.create(
+                        snstype_id=SNSType.objects.get(name=sns_type).id,
+                        url = dbfram[k+1],
+                        place_id=id,
+                    )
+                    obj1.save()
+                else:
+                    obj2 = SNSType.objects.create(
+                        name = sns_type,
+                    )
+                    obj2.save()
+                    obj3 = SNSUrl.objects.create(
+                        snstype_id=obj1.id,
+                        url = dbfram[k+1],
+                        place_id=id,
+                    )
+                    obj3.save()
+                k+=2
+            else:
+                break
     return JsonResponse({'msg': 'success'})
 
 class MapMarkerView(viewsets.ModelViewSet):
