@@ -31,7 +31,7 @@ class PlacePagination(PageNumberPagination):
     page_size_query_param = 'page_size'
 
 
-class PlacesViewSet(SetPartialMixin, viewsets.ModelViewSet):
+class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
     """
     모든 장소를 리스트, 또는 새로운 장소 생성
     장소 가져오기, 업데이트 또는 삭제
@@ -76,6 +76,12 @@ class PlacesViewSet(SetPartialMixin, viewsets.ModelViewSet):
             'data': {'location': serializer.data['image']},
         }, status=status.HTTP_201_CREATED)
 
-class PlacesPhotoViewSet(CreateAPIView):
+    def post(self, request):
+        print("Hello")
+
+        
+
+
+class PlacePhotoViewSet(CreateAPIView):
     queryset = PlacePhoto.objects.all()
     serializer_class = PlacePhotoSerializer
