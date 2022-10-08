@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views.stories_views import StoryViewSet
-from .views.places_views import PlacesViewSet
+from .views.places_views import PlacesViewSet, SNSTypeViewSet
 
 app_name = 'sdp_admin'
 
@@ -12,5 +12,6 @@ router.register(r'places', PlacesViewSet, basename="places")
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('snstype/', SNSTypeViewSet.as_view({'get':'get'})),
 ]
 
