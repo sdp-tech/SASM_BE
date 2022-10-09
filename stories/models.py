@@ -31,7 +31,8 @@ class Story(core_models.TimeStampedModel):
     tag = models.CharField(max_length=100)
     preview = models.CharField(max_length=150, blank=True)
     views = models.PositiveIntegerField(default=0, verbose_name='조회수')
-    rep_pic = models.ImageField()
+    rep_pic = models.ImageField(
+        upload_to=get_upload_path, default='story_rep_pic.png')
     html_content = models.TextField(max_length=50000)
 
     def clean(self):
