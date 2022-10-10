@@ -34,11 +34,6 @@ class SetPartialMixin:
         return partial(serializer_class, partial=True)
 
 
-class PlacePagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = 'page_size'
-
-
 class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
     """
     모든 장소를 리스트, 또는 새로운 장소 생성
@@ -51,7 +46,6 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
     queryset = Place.objects.all().order_by('id')
     serializer_class = PlacesAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
-    pagination_class = PlacePagination
 
     @action(detail=False, methods=['post'])
     def save_place(self, request):
