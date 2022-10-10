@@ -51,7 +51,7 @@ class StoryViewSet(viewsets.ModelViewSet):
             place_name = request.POST['place_name']
 
             file_path = '{}/{}.{}'.format(place_name,
-                                          'target' + str(int(time.time())), ext)
+                                          'content' + str(int(time.time())), ext)
             image = ImageFile(io.BytesIO(file_obj.read()), name=file_path)
 
             photo = StoryPhoto(caption=caption, image=image)

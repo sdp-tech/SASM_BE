@@ -24,6 +24,8 @@ from places.models import SNSUrl, SNSType, PlacePhoto, Place, get_upload_path
 from ..serializers.places_serializers import PlacesAdminSerializer, PlacePhotoAdminSerializer
 from core.permissions import IsSdpStaff
 from places.views import addr_to_lat_lon
+from users import serializers, views
+from sdp_admin.serializers.places_serializers import SNSTypeSerializer
 
 class SetPartialMixin:
     def get_serializer_class(self, *args, **kwargs):
@@ -159,4 +161,20 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
 
 class PlacesPhotoViewSet(CreateAPIView):
     queryset = PlacePhoto.objects.all()
-    serializer_class = PlacesAdminSerializer
+    serializer_class = PlacePhotoAdminSerializer
+
+class SNSTypeViewSet(viewsets.ModelViewSet):
+    """
+        db에 존재하는 SNS Type을 json으로 보내 주는 api
+    """
+
+    queryset = SNSType.objects.all().order_by('id')
+    serializer_class = SNSTypeSerializer
+    permission_classes = [IsAuthenticated, IsSdpStaff]
+    
+    def get(self, request):
+        qs = self.get_queryset().order_by('id')
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+            
+    
