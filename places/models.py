@@ -16,10 +16,14 @@ class SNSType(core_models.TimeStampedModel):
 
     def __str__(self):
         return self.name
-    
+
+
+def get_upload_path(instance, filename):
+    return 'places/{}'.format(filename)
 class PlacePhoto(core_models.TimeStampedModel):
     """PlacePhoto Model Definition"""
-    image = models.ImageField()
+    image = models.ImageField(
+        upload_to=get_upload_path, default='place_image.png')
     place = models.ForeignKey("Place",related_name='photos',on_delete=models.CASCADE)
     
     def __str__(self):
