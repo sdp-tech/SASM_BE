@@ -12,7 +12,7 @@ class PlacesAdminSerializer(serializers.ModelSerializer):
         model = Place
         ordering = ['-id']
         fields = [
-            # 'id',
+            'id',
             'place_name',
             'category',
             'vegan_category',
@@ -34,12 +34,12 @@ class PlacesAdminSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'phone_num',
-            ]
+        ]
 
     def change_rep_pic_name(self, place, validated_data):
         place_name = validated_data['place_name']
         ext = place.rep_pic.name.split(".")[-1]
-        place.rep_pic.name = 'places/{}/{}.{}'.format(place_name,'rep', ext)
+        place.rep_pic.name = 'places/{}/{}.{}'.format(place_name, 'rep', ext)
 
     def create(self, validated_data):
         # validated_data 내 rep_pic의 이름 변경이 원활하게 되지 않아 DRY한 방법으로 구현
@@ -68,6 +68,7 @@ class PlacesAdminSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class PlacePhotoAdminSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(use_url=True)
 
@@ -77,6 +78,8 @@ class PlacePhotoAdminSerializer(serializers.ModelSerializer):
             'image',
             'place',
         ]
+
+
 class SNSTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SNSType
