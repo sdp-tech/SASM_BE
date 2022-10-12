@@ -26,30 +26,27 @@ from core.permissions import IsSdpStaff
 from places.views import addr_to_lat_lon
 from users import serializers, views
 
+
 class SetPartialMixin:
     def get_serializer_class(self, *args, **kwargs):
         serializer_class = super().get_serializer_class(*args, **kwargs)
         return partial(serializer_class, partial=True)
 
-class PlacePagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = 'page_size'
 
 class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
     """
     모든 장소를 리스트, 또는 새로운 장소 생성
     장소 가져오기, 업데이트 또는 삭제
     """
-    aws_access_key_id = getattr(settings,'AWS_ACCESS_KEY_ID')
-    aws_secret_access_key = getattr(settings,'AWS_SECRET_ACCESS_KEY')
+    aws_access_key_id = getattr(settings, 'AWS_ACCESS_KEY_ID')
+    aws_secret_access_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY')
     kakao_rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
 
     queryset = Place.objects.all().order_by('id')
     serializer_class = PlacesAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
-    # pagination_class = PlacePagination
 
-    @action(detail=False, methods=['post']) 
+    @action(detail=False, methods=['post'])
     def save_place(self, request):
         place_info = request.data
         addr = place_info['address']
@@ -97,14 +94,15 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             for pic in pics:
                 ext = pic.name.split(".")[-1]
 
-                if ext not in ["jpg", "png", "gif", "jpeg",]:
+                if ext not in ["jpg", "png", "gif", "jpeg", ]:
                     return JsonResponse({
                         'status': 'error',
                         'message': 'Wrong file format'
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-                try: 
-                    file_path = '{}/{}.{}'.format(created_place.place_name,pics.index(pic)+1, ext)
+                try:
+                    file_path = '{}/{}.{}'.format(
+                        created_place.place_name, pics.index(pic)+1, ext)
                     image = ImageFile(io.BytesIO(pic.read()), name=file_path)
                     photo = PlacePhoto(image=image, place=created_place)
                     photo.save()
@@ -119,12 +117,12 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             return JsonResponse({
                 'status': 'success',
                 'data': serializer.data,
-                }, status=status.HTTP_201_CREATED)
+            }, status=status.HTTP_201_CREATED)
 
         else:
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['put']) 
+    @action(detail=False, methods=['put'])
     def update_place(self, request):
         place_info = request.data.copy()
         place_id = place_info['id']
@@ -183,7 +181,7 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             #         snsurl.save()
             photo_list = created_place.photos.all().order_by("id")
             print(photo_list)
-            
+
             """ pics """
             if(len(pics) > 0):
                 for key,value in pics.items():
@@ -214,15 +212,30 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             return JsonResponse({
                 'status': 'success',
                 'data': serializer.data,
-                }, status=status.HTTP_201_CREATED)
+            }, status=status.HTTP_201_CREATED)
 
         else:
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)     
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def check_name_overlap(self, request):
+        try:
+            place_name = request.GET['place_name']
+
+            overlap = Place.objects.filter(place_name=place_name).exists()
+
+            return JsonResponse({
+                'status': 'success',
+                'data': {'overlap': overlap},
+            }, status=status.HTTP_200_OK)
+        except:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Unknown'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class PlacesPhotoViewSet(viewsets.ModelViewSet):
-    """
-    장소에 해당하는 PlacePhoto를 보내주는 api
-    """
     queryset = PlacePhoto.objects.all()
     serializer_class = PlacePhotoAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
@@ -230,6 +243,7 @@ class PlacesPhotoViewSet(viewsets.ModelViewSet):
     def get(self,request,pk):
         photo = PlacePhoto.objects.filter(place_id=pk)
         return Response(self.get_serializer(photo,many=True).data)
+
 
 class SNSTypeViewSet(viewsets.ModelViewSet):
     """
