@@ -162,15 +162,11 @@ class PlaceListView(viewsets.ModelViewSet):
         '''
         search 값을 parameter로 받아와서 검색, 아무것도 없으면 전체 리스트 반환
         '''
-        # left = request.GET.get('left', '')
-        # right = request.GET.get('right', '')
-        # my_location = (float(left), float(right))
-        # for place in self.queryset:
-        #     place_location = (place.left_coordinate, place.right_coordinate)
-        #     place.distance = hs.haversine(my_location, place_location)
-        #     place.save()
-        qs = self.get_queryset().order_by('id')
+     
+        qs = self.get_queryset()
         search = request.GET.get('search','')
+        
+        # search 및 filtering
         search_list = qs.filter(Q(place_name__icontains=search))
         array = request.query_params.getlist('filter[]', '배열')
         query = None 
@@ -181,15 +177,39 @@ class PlaceListView(viewsets.ModelViewSet):
                 else: 
                     query = query | Q(category=a)
             place = search_list.filter(query)
-            page = self.paginate_queryset(place)
+            serializer = self.get_serializer(
+                place,
+                many=True,
+                context={
+                    "left":request.query_params.get("left"),
+                    "right":request.query_params.get("right"),
+                    "request":request
+                }
+            )
+            
         else:
-            page = self.paginate_queryset(search_list)
+            serializer = self.get_serializer(
+                search_list,
+                many=True,
+                context={
+                    "left":request.query_params.get("left"),
+                    "right":request.query_params.get("right"),
+                    "request":request
+                }
+            )
+        
+        # 검색 결과를 바탕으로 거리순 정렬 후 pagination
+        serializer_data = sorted(
+            serializer.data, key=lambda k: float(k['distance']))
+        page = self.paginate_queryset(serializer_data)
+          
         if page is not None:
-            serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
+            serializer = self.get_paginated_response(page)
         else:
             serializer = self.get_serializer(page, many=True)
+            
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
 class PlaceDetailView(viewsets.ModelViewSet):
     '''
         place의 detail 정보를 주는 API
