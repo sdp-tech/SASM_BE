@@ -37,6 +37,7 @@ class MapMarkerSerializer(serializers.ModelSerializer):
 class PlaceSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()
+    distance = serializers.SerializerMethodField()
     
     class Meta:
         model = Place
@@ -57,9 +58,24 @@ class PlaceSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'place_like',
-            ]
-
-
+            'distance',
+        ]
+        
+    def get_distance(self, obj):
+        '''
+            거리순 정렬을 위해 거리를 계산하는 함수
+        '''
+       
+        left = self.context.get('left')
+        right = self.context.get('right')
+        
+        my_location = (float(left), float(right))
+        
+        place = Place.objects.get(id=obj.id)
+        place_location = (place.latitude, place.longitude)
+        distance = hs.haversine(my_location, place_location)
+        return float(distance)
+            
     def get_open_hours(self,obj):
         '''
         오늘 요일만 보내주기 위한 함수
