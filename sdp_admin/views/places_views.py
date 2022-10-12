@@ -8,7 +8,7 @@ from django.core.files.images import ImageFile
 from django.http import HttpResponse, JsonResponse
 
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action, api_view
 from rest_framework import status
@@ -65,31 +65,32 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
         del place_info['placephoto2']
         del place_info['placephoto3']
         
-        count = int(place_info['snscount'])
-        sns = {}
-        if(count >0):
-            for i in range(count):
-                snstype,url = place_info[i].split(',')
-                sns[snstype] = url
-                del place_info[i]
+        #sns info 받기
+        # count = int(place_info['snscount'])
+        # sns = {}
+        # if(count >0):
+        #     for i in range(count):
+        #         snstype,url = place_info[i].split(',')
+        #         sns[snstype] = url
+        #         del place_info[i]
 
         serializer = PlacesAdminSerializer(data=place_info)
         if serializer.is_valid():
             created_place = serializer.save()
             """ sns """
-            print(sns)
-            for key,value in sns.items():
-                try:
-                    snstype = SNSType.objects.get(id=key)
-                    snsurl = SNSUrl(url=value,place=created_place,snstype=snstype)
-                    snsurl.save()
-                except:
-                    snstype = SNSType(name=key)
-                    snstype.save()
-                    created_snstype = SNSType.objects.get(name=key)
-                    print('생성됐나',created_snstype)
-                    snsurl = SNSUrl(url=value,place=created_place,snstype=created_snstype)
-                    snsurl.save()
+            # print(sns)
+            # for key,value in sns.items():
+            #     try:
+            #         snstype = SNSType.objects.get(id=key)
+            #         snsurl = SNSUrl(url=value,place=created_place,snstype=snstype)
+            #         snsurl.save()
+            #     except:
+            #         snstype = SNSType(name=key)
+            #         snstype.save()
+            #         created_snstype = SNSType.objects.get(name=key)
+            #         print('생성',created_snstype)
+            #         snsurl = SNSUrl(url=value,place=created_place,snstype=created_snstype)
+            #         snsurl.save()
             """ pics """
             for pic in pics:
                 ext = pic.name.split(".")[-1]
@@ -124,7 +125,7 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['put'])
     def update_place(self, request):
-        place_info = request.data.copy()
+        place_info = request.data
         place_id = place_info['id']
         place = Place.objects.get(id=place_id)
 
@@ -148,12 +149,12 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             del place_info['rep_pic']
 
         count = int(place_info['snscount'])
-        sns = {}
-        if(count >0):
-            for i in range(count):
-                snstype,url = place_info[i].split(',')
-                sns[int(snstype)] = url
-                del place_info[i]
+        # sns = {}
+        # if(count >0):
+        #     for i in range(count):
+        #         snstype,url = place_info[i].split(',')
+        #         sns[int(snstype)] = url
+        #         del place_info[i]
 
         serializer = PlacesAdminSerializer(instance=place, data=place_info, partial=True)
         print(serializer)
@@ -180,7 +181,6 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             #         snsurl = SNSUrl(url=value,place=created_place,snstype=created_snstype)
             #         snsurl.save()
             photo_list = created_place.photos.all().order_by("id")
-            print(photo_list)
 
             """ pics """
             if(len(pics) > 0):
@@ -221,9 +221,9 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
     def check_name_overlap(self, request):
         try:
             place_name = request.GET['place_name']
-
+            print(place_name)
             overlap = Place.objects.filter(place_name=place_name).exists()
-
+            print(overlap)
             return JsonResponse({
                 'status': 'success',
                 'data': {'overlap': overlap},
@@ -234,7 +234,6 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
                 'message': 'Unknown'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-
 class PlacesPhotoViewSet(viewsets.ModelViewSet):
     queryset = PlacePhoto.objects.all()
     serializer_class = PlacePhotoAdminSerializer
@@ -243,7 +242,6 @@ class PlacesPhotoViewSet(viewsets.ModelViewSet):
     def get(self,request,pk):
         photo = PlacePhoto.objects.filter(place_id=pk)
         return Response(self.get_serializer(photo,many=True).data)
-
 
 class SNSTypeViewSet(viewsets.ModelViewSet):
     """
