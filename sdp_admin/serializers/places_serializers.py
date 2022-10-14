@@ -2,8 +2,23 @@ import time
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from places.models import Place, PlacePhoto, SNSType
+from django.contrib.auth import get_user_model
+from places.models import Place, PlacePhoto,SNSType,SNSUrl
 from users.models import User
+# from places.models import Place
+class SNSUrlSerializer(serializers.ModelSerializer):
+    snstype_name = serializers.SerializerMethodField()
+    class Meta:
+        model = SNSUrl
+        fields = [
+            'url',
+            'place',
+            'snstype',
+            'snstype_name',
+        ]
+    def get_snstype_name(self,obj):
+        snstype = SNSUrl.objects.get(id=obj.id).snstype
+        return snstype.name
 
 
 class PlacesAdminSerializer(serializers.ModelSerializer):
@@ -60,7 +75,7 @@ class PlacesAdminSerializer(serializers.ModelSerializer):
             if field == 'rep_pic' and 'rep_pic' not in validated_data:
                 continue
             exec("instance.%s = validated_data.get(field, instance.%s)" %
-                 (field, field))
+                (field, field))
 
         # rep_pic이 업데이트되었을 때 실행
         if 'rep_pic' in validated_data:
