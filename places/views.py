@@ -1,34 +1,22 @@
-from unicodedata import category
-from places.serializers import PlaceSerializer,PlaceDetailSerializer, MapMarkerSerializer
-from users.serializers import UserSerializer
-from .models import Place, PlacePhoto, SNSType, SNSUrl
-from users.models import User
-
+import json
+import requests
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
-
-import os
-import json
-import time
-import requests
+from silk.profiling.profiler import silk_profile
 import pandas as pd
 import boto3
-from urllib import parse
-# import geopandas as gpd
-# from tqdm import tqdm
-import haversine as hs
-from haversine import Unit
-
+from .models import Place, PlacePhoto, SNSType, SNSUrl
+from users.models import User
+from places.serializers import PlaceSerializer,PlaceDetailSerializer, MapMarkerSerializer
+from users.serializers import UserSerializer
 # Create your views here.
 aws_access_key_id = getattr(settings,'AWS_ACCESS_KEY_ID')
 aws_secret_access_key = getattr(settings,'AWS_SECRET_ACCESS_KEY')
@@ -162,7 +150,6 @@ class PlaceListView(viewsets.ModelViewSet):
         '''
         search 값을 parameter로 받아와서 검색, 아무것도 없으면 전체 리스트 반환
         '''
-     
         qs = self.get_queryset()
         search = request.GET.get('search','')
         
@@ -202,7 +189,7 @@ class PlaceListView(viewsets.ModelViewSet):
         serializer_data = sorted(
             serializer.data, key=lambda k: float(k['distance']))
         page = self.paginate_queryset(serializer_data)
-          
+    
         if page is not None:
             serializer = self.get_paginated_response(page)
         else:
@@ -219,6 +206,7 @@ class PlaceDetailView(viewsets.ModelViewSet):
     permission_classes=[
         AllowAny,
     ]
+    @silk_profile(name='place_detail')
     def get(self,request):
         pk = request.GET.get('id', '')
         place = Place.objects.get(id=pk)

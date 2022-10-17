@@ -1,20 +1,15 @@
 import os
-from .models import User
 from .utils import (
     email_isvalid,
     username_isvalid,
 )
-from django import template
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate
-from django.contrib.auth.models import update_last_login
-from django.contrib.staticfiles import finders
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework_simplejwt.exceptions import InvalidToken
-
+from .models import User
 # email 인증 관련
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode

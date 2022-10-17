@@ -1,7 +1,6 @@
-from .views import base_view, email_auth, login_google, login_kakao, login_naver, pw_change
 from django.urls import path
-
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from .views import base_view, email_auth, login_google, login_kakao, login_naver, pw_change
 app_name = "users"
 
 urlpatterns = [

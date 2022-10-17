@@ -4,7 +4,6 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.images import ImageFile
 from django.http import JsonResponse
-
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
@@ -12,7 +11,6 @@ from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView
-
 from stories.models import StoryPhoto, Story
 from ..serializers.stories_serializers import StoryPhotoSerializer, StorySerializer
 from core.permissions import IsSdpStaff

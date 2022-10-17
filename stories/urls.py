@@ -1,5 +1,5 @@
-from .views import StoryDetailView, StoryLikeView, StoryListView, GoToMapView
 from django.urls import path
+from .views import StoryDetailView, StoryLikeView, StoryListView, GoToMapView
 
 urlpatterns =[
     path('story_like/', StoryLikeView.as_view({'post':'post'}), name="story_like"),

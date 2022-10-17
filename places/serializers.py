@@ -1,12 +1,10 @@
 import datetime
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+import haversine as hs
 from places.models import Place, PlacePhoto, SNSUrl
 from users.models import User
-
-from django.core.exceptions import ObjectDoesNotExist
-
-import haversine as hs
 
 class PlacePhotoSerializer(serializers.ModelSerializer):
     class Meta:
