@@ -65,32 +65,32 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
         del place_info['placephoto2']
         del place_info['placephoto3']
         
-        #sns info 받기
-        # count = int(place_info['snscount'])
-        # sns = {}
-        # if(count >0):
-        #     for i in range(count):
-        #         snstype,url = place_info[i].split(',')
-        #         sns[snstype] = url
-        #         del place_info[i]
+        # sns info 받기
+        count = int(place_info['snscount'])
+        sns = {}
+        if(count >0):
+            for i in range(count):
+                snstype, snstype_name, url = place_info[str(i)].split(',')
+                sns[snstype] = [snstype_name, url]
+                del place_info[str(i)]
 
         serializer = PlacesAdminSerializer(data=place_info)
         if serializer.is_valid():
             created_place = serializer.save()
+            
             """ sns """
-            # print(sns)
-            # for key,value in sns.items():
-            #     try:
-            #         snstype = SNSType.objects.get(id=key)
-            #         snsurl = SNSUrl(url=value,place=created_place,snstype=snstype)
-            #         snsurl.save()
-            #     except:
-            #         snstype = SNSType(name=key)
-            #         snstype.save()
-            #         created_snstype = SNSType.objects.get(name=key)
-            #         print('생성',created_snstype)
-            #         snsurl = SNSUrl(url=value,place=created_place,snstype=created_snstype)
-            #         snsurl.save()
+            for key,value in sns.items():
+                try:
+                    snstype = SNSType.objects.get(id=key)
+                    snsurl = SNSUrl(url=value[1], place=created_place, snstype=snstype)
+                    snsurl.save()
+                except:
+                    snstype = SNSType(name=value[0])
+                    snstype.save()
+                    created_snstype = SNSType.objects.get(name=value[0])
+                    snsurl = SNSUrl(url=value[1], place=created_place, snstype=created_snstype)
+                    snsurl.save()
+                    
             """ pics """
             for pic in pics:
                 ext = pic.name.split(".")[-1]
@@ -125,7 +125,7 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['put'])
     def update_place(self, request):
-        place_info = request.data
+        place_info = request.data.copy()
         place_id = place_info['id']
         place = Place.objects.get(id=place_id)
 
@@ -148,38 +148,52 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
         if type(place_info['rep_pic']) is str:
             del place_info['rep_pic']
 
+        # sns info 받기
         count = int(place_info['snscount'])
-        # sns = {}
-        # if(count >0):
-        #     for i in range(count):
-        #         snstype,url = place_info[i].split(',')
-        #         sns[int(snstype)] = url
-        #         del place_info[i]
+        sns = {}
+        if(count >0):
+            for i in range(count):
+                snstype, snstype_name, url = place_info[str(i)].split(',')
+                sns[snstype] = [snstype_name, url]                
+                del place_info[str(i)]
 
         serializer = PlacesAdminSerializer(instance=place, data=place_info, partial=True)
-        print(serializer)
+       
         if serializer.is_valid():
             created_place = serializer.save()
+            
             """ sns """
-            # print(sns)
-            # list = SNSUrl.objects.filter(place=created_place)
-            # for l in list:
-            #     if(l.snstype in sns):
-            #         if(l.url == sns[l.id]):
-                        
-
-            # for key,value in sns.items():
-            #     try:
-            #         snstype = SNSType.objects.get(id=key)
-            #         snsurl = SNSUrl(url=value,place=created_place,snstype=snstype)
-            #         snsurl.save()
-            #     except:
-            #         snstype = SNSType(name=key)
-            #         snstype.save()
-            #         created_snstype = SNSType.objects.get(name=key)
-            #         print('생성됐나',created_snstype)
-            #         snsurl = SNSUrl(url=value,place=created_place,snstype=created_snstype)
-            #         snsurl.save()
+            # 해당 place의 sns list 가져오기
+            list = SNSUrl.objects.filter(place=created_place)
+            for l in list:
+                snsid = str(l.snstype.id)
+                # 원래 있던 snstype인 경우
+                if(snsid in sns):
+                    # url 비교해서 일치하면 sns info 삭제, 다르면 url update 후 삭제
+                    if(l.url == sns[snsid][1]):
+                        del(sns[snsid])
+                    else:
+                        l.url = sns[snsid][1]
+                        l.save()
+                        del(sns[snsid])
+                                        
+                else:
+                    # 해당하는 타입의 sns가 삭제된 경우 db에서 삭제
+                    l.delete()
+        
+            # 추가된 sns               
+            for key,value in sns.items():
+                try:
+                    snstype = SNSType.objects.get(name=value[0])
+                    snsurl = SNSUrl(url=value[1], place=created_place, snstype=snstype)
+                    snsurl.save()
+                except:
+                    snstype = SNSType(name=value[0])
+                    snstype.save()
+                    created_snstype = SNSType.objects.get(name=value[0])
+                    snsurl = SNSUrl(url=value[1], place=created_place, snstype=created_snstype)
+                    snsurl.save()
+                    
             photo_list = created_place.photos.all().order_by("id")
 
             """ pics """
