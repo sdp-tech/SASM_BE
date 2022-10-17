@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "==4.0"
+pillow = "*"
+djangorestframework = "*"
+django-rest-knox = "*"
+django-cors-headers = "*"
+django-debug-toolbar = "*"
+bcrypt = "*"
+mysqlclient = "*"
+openpyxl = "*"
+pandas = "*"
+wheel = "*"
+pipwin = "*"
+numpy = "*"
+shapely = "*"
+six = "*"
+geopandas = "*"
+haversine = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
