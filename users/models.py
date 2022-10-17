@@ -3,10 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import UserManager, PermissionsMixin
 
-# Create your models here.
 # username으로 email을 사용하기 위해 UserManager의 함수를 overrinding 한다.
-
-
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         if not email:
@@ -42,7 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     code = models.CharField(max_length=5, blank=True)
     gender = models.CharField(choices=GENDER_CHOICES,
-                              max_length=10, blank=True)
+                                max_length=10, blank=True)
     nickname = models.CharField(max_length=20, blank=True)
     birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64, unique=True)
