@@ -35,14 +35,20 @@ class StoryLikeView(viewsets.ModelViewSet):
                 story.story_likeuser_set.remove(profile)
                 story.story_like_cnt -= 1
                 story.save()
-                return Response(status.HTTP_204_NO_CONTENT)
+                return Response({
+                'status': 'success',
+            }, status=status.HTTP_201_CREATED)
             else:
                 story.story_likeuser_set.add(profile)
                 story.story_like_cnt += 1
                 story.save()
-                return Response(status.HTTP_201_CREATED)
+                return Response({
+                'status': 'success',
+            }, status=status.HTTP_201_CREATED)
         else:
-            return Response(status.HTTP_204_NO_CONTENT)
+            return Response({
+                'status': 'success',
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
 class BasicPagination(PageNumberPagination):
     page_size = 4
@@ -61,7 +67,6 @@ class StoryListView(viewsets.ModelViewSet):
     
     def get(self, request):
         qs = self.get_queryset()
-        
         search = request.GET.get('search','')
         search_list = qs.filter(Q(title__icontains=search)|Q(address__place_name__icontains=search))
         array = request.query_params.getlist('filter[]', '배열')
@@ -81,8 +86,10 @@ class StoryListView(viewsets.ModelViewSet):
             serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
         else:
             serializer = self.get_serializer(page, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
 
 class StoryDetailView(generics.RetrieveAPIView):
     '''
@@ -104,9 +111,10 @@ class StoryDetailView(generics.RetrieveAPIView):
 
         # response를 미리 받기
         serializer = self.get_serializer(story, many=True, context={'request': request})
-        response = Response(serializer.data, status=status.HTTP_200_OK)
-        print(response)
-    
+        response = Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
 
         # 쿠키 읽기, 생성하기
         if request.COOKIES.get('hit') is not None:
@@ -124,7 +132,10 @@ class StoryDetailView(generics.RetrieveAPIView):
             return response
 
         serializer = self.get_serializer(story, many=True, context={'request': request})
-        response = Response(serializer.data, status=status.HTTP_200_OK)
+        response = Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
         return response
 
 class GoToMapView(viewsets.ModelViewSet):
@@ -142,4 +153,7 @@ class GoToMapView(viewsets.ModelViewSet):
         story = self.queryset.get(id=story_id)
         place = story.address
         serializer = self.get_serializer(place)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
