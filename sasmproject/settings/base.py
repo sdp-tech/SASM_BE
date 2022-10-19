@@ -34,7 +34,7 @@ SECRET_KEY = 'django-insecure-f45=x^bapsz5k-2q3r0oe4^28lf-+%p0m5zbpfww8mz5p92c9%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost']
+ALLOWED_HOSTS = ['127.0.0.1','localhost','3.38.89.18']
 
 CORS_ORIGIN_WHITELIST = ["http://localhost:3000"]
 # Application definition
@@ -71,6 +71,7 @@ THIRD_APPS = [
     'corsheaders',
     'drf_yasg',
     'storages',
+    'silk',
 ]
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_APPS
 
@@ -79,6 +80,7 @@ SITE_ID = 1
 AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
+    'silk.middleware.SilkyMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -153,6 +155,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
+    'EXCEPTION_HANDLER': 'sasmproject.exceptions.custom_exception_handler',
 }
 
 # username 필드 사용 X email 필드 사용
@@ -183,7 +186,7 @@ EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = secrets['EMAIL_HOST_USER']
 
 #corheaders
-CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000')
+CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000','http://127.0.0.1:8000')
 CORS_ALLOW_CREDENTIALS = True
 
 #aws s3
@@ -212,4 +215,23 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
+]#debug-tool-bar
+INTERNAL_IPS = [
+    '127.0.0.1',
 ]
+#django silk
+SILKY_PYTHON_PROFILER = True
+SILKY_INTERCEPT_PERCENT = 5
+SILKY_AUTHENTICATION = True
+SILKY_AUTHORISATION = True
+
+#drf-yasg
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        },
+    }
+}
