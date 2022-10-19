@@ -141,7 +141,7 @@ class MeView(APIView):
     def get(self, request):
         return Response({
             'status': 'success',
-            'data': UserSerializer(request.user),
+            'data': UserSerializer(request.user).data,
         }, status=status.HTTP_200_OK)
 
     def post(self, request):
