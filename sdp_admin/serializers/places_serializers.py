@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from places.models import Place, PlacePhoto,SNSType,SNSUrl
 from users.models import User
 # from places.models import Place
-class SNSUrlSerializer(serializers.ModelSerializer):
+class SNSUrlAdminSerializer(serializers.ModelSerializer):
     snstype_name = serializers.SerializerMethodField()
     class Meta:
         model = SNSUrl
@@ -95,7 +95,7 @@ class PlacePhotoAdminSerializer(serializers.ModelSerializer):
         ]
 
 
-class SNSTypeSerializer(serializers.ModelSerializer):
+class SNSTypeAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = SNSType
         fields = [

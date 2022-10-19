@@ -25,7 +25,7 @@ schema_view = get_schema_view(
         description='''
         안녕하세요. SASM의 OPEN API 문서 페이지 입니다.
 
-        작성자 : ...
+        작성자 : SDP_TECH 팀
         ''',
         terms_of_service='',
         contact=openapi.Contact(name='SDP_OFFICIAL', email='sdpygl@gmail.com'),

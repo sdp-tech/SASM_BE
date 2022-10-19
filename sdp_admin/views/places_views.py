@@ -11,7 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from silk.profiling.profiler import silk_profile
 from places.models import SNSUrl, SNSType, PlacePhoto, Place, get_upload_path
-from ..serializers.places_serializers import PlacesAdminSerializer, PlacePhotoAdminSerializer, SNSTypeSerializer, SNSUrlSerializer
+from ..serializers.places_serializers import PlacesAdminSerializer, PlacePhotoAdminSerializer, SNSTypeAdminSerializer, SNSUrlAdminSerializer
 from core.permissions import IsSdpStaff
 from places.views import addr_to_lat_lon
 
@@ -253,7 +253,7 @@ class SNSTypeViewSet(viewsets.ModelViewSet):
     """
 
     queryset = SNSType.objects.all()
-    serializer_class = SNSTypeSerializer
+    serializer_class = SNSTypeAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
 
 class SNSUrlViewSet(viewsets.ModelViewSet):
@@ -262,7 +262,7 @@ class SNSUrlViewSet(viewsets.ModelViewSet):
     """
 
     queryset = SNSUrl.objects.all()
-    serializer_class = SNSUrlSerializer
+    serializer_class = SNSUrlAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
     
     def get(self,request,pk):
