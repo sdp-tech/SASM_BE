@@ -301,5 +301,6 @@ class PlaceLikeView(viewsets.ModelViewSet):
         else:
             return Response({
             'status': 'error',
-            'message' : 'User is not authenticated'
+            'message' : 'User is not authenticated',
+            'code' : 401,
         }, status=status.HTTP_401_UNAUTHORIZED)
