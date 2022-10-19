@@ -1,10 +1,6 @@
 import json
-from os import name
-from symbol import parameters
-from telnetlib import AUTHENTICATION
 import requests
 from django.conf import settings
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from rest_framework import status
