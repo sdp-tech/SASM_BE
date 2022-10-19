@@ -33,13 +33,24 @@ class UserActivateView(APIView):
                 if int(real_uid) == int(user_id):
                     user.is_active = True
                     user.save()
-                    print('dd')
                     return redirect('http://localhost:3000/auth')
-                return Response('인증에 실패하였습니다1', status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                        'status': 'error',
+                        'message': 'signup URL expired',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
             else:
-                return Response('인증에 실패하였습니다2', status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                        'status': 'error',
+                        'message': 'User does not exist',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
 
         except(TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
             print(traceback.format_exc())
-            return Response('인증에 실패하였습니다',status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                        'status': 'error',
+                        'message': 'Unknown',
+                        'code': 400
+                    }, status=status.HTTP_400_BAD_REQUEST)
