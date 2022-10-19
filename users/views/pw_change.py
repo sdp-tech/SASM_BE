@@ -14,6 +14,7 @@ from django.shortcuts import redirect
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.management.utils import get_random_secret_key
+from django.contrib.auth import authenticate
 from rest_framework_jwt.settings import api_settings
 from django.core.mail import EmailMultiAlternatives
 from email.mime.image import MIMEImage
@@ -68,14 +69,24 @@ class PwResetEmailSendView(APIView):
                 msg.attach(image)
                 msg.send()
                 print('전송완료')
-                
-                return Response(user.email+'이메일 전송이 완료되었습니다', status=status.HTTP_200_OK)
+                return Response({
+                        'status': 'success',
+                        'data': user.email+'이메일 전송이 완료되었습니다',
+                    }, status=status.HTTP_200_OK)
             print(serializer.errors)
-            return Response('일치하는 유저가 없습니다', status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                        'status': 'error',
+                        'message': 'User does not exist',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
         except( ValueError, OverflowError, User.DoesNotExist):
             user = None
             print(traceback.format_exc())
-            return Response('일치하는 유저가 없습니다', status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                        'status': 'error',
+                        'message': 'Unknown',
+                        'code': 400
+                    }, status=status.HTTP_400_BAD_REQUEST)
 
 #비밀번호 재설정
 
@@ -88,7 +99,11 @@ class PasswordChangeView(viewsets.ModelViewSet):
         try:
             return redirect('http://localhost:3000/auth/find/SetNewPassword/')
         except:
-            return Response('잘못된 연결입니다',status=status.HTTP_400_BAD_REQUEST) 
+            return Response({
+                        'status': 'error',
+                        'message': 'Unknown',
+                        'code': 400
+                    }, status=status.HTTP_400_BAD_REQUEST) 
     def post(self, request):
         serializer = PwChangeSerializer(data=request.data)
         if serializer.is_valid():
@@ -98,18 +113,29 @@ class PasswordChangeView(viewsets.ModelViewSet):
                 if serializer.data['password']:
                     user2 = authenticate(email=user.email, password=serializer.data['password'])
                     if user2 != None :
-                        return Response('기존 비밀번호와 일치합니다')
+                        return Response({
+                            'status': 'fail',
+                            'data': {"password": "identical to previous password"},
+                    }, status=status.HTTP_200_OK)
                     user.set_password(serializer.data.get("password"))
                     new_code = get_random_secret_key()
                     user.code = new_code[0:5]
                     user.save()
-                    response = {
+                    return Response({
                         'status': 'success',
-                        'code': status.HTTP_200_OK,
-                        'message': 'Password updated successfully',
-                        'data': []
-                    }
-                    return Response(response)
-                return Response('비밀번호를 다시 입력해주세요')
-            return Response('코드가 일치하지 않습니다')
-        return Response(serializer.errors)
+                    }, status=status.HTTP_200_OK)
+                return Response({
+                        'status': 'error',
+                        'message': 'Password does not exist',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                        'status': 'error',
+                        'message': 'Code does not match with database',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+                        'status': 'error',
+                        'message': serializer.errors,
+                        'code': 400
+                    }, status=status.HTTP_400_BAD_REQUEST)
