@@ -1,17 +1,8 @@
-#소셜 로그인 관련 설정들
-import requests
-from ..models import User
-from django.conf import settings
-from django.http import JsonResponse
-from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from rest_framework import status
-from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.kakao import views as kakao_view
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from json.decoder import JSONDecodeError
-from dj_rest_auth.registration.views import SocialLoginView
+from ..models import User
+from .social_login import *
 
 BASE_URL = 'http://127.0.0.1:8000/'
 KAKAO_CALLBACK_URI = BASE_URL + 'users/kakao/callback/'

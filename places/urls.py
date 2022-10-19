@@ -1,5 +1,5 @@
-from .views import PlaceDetailView,save_place_db, PlaceLikeView, PlaceListView, MapMarkerView
 from django.urls import path
+from .views import PlaceDetailView,save_place_db, PlaceLikeView, PlaceListView, MapMarkerView
 
 urlpatterns =[
     path('save_place/', save_place_db),
