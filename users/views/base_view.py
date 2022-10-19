@@ -19,6 +19,12 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.utils.decorators import method_decorator
 
+#serializer에 partial=True를 주기위한 Mixin
+class SetPartialMixin:
+    def get_serializer_class(self, *args, **kwargs):
+        serializer_class = super().get_serializer_class(*args, **kwargs)
+        return partial(serializer_class, partial=True)
+
 class PlaceLikePagination(PageNumberPagination):
     page_size = 6
     #page_size_query_param = 'page_size'
@@ -39,7 +45,6 @@ class UserPlaceLikeView(viewsets.ModelViewSet):
     @swagger_auto_schema(operation_id='api_users_like_place_get', manual_parameters=[filter])
     def get(self,request):
         user = request.user
-        print(user)
         #역참조 이용
         like_place = user.PlaceLikeUser.all()
         array = request.query_params.getlist('filter[]', '배열')
@@ -56,9 +61,10 @@ class UserPlaceLikeView(viewsets.ModelViewSet):
             page = self.paginate_queryset(like_place)
         #context 값 넘겨주기
         if page is not None:
-            serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request}).data) 
+            serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request,"left":0,"right":0}).data) 
         else:
-            serializer = self.get_serializer(page, many=True, context={'request': request})
+            serializer = self.get_serializer(page, many=True, context={'request': request,"left":0,"right":0})
+        print(serializer.data)
         return Response({
             'status': 'success',
             'data': serializer.data,
@@ -109,12 +115,6 @@ class UserStoryLikeView(viewsets.ModelViewSet):
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-
-#serializer에 partial=True를 주기위한 Mixin
-class SetPartialMixin:
-    def get_serializer_class(self, *args, **kwargs):
-        serializer_class = super().get_serializer_class(*args, **kwargs)
-        return partial(serializer_class, partial=True)
 
 #SetPartialMixin 상속
 @method_decorator(name='post', decorator=swagger_auto_schema(

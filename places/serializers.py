@@ -63,7 +63,6 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
             거리순 정렬을 위해 거리를 계산하는 함수
         '''
-       
         left = self.context.get('left')
         right = self.context.get('right')
         
