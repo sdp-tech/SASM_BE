@@ -1,18 +1,23 @@
 import json
+from os import name
+from symbol import parameters
+from telnetlib import AUTHENTICATION
 import requests
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from rest_framework import status
-from rest_framework import viewsets
+from rest_framework import viewsets, exceptions
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action
+from rest_framework.decorators import api_view
 from silk.profiling.profiler import silk_profile
 import pandas as pd
 import boto3
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from .models import Place, PlacePhoto, SNSType, SNSUrl
 from users.models import User
 from places.serializers import PlaceSerializer,PlaceDetailSerializer, MapMarkerSerializer
@@ -49,7 +54,12 @@ def addr_to_lat_lon(addr):
     y=float(match_first['y'])
     return (x, y)
 
+@swagger_auto_schema(operation_id='func_places_save_place_get', method='get',responses={200:'success'},security=[])
+@api_view(['GET'])
 def save_place_db(request):
+    '''
+        SASM_DB 엑셀파일을 읽어 Place,PlacePhoto,SNS를 DB에 저장하는 함수
+    '''
     df = pd.read_excel("SASM_DB.xlsx", engine="openpyxl")
     df = df.fillna('')
     for dbfram in df.itertuples():
@@ -114,7 +124,7 @@ def save_place_db(request):
                 k+=2
             else:
                 break
-    return JsonResponse({'msg': 'success'})
+    return Response({'msg': 'success'})
 
 class MapMarkerView(viewsets.ModelViewSet):
     '''
@@ -125,11 +135,13 @@ class MapMarkerView(viewsets.ModelViewSet):
     permission_classes=[
         AllowAny,
     ]
-    
+    @swagger_auto_schema(operation_id='api_places_map_info_get',security=[])
     def get(self, request):
         serializer = MapMarkerSerializer(self.queryset, many=True)
-        response = Response(serializer.data, status=status.HTTP_200_OK)
-        return response
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
     
 class BasicPagination(PageNumberPagination):
     page_size = 20
@@ -144,11 +156,17 @@ class PlaceListView(viewsets.ModelViewSet):
     permission_classes=[
         AllowAny,
     ]
+    search = openapi.Parameter('search', in_=openapi.IN_QUERY, description='유저가 입력한 검색 값',
+                                type=openapi.TYPE_STRING,required=False)
+    filter = openapi.Parameter('filter', in_=openapi.IN_QUERY, description='유저가 선택한 필터링 값',
+                                type=openapi.TYPE_ARRAY,items=openapi.Items(type=openapi.TYPE_STRING),required=False)
     pagination_class=BasicPagination
-    
+
+    @swagger_auto_schema(operation_id='api_places_place_search_get',
+                        manual_parameters=[search,filter],security=[])
     def get(self, request):
         '''
-        search 값을 parameter로 받아와서 검색, 아무것도 없으면 전체 리스트 반환
+        search,filter를 적용한 장소 리스트를 distance로 정렬하여 반환
         '''
         qs = self.get_queryset()
         search = request.GET.get('search','')
@@ -195,7 +213,10 @@ class PlaceListView(viewsets.ModelViewSet):
         else:
             serializer = self.get_serializer(page, many=True)
             
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
     
 class PlaceDetailView(viewsets.ModelViewSet):
     '''
@@ -206,12 +227,21 @@ class PlaceDetailView(viewsets.ModelViewSet):
     permission_classes=[
         AllowAny,
     ]
+    id = openapi.Parameter('id', in_=openapi.IN_QUERY, description='장소의 id ',
+                                type=openapi.TYPE_INTEGER,required=True)
+    @swagger_auto_schema(operation_id='api_places_place_detail_get',
+                        manual_parameters=[id],security=[])
     @silk_profile(name='place_detail')
     def get(self,request):
+        '''
+            Place의 detail한 정보를 주는 api
+        '''
         pk = request.GET.get('id', '')
         place = Place.objects.get(id=pk)
-        response = Response(PlaceDetailSerializer(place,context={'request': request}).data, status=status.HTTP_200_OK)
-        return response
+        return Response({
+            'status': 'success',
+            'data': PlaceDetailSerializer(place,context={'request': request}).data,
+        }, status=status.HTTP_200_OK)
 
 class PlaceLikeView(viewsets.ModelViewSet):
     serializer_class=PlaceSerializer
@@ -219,14 +249,34 @@ class PlaceLikeView(viewsets.ModelViewSet):
     permission_classes=[
         IsAuthenticated,
     ]
+
+    @swagger_auto_schema(operation_id='api_places_place_like_user_get')
     def get(self,request,pk):
+        '''
+            장소의 좋아요한 유저 list를 반환하는 api
+        '''
         place = get_object_or_404(Place, pk=pk)
         like_id = place.place_likeuser_set.all()
         users = User.objects.filter(id__in=like_id)
         serializer = UserSerializer(users, many=True)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
 
+    post_params = openapi.Schema(
+        type=openapi.TYPE_OBJECT, 
+        properties={
+            'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='장소의 id값'),
+        }
+    )   
+    @swagger_auto_schema(operation_id='api_places_place_like_post',
+                        request_body=post_params,
+                        responses={200:'success'})
     def post(self, request):
+        '''
+            좋아요 및 좋아요 취소를 수행하는 api
+        '''
         id = request.data['id']
         place = get_object_or_404(Place, pk=id)
         if request.user.is_authenticated:
@@ -238,14 +288,18 @@ class PlaceLikeView(viewsets.ModelViewSet):
                 place.place_likeuser_set.remove(profile)
                 place.place_like_cnt -= 1
                 place.save()
-                return Response(status.HTTP_204_NO_CONTENT)
+                return Response({
+                    "status" : "success",
+                },status=status.HTTP_200_OK)
             else:
                 place.place_likeuser_set.add(profile)
                 place.place_like_cnt += 1
                 place.save()
-                return Response(status.HTTP_201_CREATED)
+                return Response({
+                    "status" : "success",
+                },status=status.HTTP_200_OK)
         else:
-            return Response(status.HTTP_204_NO_CONTENT)
-
-    
-    
+            return Response({
+            'status': 'error',
+            'message' : 'User is not authenticated'
+        }, status=status.HTTP_401_UNAUTHORIZED)

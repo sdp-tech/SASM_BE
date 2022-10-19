@@ -188,7 +188,7 @@ class LogoutView(GenericAPIView):
         serializer.save()
         response = {
             'msg': 'success'
-           }
+            }
         return Response(response, status=status.HTTP_200_OK)
 
 @api_view(["POST"])

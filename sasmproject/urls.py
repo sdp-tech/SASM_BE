@@ -3,7 +3,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import permissions
-
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -15,7 +14,9 @@ urlpatterns = [
     path('users/', include('allauth.urls')),
     path('places/', include('places.urls')),
     path('sdp_admin/', include('sdp_admin.urls')),
+    path('silk/', include('silk.urls', namespace='silk')),
 ]
+
 # API 문서에 작성될 소개 내용
 schema_view = get_schema_view(
     openapi.Info(
@@ -24,7 +25,7 @@ schema_view = get_schema_view(
         description='''
         안녕하세요. SASM의 OPEN API 문서 페이지 입니다.
 
-        작성자 : ...
+        작성자 : SDP_TECH 팀
         ''',
         terms_of_service='',
         contact=openapi.Contact(name='SDP_OFFICIAL', email='sdpygl@gmail.com'),
@@ -45,11 +46,7 @@ urlpatterns += [
          cache_timeout=0), name='schema-redoc'),
 ]
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL,
-                          document_root=settings.MEDIA_ROOT)
-
     import debug_toolbar
-
     urlpatterns += [
         path("__debug__/", include(debug_toolbar.urls)),
     ]
