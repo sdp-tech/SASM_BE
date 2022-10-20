@@ -1,17 +1,19 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 from .views.stories_views import StoryViewSet
 from .views.places_views import PlaceViewSet, SNSTypeViewSet, PlacesPhotoViewSet,SNSUrlViewSet
 
 app_name = 'sdp_admin'
 
-router = DefaultRouter()
-router.register(r'stories', StoryViewSet, basename="stories")
-router.register(r'places', PlaceViewSet, basename="places")
-router.register(r'snstypes', SNSTypeViewSet, basename="snstypes")
-
 urlpatterns = [
-    path('', include(router.urls)),
+    path('places/save_place/',PlaceViewSet.as_view({'post':'save_place'}),name='save_place'),
+    path('places/update_place/',PlaceViewSet.as_view({'put':'update_place'}),name='update_place'),
+    path('places/<int:pk>/',PlaceViewSet.as_view({'get':'retrieve'}),name='placedetail'),
+    path('places/check_name_overlap/',PlaceViewSet.as_view({'get':'check_name_overlap'}), name='checkoverlap'),
     path('placephoto/<int:pk>/',PlacesPhotoViewSet.as_view({'get':'get'}),name='placephoto'),
     path('snsurl/<int:pk>/',SNSUrlViewSet.as_view({'get':'get'}),name='snsurl'),
+    path('snstypes/',SNSTypeViewSet.as_view({'get':'list'}),name='snstype_list'),
+    path('stories/photos/',StoryViewSet.as_view({'post':'photos'}),name='story_photo'),
+    path('stories/<int:pk>/',StoryViewSet.as_view({'get':'retrieve'}),name='storydetail'),
+    path('stories/',StoryViewSet.as_view({'post':'create'}),name='create_story'),
+    path('stories/<int:pk>/',StoryViewSet.as_view({'put':'update'}),name='update_story'),
 ]

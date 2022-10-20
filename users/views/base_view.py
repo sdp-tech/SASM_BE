@@ -1,6 +1,7 @@
 from functools import partial
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from django.utils.decorators import method_decorator
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response 
@@ -9,15 +10,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, GenericAPIView
 from rest_framework.pagination import PageNumberPagination
+from drf_yasg.utils import swagger_auto_schema
 from places.serializers import PlaceSerializer
 from stories.serializers import StoryListSerializer
 from ..models import User
 from places.models import Place
 from stories.models import Story
 from users.serializers import UserSerializer, UserLoginSerializer,EmailFindSerializer,RepetitionCheckSerializer, UserLogoutSerializer
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from django.utils.decorators import method_decorator
+from sasmproject.swagger import param_filter
 
 #serializer에 partial=True를 주기위한 Mixin
 class SetPartialMixin:
@@ -39,10 +39,8 @@ class UserPlaceLikeView(viewsets.ModelViewSet):
         IsAuthenticated,
     ]
     pagination_class=PlaceLikePagination
-    filter = openapi.Parameter('filter', in_=openapi.IN_QUERY, description='유저가 선택한 필터링 값',
-                                type=openapi.TYPE_ARRAY,items=openapi.Items(type=openapi.TYPE_STRING),required=False)
     
-    @swagger_auto_schema(operation_id='api_users_like_place_get', manual_parameters=[filter])
+    @swagger_auto_schema(operation_id='api_users_like_place_get', manual_parameters=[param_filter])
     def get(self,request):
         user = request.user
         #역참조 이용
@@ -64,7 +62,6 @@ class UserPlaceLikeView(viewsets.ModelViewSet):
             serializer = self.get_paginated_response(self.get_serializer(page, many=True,context={'request': request,"left":0,"right":0}).data) 
         else:
             serializer = self.get_serializer(page, many=True, context={'request': request,"left":0,"right":0})
-        print(serializer.data)
         return Response({
             'status': 'success',
             'data': serializer.data,
@@ -86,10 +83,7 @@ class UserStoryLikeView(viewsets.ModelViewSet):
     ]
     pagination_class=StoryLikePagination
     
-    filter = openapi.Parameter('filter', in_=openapi.IN_QUERY, description='유저가 선택한 필터링 값',
-                                type=openapi.TYPE_ARRAY,items=openapi.Items(type=openapi.TYPE_STRING),required=False)
-    
-    @swagger_auto_schema(operation_id='api_users_like_story_get', manual_parameters=[filter])
+    @swagger_auto_schema(operation_id='api_users_like_story_get', manual_parameters=[param_filter])
     def get(self,request):
         user = request.user
         #역참조 이용
@@ -118,9 +112,7 @@ class UserStoryLikeView(viewsets.ModelViewSet):
 
 #SetPartialMixin 상속
 @method_decorator(name='post', decorator=swagger_auto_schema(
-    operation_id='api_users_signup_post', security=[]
-))
-#@swagger_auto_schema(operation_id='api_users_signup_post', security=[])
+    operation_id='api_users_signup_post', security=[]))
 class SignupView(SetPartialMixin,CreateAPIView):
     '''
     회원가입을 수행하는 API
@@ -131,6 +123,11 @@ class SignupView(SetPartialMixin,CreateAPIView):
     permission_classes = [
         AllowAny, 
     ]
+    def create(self, request, *args, **kwargs):
+        super().create(request, *args, **kwargs)
+        return Response({
+            'status': 'Success',
+            },status=status.HTTP_200_OK)
     
 class MeView(APIView):
     '''
@@ -162,9 +159,8 @@ class MeView(APIView):
                 }, status=status.HTTP_200_OK)
         else:
             return Response({
-                    'status': 'error',
-                    'message': serializer.errors,
-                    'code': 400
+                    'status': 'fail',
+                    'data': serializer.errors,
                 }, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
@@ -222,9 +218,8 @@ class LoginView(GenericAPIView):
                     }, status=status.HTTP_200_OK)
         else:
             return Response({
-                    'status': 'error',
+                    'status': 'fail',
                     'message': serializer.errors,
-                    'code': 400
                 }, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(GenericAPIView):
@@ -256,9 +251,8 @@ def findemail(request):
                     'data': data,
                 }, status=status.HTTP_200_OK)
     return Response({
-                    'status': 'error',
-                    'message': serializer.errors,
-                    'code': 400
+                    'status': 'fail',
+                    'data': serializer.errors,
                 }, status=status.HTTP_400_BAD_REQUEST3)
 
 @api_view(["POST"])
@@ -285,7 +279,6 @@ def rep_check(request):
                     'data': data,
                 }, status=status.HTTP_200_OK)
     return Response({
-                    'status': 'error',
-                    'message': serializer.errors,
-                    'code': 400
+                    'status': 'fail',
+                    'data': serializer.errors,
                 }, status=status.HTTP_400_BAD_REQUEST)

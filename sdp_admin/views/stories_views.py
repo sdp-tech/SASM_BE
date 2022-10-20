@@ -1,9 +1,6 @@
 import io
 import time
-from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
 from django.core.files.images import ImageFile
-from django.http import JsonResponse
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
@@ -11,10 +8,11 @@ from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView
+from drf_yasg.utils import swagger_auto_schema
 from stories.models import StoryPhoto, Story
 from ..serializers.stories_serializers import StoryPhotoSerializer, StorySerializer
 from core.permissions import IsSdpStaff
-
+from sasmproject.swagger import StoryViewSet_post_params
 
 # TODO: stories/views.py와 코드 중복, core로 빼기
 class StoryPagination(PageNumberPagination):
@@ -33,15 +31,38 @@ class StoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsSdpStaff]
     pagination_class = StoryPagination
 
+    @swagger_auto_schema(operation_id='api_sdp_admin_stories_get')
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        return Response({
+            'status': 'Success',
+            'data': response.data,
+            },status=status.HTTP_200_OK)
+    
+    @swagger_auto_schema(operation_id='api_sdp_admin_stories_post')
+    def create(self, request, *args, **kwargs):
+        super().create(request, *args, **kwargs)
+        return Response({
+            'status': 'Success',
+            },status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_sdp_admin_stories_put')
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        return Response({
+            'status': 'Success',
+            },status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_sdp_admin_stories_photo_post',request_body=StoryViewSet_post_params)
     @action(detail=False, methods=['post'])
     def photos(self, request):
         file_obj = request.FILES['file']
         ext = file_obj.name.split(".")[-1]
 
         if ext not in ["jpg", "png", "gif", "jpeg", ]:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Wrong file format'
+            return Response({
+                'status': 'fail',
+                'data': {'photo' : 'Wrong file format'},
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -55,14 +76,15 @@ class StoryViewSet(viewsets.ModelViewSet):
             photo = StoryPhoto(caption=caption, image=image)
             photo.save()
         except:
-            return JsonResponse({
+            return Response({
                 'status': 'error',
-                'message': 'Unknown'
+                'message': 'Unknown',
+                'code' : 400,
             }, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = StoryPhotoSerializer(photo)
         print(serializer.data['image'])
-        return JsonResponse({
+        return Response({
             'status': 'success',
             'data': {'location': serializer.data['image']},
         }, status=status.HTTP_201_CREATED)
