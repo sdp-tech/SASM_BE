@@ -72,6 +72,7 @@ THIRD_APPS = [
     'drf_yasg',
     'storages',
     'silk',
+    'sentry_sdk',
 ]
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_APPS
 
