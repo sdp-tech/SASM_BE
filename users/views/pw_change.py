@@ -71,13 +71,11 @@ class PwResetEmailSendView(APIView):
                 print('전송완료')
                 return Response({
                         'status': 'success',
-                        'data': user.email+'이메일 전송이 완료되었습니다',
                     }, status=status.HTTP_200_OK)
             print(serializer.errors)
             return Response({
                         'status': 'error',
-                        'message': 'User does not exist',
-                        'code': 404
+                        'data': serializer.errors,
                     }, status=status.HTTP_404_NOT_FOUND)
         except( ValueError, OverflowError, User.DoesNotExist):
             user = None
@@ -89,7 +87,6 @@ class PwResetEmailSendView(APIView):
                     }, status=status.HTTP_400_BAD_REQUEST)
 
 #비밀번호 재설정
-
 class PasswordChangeView(viewsets.ModelViewSet):
     
     queryset = User.objects.all()
@@ -125,17 +122,15 @@ class PasswordChangeView(viewsets.ModelViewSet):
                         'status': 'success',
                     }, status=status.HTTP_200_OK)
                 return Response({
-                        'status': 'error',
-                        'message': 'Password does not exist',
-                        'code': 404
+                        'status': 'fail',
+                        'data': {'password':'Password does not exist'},
                     }, status=status.HTTP_404_NOT_FOUND)
             return Response({
                         'status': 'error',
-                        'message': 'Code does not match with database',
+                        'message': {'code':'Code does not match with database'},
                         'code': 404
                     }, status=status.HTTP_404_NOT_FOUND)
         return Response({
                         'status': 'error',
-                        'message': serializer.errors,
-                        'code': 400
+                        'data': serializer.errors,
                     }, status=status.HTTP_400_BAD_REQUEST)

@@ -2,31 +2,26 @@ import io
 from re import X
 from functools import partial
 from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
 from django.core.files.images import ImageFile
-from django.http import JsonResponse
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from silk.profiling.profiler import silk_profile
-from places.models import SNSUrl, SNSType, PlacePhoto, Place, get_upload_path
+from drf_yasg.utils import swagger_auto_schema
+from places.models import SNSUrl, SNSType, PlacePhoto, Place
 from ..serializers.places_serializers import PlacesAdminSerializer, PlacePhotoAdminSerializer, SNSTypeAdminSerializer, SNSUrlAdminSerializer
 from core.permissions import IsSdpStaff
 from places.views import addr_to_lat_lon
-
+from sasmproject.swagger import SAMPLE_RESP, param_place_name, param_pk, OVERLAP_RESP
 
 class SetPartialMixin:
     def get_serializer_class(self, *args, **kwargs):
         serializer_class = super().get_serializer_class(*args, **kwargs)
         return partial(serializer_class, partial=True)
 
-
 class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
-    """
-    모든 장소를 리스트, 또는 새로운 장소 생성
-    장소 가져오기, 업데이트 또는 삭제
-    """
+
     aws_access_key_id = getattr(settings, 'AWS_ACCESS_KEY_ID')
     aws_secret_access_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY')
     kakao_rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
@@ -35,9 +30,13 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
     serializer_class = PlacesAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
 
-    @silk_profile(name='save_place')
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_save_place_post',request_body=PlacesAdminSerializer,
+                        responses=SAMPLE_RESP)
     @action(detail=False, methods=['post'])
     def save_place(self, request):
+        """
+            장소 생성
+        """
         place_info = request.data
         addr = place_info['address']
         place_info['longitude'], place_info['latitude'] = addr_to_lat_lon(addr)
@@ -86,9 +85,9 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
                 ext = pic.name.split(".")[-1]
 
                 if ext not in ["jpg", "png", "gif", "jpeg", ]:
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': 'Wrong file format'
+                    return Response({
+                        'status': 'fail',
+                        'data': 'Wrong file format',
                     }, status=status.HTTP_400_BAD_REQUEST)
 
                 try:
@@ -99,22 +98,29 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
                     photo.save()
 
                 except:
-                    print()
-                    return JsonResponse({
+                    return Response({
                         'status': 'error',
-                        'message': 'Unknown'
+                        'message': 'Unknown',
+                        'code' : 400,
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-            return JsonResponse({
+            return Response({
                 'status': 'success',
-                'data': serializer.data,
             }, status=status.HTTP_201_CREATED)
 
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'status' : 'fail',
+                'data' : serializer.errors,
+            },status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_update_place_put',request_body=PlacesAdminSerializer,
+                        responses=SAMPLE_RESP)
     @action(detail=False, methods=['put'])
     def update_place(self, request):
+        """
+            장소 수정
+        """
         place_info = request.data.copy()
         place_id = place_info['id']
         place = Place.objects.get(id=place_id)
@@ -148,7 +154,7 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
                 del place_info[str(i)]
 
         serializer = PlacesAdminSerializer(instance=place, data=place_info, partial=True)
-       
+    
         if serializer.is_valid():
             created_place = serializer.save()
             
@@ -192,9 +198,9 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
                     ext = value.name.split(".")[-1]
 
                     if ext not in ["jpg", "png", "gif", "jpeg",]:
-                        return JsonResponse({
-                            'status': 'error',
-                            'message': 'Wrong file format'
+                        return Response({
+                            'status': 'fail',
+                            'data': 'Wrong file format',
                         }, status=status.HTTP_400_BAD_REQUEST)
 
                     try:
@@ -208,19 +214,25 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
 
                         photo.save()
                     except:
-                        return JsonResponse({
+                        return Response({
                             'status': 'error',
-                            'message': 'Unknown'
+                            'message': 'Unknown',
+                            'code' : 400,
                         }, status=status.HTTP_400_BAD_REQUEST)
 
-            return JsonResponse({
+            return Response({
                 'status': 'success',
                 'data': serializer.data,
-            }, status=status.HTTP_201_CREATED)
+            }, status=status.HTTP_200_OK)
 
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'status' : 'fail',
+                'data' : serializer.errors,
+            },status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_check_name_overlap_get',manual_parameters=[param_place_name],
+                        responses=OVERLAP_RESP)
     @action(detail=False, methods=['get'])
     def check_name_overlap(self, request):
         try:
@@ -228,14 +240,15 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             print(place_name)
             overlap = Place.objects.filter(place_name=place_name).exists()
             print(overlap)
-            return JsonResponse({
+            return Response({
                 'status': 'success',
                 'data': {'overlap': overlap},
             }, status=status.HTTP_200_OK)
         except:
-            return JsonResponse({
+            return Response({
                 'status': 'error',
-                'message': 'Unknown'
+                'message': 'Unknown',
+                'code' : 400,
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class PlacesPhotoViewSet(viewsets.ModelViewSet):
@@ -243,9 +256,13 @@ class PlacesPhotoViewSet(viewsets.ModelViewSet):
     serializer_class = PlacePhotoAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
 
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_placephoto_pk_get',manual_parameters=[param_pk])
     def get(self,request,pk):
         photo = PlacePhoto.objects.filter(place_id=pk)
-        return Response(self.get_serializer(photo,many=True).data)
+        return Response({
+                'status': 'success',
+                'data': self.get_serializer(photo,many=True).data,
+            }, status=status.HTTP_200_OK)
 
 class SNSTypeViewSet(viewsets.ModelViewSet):
     """
@@ -255,6 +272,14 @@ class SNSTypeViewSet(viewsets.ModelViewSet):
     queryset = SNSType.objects.all()
     serializer_class = SNSTypeAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
+    
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_snstype_get')
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        return Response({
+            'status': 'Success',
+            'data': response.data,
+            },status=status.HTTP_200_OK) 
 
 class SNSUrlViewSet(viewsets.ModelViewSet):
     """
@@ -264,8 +289,12 @@ class SNSUrlViewSet(viewsets.ModelViewSet):
     queryset = SNSUrl.objects.all()
     serializer_class = SNSUrlAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
-    
+
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_snsurl_get',manual_parameters=[param_pk])
     def get(self,request,pk):
         snsurl = SNSUrl.objects.filter(place_id=pk)
-        return Response(self.get_serializer(snsurl,many=True).data)
+        return Response({
+                'status': 'success',
+                'data': self.get_serializer(snsurl,many=True).data,
+            }, status=status.HTTP_200_OK)
     
