@@ -1,8 +1,8 @@
-FROM python:3.10
+FROM python:3.9
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 # pull official base image
-FROM python:3.10-slim-buster as builder
+FROM python:3.9-slim-buster as builder
 # 의존성 패키지 설치 및 삭제
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get -y install default-libmysqlclient-dev
