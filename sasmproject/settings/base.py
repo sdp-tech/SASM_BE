@@ -36,7 +36,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1','localhost','3.38.89.18']
 
-CORS_ORIGIN_WHITELIST = ["http://localhost:3000"]
 # Application definition
 
 DJANGO_APPS = [
@@ -81,8 +80,8 @@ SITE_ID = 1
 AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
-    'silk.middleware.SilkyMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'silk.middleware.SilkyMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -168,7 +167,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 REST_USE_JWT = True
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
     'ROTATE_REFRESH_TOKENS': False, # true면 토큰 갱신 시 refresh도 같이 갱신
     'BLACKLIST_AFTER_ROTATION': True,
