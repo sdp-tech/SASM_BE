@@ -19,11 +19,178 @@ from .models import Place, PlacePhoto, SNSType, SNSUrl
 from users.models import User
 from places.serializers import PlaceSerializer,PlaceDetailSerializer, MapMarkerSerializer
 from users.serializers import UserSerializer
+from sasmproject.swagger import param_search,param_filter,param_id,PlaceLikeView_post_params
 # Create your views here.
 aws_access_key_id = getattr(settings,'AWS_ACCESS_KEY_ID')
 aws_secret_access_key = getattr(settings,'AWS_SECRET_ACCESS_KEY')
 kakao_rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
-#google_rest_api_key = getattr(settings, 'GOOGLE')
+
+class MapMarkerView(viewsets.ModelViewSet):
+    '''
+        map marker 표시를 위해 모든 장소를 주는 API
+    '''
+    queryset = Place.objects.all()
+    serializer_class = MapMarkerSerializer
+    permission_classes=[
+        AllowAny,
+    ]
+    @swagger_auto_schema(operation_id='api_places_map_info_get',security=[])
+    def get(self, request):
+        serializer = MapMarkerSerializer(self.queryset, many=True)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+    
+class BasicPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+
+class PlaceListView(viewsets.ModelViewSet):
+    '''
+        place의 list의 정보를 주는 API
+    '''
+    queryset = Place.objects.all()
+    serializer_class = PlaceSerializer
+    permission_classes=[
+        AllowAny,
+    ]
+    pagination_class=BasicPagination
+    
+    @swagger_auto_schema(operation_id='api_places_place_search_get',
+                        manual_parameters=[param_search,param_filter],security=[])
+    def get(self, request):
+        '''
+        search,filter를 적용한 장소 리스트를 distance로 정렬하여 반환
+        '''
+        qs = self.get_queryset()
+        search = request.GET.get('search','')
+        
+        # search 및 filtering
+        search_list = qs.filter(Q(place_name__icontains=search))
+        array = request.query_params.getlist('filter[]', '배열')
+        query = None 
+        if array != '배열':
+            for a in array: 
+                if query is None: 
+                    query = Q(category=a) 
+                else: 
+                    query = query | Q(category=a)
+            place = search_list.filter(query)
+            serializer = self.get_serializer(
+                place,
+                many=True,
+                context={
+                    "left":request.query_params.get("left"),
+                    "right":request.query_params.get("right"),
+                    "request":request
+                }
+            )
+            
+        else:
+            serializer = self.get_serializer(
+                search_list,
+                many=True,
+                context={
+                    "left":request.query_params.get("left"),
+                    "right":request.query_params.get("right"),
+                    "request":request
+                }
+            )
+        
+        # 검색 결과를 바탕으로 거리순 정렬 후 pagination
+        serializer_data = sorted(
+            serializer.data, key=lambda k: float(k['distance']))
+        page = self.paginate_queryset(serializer_data)
+    
+        if page is not None:
+            serializer = self.get_paginated_response(page)
+        else:
+            serializer = self.get_serializer(page, many=True)
+            
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+    
+class PlaceDetailView(viewsets.ModelViewSet):
+    '''
+        place의 detail 정보를 주는 API
+    '''
+    queryset = Place.objects.all()
+    serializer_class = PlaceDetailSerializer
+    permission_classes=[
+        AllowAny,
+    ]
+    @swagger_auto_schema(operation_id='api_places_place_detail_get',
+                        manual_parameters=[param_id],security=[])
+    @silk_profile(name='place_detail')
+    def get(self,request):
+        '''
+            Place의 detail한 정보를 주는 api
+        '''
+        pk = request.GET.get('id', '')
+        place = Place.objects.get(id=pk)
+        return Response({
+            'status': 'success',
+            'data': PlaceDetailSerializer(place,context={'request': request}).data,
+        }, status=status.HTTP_200_OK)
+
+class PlaceLikeView(viewsets.ModelViewSet):
+    serializer_class=PlaceSerializer
+    queryset = Place.objects.all()
+    permission_classes=[
+        IsAuthenticated,
+    ]
+
+    @swagger_auto_schema(operation_id='api_places_place_like_user_get')
+    def get(self,request,pk):
+        '''
+            장소의 좋아요한 유저 list를 반환하는 api
+        '''
+        place = get_object_or_404(Place, pk=pk)
+        like_id = place.place_likeuser_set.all()
+        users = User.objects.filter(id__in=like_id)
+        serializer = UserSerializer(users, many=True)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+  
+    @swagger_auto_schema(operation_id='api_places_place_like_post',
+                        request_body=PlaceLikeView_post_params,
+                        responses={200:'success'})
+    def post(self, request):
+        '''
+            좋아요 및 좋아요 취소를 수행하는 api
+        '''
+        id = request.data['id']
+        place = get_object_or_404(Place, pk=id)
+        if request.user.is_authenticated:
+            user = request.user
+            profile = User.objects.get(email=user)
+            check_like = place.place_likeuser_set.filter(pk=profile.pk)
+
+            if check_like.exists():
+                place.place_likeuser_set.remove(profile)
+                place.place_like_cnt -= 1
+                place.save()
+                return Response({
+                    "status" : "success",
+                },status=status.HTTP_200_OK)
+            else:
+                place.place_likeuser_set.add(profile)
+                place.place_like_cnt += 1
+                place.save()
+                return Response({
+                    "status" : "success",
+                },status=status.HTTP_200_OK)
+        else:
+            return Response({
+            'status': 'fail',
+            'data' : { "user" : "user is not authenticated"},
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
 def get_s3(place,num):
     try:
         s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id,
@@ -40,7 +207,6 @@ def get_s3(place,num):
         return ext
     except Exception as e:
         print('에러',e)
-
 
 def addr_to_lat_lon(addr):
     url = 'https://dapi.kakao.com/v2/local/search/address.json?query={address}'.format(address=addr)
@@ -122,182 +288,3 @@ def save_place_db(request):
             else:
                 break
     return Response({'msg': 'success'})
-
-class MapMarkerView(viewsets.ModelViewSet):
-    '''
-        map marker 표시를 위해 모든 장소를 주는 API
-    '''
-    queryset = Place.objects.all()
-    serializer_class = MapMarkerSerializer
-    permission_classes=[
-        AllowAny,
-    ]
-    @swagger_auto_schema(operation_id='api_places_map_info_get',security=[])
-    def get(self, request):
-        serializer = MapMarkerSerializer(self.queryset, many=True)
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-    
-class BasicPagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = 'page_size'
-
-class PlaceListView(viewsets.ModelViewSet):
-    '''
-        place의 list의 정보를 주는 API
-    '''
-    queryset = Place.objects.all()
-    serializer_class = PlaceSerializer
-    permission_classes=[
-        AllowAny,
-    ]
-    search = openapi.Parameter('search', in_=openapi.IN_QUERY, description='유저가 입력한 검색 값',
-                                type=openapi.TYPE_STRING,required=False)
-    filter = openapi.Parameter('filter', in_=openapi.IN_QUERY, description='유저가 선택한 필터링 값',
-                                type=openapi.TYPE_ARRAY,items=openapi.Items(type=openapi.TYPE_STRING),required=False)
-    pagination_class=BasicPagination
-
-    @swagger_auto_schema(operation_id='api_places_place_search_get',
-                        manual_parameters=[search,filter],security=[])
-    def get(self, request):
-        '''
-        search,filter를 적용한 장소 리스트를 distance로 정렬하여 반환
-        '''
-        qs = self.get_queryset()
-        search = request.GET.get('search','')
-        
-        # search 및 filtering
-        search_list = qs.filter(Q(place_name__icontains=search))
-        array = request.query_params.getlist('filter[]', '배열')
-        query = None 
-        if array != '배열':
-            for a in array: 
-                if query is None: 
-                    query = Q(category=a) 
-                else: 
-                    query = query | Q(category=a)
-            place = search_list.filter(query)
-            serializer = self.get_serializer(
-                place,
-                many=True,
-                context={
-                    "left":request.query_params.get("left"),
-                    "right":request.query_params.get("right"),
-                    "request":request
-                }
-            )
-            
-        else:
-            serializer = self.get_serializer(
-                search_list,
-                many=True,
-                context={
-                    "left":request.query_params.get("left"),
-                    "right":request.query_params.get("right"),
-                    "request":request
-                }
-            )
-        
-        # 검색 결과를 바탕으로 거리순 정렬 후 pagination
-        serializer_data = sorted(
-            serializer.data, key=lambda k: float(k['distance']))
-        page = self.paginate_queryset(serializer_data)
-    
-        if page is not None:
-            serializer = self.get_paginated_response(page)
-        else:
-            serializer = self.get_serializer(page, many=True)
-            
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-    
-class PlaceDetailView(viewsets.ModelViewSet):
-    '''
-        place의 detail 정보를 주는 API
-    '''
-    queryset = Place.objects.all()
-    serializer_class = PlaceDetailSerializer
-    permission_classes=[
-        AllowAny,
-    ]
-    id = openapi.Parameter('id', in_=openapi.IN_QUERY, description='장소의 id ',
-                                type=openapi.TYPE_INTEGER,required=True)
-    @swagger_auto_schema(operation_id='api_places_place_detail_get',
-                        manual_parameters=[id],security=[])
-    @silk_profile(name='place_detail')
-    def get(self,request):
-        '''
-            Place의 detail한 정보를 주는 api
-        '''
-        pk = request.GET.get('id', '')
-        place = Place.objects.get(id=pk)
-        return Response({
-            'status': 'success',
-            'data': PlaceDetailSerializer(place,context={'request': request}).data,
-        }, status=status.HTTP_200_OK)
-
-class PlaceLikeView(viewsets.ModelViewSet):
-    serializer_class=PlaceSerializer
-    queryset = Place.objects.all()
-    permission_classes=[
-        IsAuthenticated,
-    ]
-
-    @swagger_auto_schema(operation_id='api_places_place_like_user_get')
-    def get(self,request,pk):
-        '''
-            장소의 좋아요한 유저 list를 반환하는 api
-        '''
-        place = get_object_or_404(Place, pk=pk)
-        like_id = place.place_likeuser_set.all()
-        users = User.objects.filter(id__in=like_id)
-        serializer = UserSerializer(users, many=True)
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-
-    post_params = openapi.Schema(
-        type=openapi.TYPE_OBJECT, 
-        properties={
-            'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='장소의 id값'),
-        }
-    )   
-    @swagger_auto_schema(operation_id='api_places_place_like_post',
-                        request_body=post_params,
-                        responses={200:'success'})
-    def post(self, request):
-        '''
-            좋아요 및 좋아요 취소를 수행하는 api
-        '''
-        id = request.data['id']
-        place = get_object_or_404(Place, pk=id)
-        if request.user.is_authenticated:
-            user = request.user
-            profile = User.objects.get(email=user)
-            check_like = place.place_likeuser_set.filter(pk=profile.pk)
-
-            if check_like.exists():
-                place.place_likeuser_set.remove(profile)
-                place.place_like_cnt -= 1
-                place.save()
-                return Response({
-                    "status" : "success",
-                },status=status.HTTP_200_OK)
-            else:
-                place.place_likeuser_set.add(profile)
-                place.place_like_cnt += 1
-                place.save()
-                return Response({
-                    "status" : "success",
-                },status=status.HTTP_200_OK)
-        else:
-            return Response({
-            'status': 'error',
-            'message' : 'User is not authenticated',
-            'code' : 401,
-        }, status=status.HTTP_401_UNAUTHORIZED)
