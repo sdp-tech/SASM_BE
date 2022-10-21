@@ -5,9 +5,11 @@ ENV PYTHONUNBUFFERED 1
 FROM python:3.9-slim-buster as builder
 # 의존성 패키지 설치 및 삭제
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install gcc
-RUN apt-get -y install default-libmysqlclient-dev
-RUN pip3 install mysqlclient
+apt-get install libmysqlclient-dev -y
+apt-get install mysql-client-core-5.6
+apt-get install python3.10-dev -y
+apt-get install gcc -y
+pip install mysqlclient
 RUN mkdir /srv/SASM_BE
 ADD . /srv/SASM_BE
 
