@@ -26,6 +26,7 @@ djangorestframework-simplejwt==5.1.0
 drf-yasg==1.21.3
 et-xmlfile==1.1.0
 gprof2dot==2022.7.29
+gunicorn==20.1.0
 haversine==2.6.0
 idna==3.3
 inflection==0.5.1
