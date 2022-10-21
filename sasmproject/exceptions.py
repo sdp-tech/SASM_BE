@@ -13,10 +13,14 @@ def custom_exception_handler(exc,context):
     response = exception_handler(exc,context)
     if response is not None:
         response.data['status'] = 'error'
-        response.data['message'] = response.data['detail']
-        response.data['code'] = response.status_code
-        del response.data['detail']
-        return response
+        try:
+            if (response.data['detail']) :
+                response.data['message'] = response.data['detail']
+                del response.data['detail']
+                response.data['code'] = response.status_code
+                return response 
+        except:
+            return response
     else:
         STATUS_RSP_INTERNAL_ERROR['message'] = str(exc)
         STATUS_RSP_INTERNAL_ERROR['code'] = 500
