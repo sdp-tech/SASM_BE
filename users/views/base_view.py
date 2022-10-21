@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, GenericAPIView
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from places.serializers import PlaceSerializer
 from stories.serializers import StoryListSerializer
 from ..models import User

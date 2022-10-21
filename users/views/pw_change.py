@@ -74,7 +74,7 @@ class PwResetEmailSendView(APIView):
                     }, status=status.HTTP_200_OK)
             print(serializer.errors)
             return Response({
-                        'status': 'error',
+                        'status': 'fail',
                         'data': serializer.errors,
                     }, status=status.HTTP_404_NOT_FOUND)
         except( ValueError, OverflowError, User.DoesNotExist):
@@ -131,6 +131,6 @@ class PasswordChangeView(viewsets.ModelViewSet):
                         'code': 404
                     }, status=status.HTTP_404_NOT_FOUND)
         return Response({
-                        'status': 'error',
+                        'status': 'fail',
                         'data': serializer.errors,
                     }, status=status.HTTP_400_BAD_REQUEST)
