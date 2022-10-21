@@ -5,14 +5,8 @@ ENV PYTHONUNBUFFERED 1
 FROM python:3.10-slim-buster as builder
 # 의존성 패키지 설치 및 삭제
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install software-properties-common -y
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get install python 3.10
-RUN apt-get install python3.10-dev build-essential
-RUN apt-get install libssl1.1
-RUN apt-get install libssl1.1=1.1.1f-1ubuntu2
-RUN apt-get install libssl-dev
-RUN apt-get install libmysqlclient-dev
+RUN apt-get install default-libmysqlclient-dev
+RUN apt-get install build-essential
 RUN pip3 install mysqlclient
 RUN mkdir /srv/SASM_BE
 ADD . /srv/SASM_BE
