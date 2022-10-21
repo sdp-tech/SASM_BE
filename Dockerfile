@@ -4,7 +4,7 @@ ENV PYTHONUNBUFFERED 1
 # pull official base image
 FROM python:3.10-slim-buster as builder
 # 의존성 패키지 설치 및 삭제
-RUN apt-get update && apt-get add python3 python3-dev mariadb-dev build-base && pip3 install mysqlclient && apt-get del python3-dev mariadb-dev build-base
+RUN apt-get install python3.10-dev default-libmysqlclient-dev build-essential
 RUN mkdir /srv/SASM_BE
 ADD . /srv/SASM_BE
 
