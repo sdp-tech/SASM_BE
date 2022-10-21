@@ -4,7 +4,8 @@ ENV PYTHONUNBUFFERED 1
 # pull official base image
 FROM python:3.10-slim-buster as builder
 # 의존성 패키지 설치 및 삭제
-RUN apt-get update && apt-get install python3 python3-dev build-essential
+RUN apt-get update
+RUN apt-get install python3 python3-dev build-essential
 RUN apt-get install libssl1.1
 RUN apt-get install libssl1.1=1.1.1f-1ubuntu2
 RUN apt-get install libssl-dev
