@@ -39,5 +39,5 @@ jobs: # 아래의 jobs를 수행
         username: ubuntu
         key: ${{ secrets.KEY }}
         script: |
-          cat "${{ secrets.BE_SECRET }}" > /home/ubuntu/SASM_BE/secrets.json
+          echo "${{ secrets.BE_SECRET }}" >> /home/ubuntu/SASM_BE/secrets.json
           sh /home/ubuntu/SASM_BE/config/scripts/deploy.sh
