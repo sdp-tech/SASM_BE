@@ -4,9 +4,9 @@ FROM python:3.10-alpine as builder
 RUN apk update && apk add python3 python3-dev mariadb-dev build-base && pip3 install mysqlclient && apk del python3-dev mariadb-dev build-base
 RUN apk add --no-cache gcc musl-dev python3-dev
 RUN pip install ruamel.yaml.clib
-RUN mkdir /home/ubuntu/SASM_BE
-WORKDIR /home/ubuntu/SASM_BE
-COPY requirements.txt /home/ubuntu/SASM_BE/requirements.txt
+RUN mkdir /srv/SASM_BE
+WORKDIR /srv/SASM_BE
+COPY requirements.txt /srv/SASM_BE/requirements.txt
 RUN python3 -m pip install --upgrade pip
 RUN pip install -r requirements.txt
-COPY . /home/ubuntu/SASM_BE/
+COPY . /srv/SASM_BE/
