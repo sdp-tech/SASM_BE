@@ -20,7 +20,9 @@ jobs: # 아래의 jobs를 수행
         host: ${{ secrets.HOST }}
         username: ubuntu
         key: ${{ secrets.KEY }}
-        script: sudo mkdir -p /srv/SASM_BE
+        script: |
+          sudo su
+          mkdir -p /srv/SASM_BE
 
     - name: copy source via ssh key # 4. ssh key로 현재 푸시된 소스를 서버에 복사 (rsync로 github runners와 ec2 동기화)
       uses: burnett01/rsync-deployments@4.1
