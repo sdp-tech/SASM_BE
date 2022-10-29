@@ -28,7 +28,7 @@ jobs: # 아래의 jobs를 수행
       uses: burnett01/rsync-deployments@4.1
       with:
         switches: -avzr --delete
-        remote_path: /srv/SASM_BE/
+        remote_path: /srv/SASM_BE
         remote_host: ${{ secrets.HOST }}
         remote_user: ubuntu
         remote_key: ${{ secrets.KEY }}
