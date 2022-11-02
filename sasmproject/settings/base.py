@@ -186,7 +186,7 @@ EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = secrets['EMAIL_HOST_USER']
 
 #corheaders
-CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000','http://127.0.0.1:8000')
+CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000','http://127.0.0.1:8000','https://api.sasmbe.com','https://main.d2hps9gsgzjxq.amplifyapp.com')
 CORS_ALLOW_CREDENTIALS = True
 
 #aws s3
