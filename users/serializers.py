@@ -72,6 +72,7 @@ class UserSerializer(serializers.ModelSerializer):
         print(html_content)
         mail_subject = '[SDP] 회원가입 인증 메일입니다'
         to_email = user.email
+        from_email = 'sdpygl@gmail.com'
         msg = EmailMultiAlternatives(
             mail_subject, plaintext, from_email, [to_email])
         msg.attach_alternative(html_content, "text/html")
