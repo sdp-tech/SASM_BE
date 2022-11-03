@@ -269,7 +269,7 @@ def rep_check(request):
             if User.objects.filter(email=serializer.data['email']).exists():
                 data = '존재하는 이메일입니다',
             else :
-                data = '존재하는 이메일입니다',
+                data = '존재하지 않는 이메일입니다',
         elif type == 'nickname':
             if User.objects.filter(nickname=serializer.data['nickname']).exists():
                 data = '존재하는 닉네임입니다'
