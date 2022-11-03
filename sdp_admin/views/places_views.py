@@ -30,6 +30,22 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
     serializer_class = PlacesAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
 
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_get')
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        return Response({
+            'status': 'Success',
+            'data': response.data,
+            },status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_get')
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        return Response({
+            'status': 'Success',
+            'data': response.data,
+            },status=status.HTTP_200_OK)
+            
     @swagger_auto_schema(operation_id='api_sdp_admin_places_save_place_post',request_body=PlacesAdminSerializer,
                         responses=SAMPLE_RESP)
     @action(detail=False, methods=['post'])
