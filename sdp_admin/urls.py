@@ -7,6 +7,7 @@ app_name = 'sdp_admin'
 urlpatterns = [
     path('places/save_place/',PlaceViewSet.as_view({'post':'save_place'}),name='save_place'),
     path('places/update_place/',PlaceViewSet.as_view({'put':'update_place'}),name='update_place'),
+    path('places/',PlaceViewSet.as_view({'get':'list'}),name='place_list'),
     path('places/<int:pk>/',PlaceViewSet.as_view({'get':'retrieve'}),name='placedetail'),
     path('places/check_name_overlap/',PlaceViewSet.as_view({'get':'check_name_overlap'}), name='checkoverlap'),
     path('placephoto/<int:pk>/',PlacesPhotoViewSet.as_view({'get':'get'}),name='placephoto'),
