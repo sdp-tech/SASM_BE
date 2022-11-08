@@ -5,6 +5,16 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
+DATABASES = {
+    'default': {
+        'ENGINE': env('DB_ENGINE'),
+        'NAME': env('DB_NAME'),
+        "USER": env('DB_USER'),
+        "PASSWORD": env('DB_PASSWORD'),
+        "HOST": env('DB_HOST'),
+        "PORT": env('DB_PORT'),
+    }
+}
 
 sentry_sdk.init(
     dsn="https://404ba4a0e77d437e8755decbc545c8eb@o4504016282583040.ingest.sentry.io/4504016285270016",
