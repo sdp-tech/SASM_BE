@@ -9,6 +9,28 @@ jobs: # 아래의 jobs를 수행
     name: Build
     runs-on: ubuntu-latest # 여러 OS 중 우분투 환경 선택
     steps:
+    - name : Configure AWS Credentials
+      uses : aws-actions/configure-aws-credentials@v1
+      with : 
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-2
+    
+    - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+    
+    - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: sasm
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
     - name: checkout # 마스터 브랜치로 checkout
       uses: actions/checkout@master
 
@@ -38,4 +60,9 @@ jobs: # 아래의 jobs를 수행
         key: ${{ secrets.KEY }}
         script: |
           echo '${{ secrets.ENV_VARS }}' >> /home/ubuntu/SASM_BE/.env
+          docker pull  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           sh /home/ubuntu/SASM_BE/config/scripts/deploy.sh
+
+    - name: Log out of Amazon ECR
+      if: always()
+      run: docker logout ${{ steps.login-ecr.outputs.registry }}

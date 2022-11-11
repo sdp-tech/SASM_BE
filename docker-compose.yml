@@ -1,26 +1,18 @@
 version: "3"
 
 services:
-  web:
-    container_name: web
+  web_local:
+    container_name: web_local
     build:
       context: ./
       dockerfile: Dockerfile
-    command: gunicorn sasmproject.wsgi:application --bind 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000
     environment:
-      DJANGO_SETTINGS_MODULE: sasmproject.settings.prod # prod.py > .env 파일에 있는 값들을 환경변수로 설정
-    env_file:
-      - .env # .github/workflows/deploy.yml에서 만든 env 파일에 의존
-    expose:
-      - 8000
+      DJANGO_SETTINGS_MODULE: sasmproject.settings.local # prod.py > .env 파일에 있는 값들을 환경변수로 설정
+    # env_file:
+    #   - .env # .github/workflows/deploy.yml에서 만든 env 파일에 의존
+    ports:
+      - 8000:8000
     # entrypoint:
     #   - sh
     #   - config/docker/entrypoint.prod.sh
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    build: ./config/nginx
-    ports:
-      - "80:80"
-    depends_on:
-      - web
