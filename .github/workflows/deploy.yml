@@ -39,8 +39,8 @@ jobs: # 아래의 jobs를 수행
         ECR_REPOSITORY: sasm
         IMAGE_TAG: ${{ github.run_number }}
       run: |
-        docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REPOSITORY:$IMAGE_TAG
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
     - name: create remote directory # ec2 서버에 접속해 리모트 디렉토리 생성
