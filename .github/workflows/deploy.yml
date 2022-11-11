@@ -67,6 +67,9 @@ jobs: # 아래의 jobs를 수행
         host: ${{ secrets.HOST }}
         username: ubuntu
         key: ${{ secrets.KEY }}
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: sasm
+        IMAGE_TAG: ${{ github.run_number }}
         script: |
           echo 'TAG="'$IMAGE_TAG'"' >> /home/ubuntu/SASM_BE/.env
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
