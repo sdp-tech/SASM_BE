@@ -68,8 +68,8 @@ jobs: # 아래의 jobs를 수행
         username: ubuntu
         key: ${{ secrets.KEY }}
         script: |
-          echo $GITHUB_RUN_NUMBER
-          IMAGE_TAG = $((1000 + $GITHUB_RUN_NUMBER))
+          echo ${{github.run_number}}
+          IMAGE_TAG = ${{github.run_number}}
           echo "TAG=$IMAGE_TAG" >> /home/ubuntu/SASM_BE/.env
           sh /home/ubuntu/SASM_BE/config/scripts/deploy.sh
 
