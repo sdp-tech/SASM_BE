@@ -68,8 +68,9 @@ jobs: # 아래의 jobs를 수행
         username: ubuntu
         key: ${{ secrets.KEY }}
         script: |
-          $IMAGE_TAG = $Env:GITHUB_RUN_NUMBER
-          echo 'TAG="'$IMAGE_TAG'"' >> /home/ubuntu/SASM_BE/.env
+          echo $GITHUB_RUN_NUMBER
+          IMAGE_TAG = $((1000 + $GITHUB_RUN_NUMBER))
+          echo "TAG=$IMAGE_TAG" >> /home/ubuntu/SASM_BE/.env
           sh /home/ubuntu/SASM_BE/config/scripts/deploy.sh
 
     - name: Log out of Amazon ECR
