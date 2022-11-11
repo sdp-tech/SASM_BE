@@ -9,6 +9,9 @@ jobs: # 아래의 jobs를 수행
     name: Build
     runs-on: ubuntu-latest # 여러 OS 중 우분투 환경 선택
     steps:
+    - name: checkout # 마스터 브랜치로 checkout
+      uses: actions/checkout@master
+      
     - name : Configure AWS Credentials
       uses : aws-actions/configure-aws-credentials@v1
       with : 
@@ -30,9 +33,6 @@ jobs: # 아래의 jobs를 수행
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
-    - name: checkout # 마스터 브랜치로 checkout
-      uses: actions/checkout@master
 
     - name: create remote directory # ec2 서버에 접속해 리모트 디렉토리 생성
       uses: appleboy/ssh-action@master
