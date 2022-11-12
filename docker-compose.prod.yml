@@ -2,7 +2,7 @@ version: "3"
 
 services:
   web:
-    image: sasm:${TAG}
+    image: 851125685257.dkr.ecr.ap-northeast-2.amazonaws.com/sasm:${TAG}
     container_name: web
     build:
       context: ./
