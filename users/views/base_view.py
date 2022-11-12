@@ -242,11 +242,13 @@ class LogoutView(GenericAPIView):
 @permission_classes([AllowAny])
 def findemail(request):
     serializer = EmailFindSerializer(data=request.data)
+    print(request.data)
     if serializer.is_valid():
         if User.objects.filter(email=serializer.data['email']).exists():
-            data = '존재하는 이메일입니다',
+            data = '존재하는 이메일입니다'
         else:
-            data = '존재하지 않는 이메일입니다',
+            data = '존재하지 않는 이메일입니다'
+        print(data)
         return Response({
                     'status': 'success',
                     'data': data,
