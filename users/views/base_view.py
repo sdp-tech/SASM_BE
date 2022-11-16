@@ -256,7 +256,7 @@ def findemail(request):
     return Response({
                     'status': 'fail',
                     'data': serializer.errors,
-                }, status=status.HTTP_400_BAD_REQUEST3)
+                }, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
