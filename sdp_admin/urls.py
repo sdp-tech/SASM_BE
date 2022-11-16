@@ -1,6 +1,7 @@
 from django.urls import path
 from .views.stories_views import StoryViewSet
 from .views.places_views import PlaceViewSet, SNSTypeViewSet, PlacesPhotoViewSet,SNSUrlViewSet
+from .views.voc_views import VocViewSet
 
 app_name = 'sdp_admin'
 
@@ -17,4 +18,7 @@ urlpatterns = [
     path('stories/<int:pk>/',StoryViewSet.as_view({'get':'retrieve'}),name='storydetail'),
     path('stories/',StoryViewSet.as_view({'post':'create'}),name='create_story'),
     path('stories/<int:pk>/',StoryViewSet.as_view({'put':'update'}),name='update_story'),
+    path('voc/',VocViewSet.as_view({'post':'create'}),name="create_voc"),
+    path('voc/<int:pk>/',VocViewSet.as_view({'get':'retrieve'}),name="get_voc"),
+    path('voc/list/',VocViewSet.as_view({'get':'list'}),name="list_voc"),
 ]
