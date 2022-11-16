@@ -33,7 +33,7 @@ class UserActivateView(APIView):
                 if int(real_uid) == int(user_id):
                     user.is_active = True
                     user.save()
-                    return redirect('https://main.d2hps9gsgzjxq.amplifyapp.com/auth')
+                    return redirect('https://sasm.co.kr/auth')
                 return Response({
                         'status': 'error',
                         'message': 'signup URL expired',

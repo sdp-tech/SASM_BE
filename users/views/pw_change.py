@@ -21,8 +21,6 @@ from email.mime.image import MIMEImage
 
 jwt_decode_handler= api_settings.JWT_DECODE_HANDLER
 jwt_payload_get_user_id_handler = api_settings.JWT_PAYLOAD_GET_USER_ID_HANDLER
-def urlsend():
-    return redirect('http://localhost:3000/auth/find/SetNewPassword/')
 def email_auth_string():
     LENGTH = 5
     string_pool = string.ascii_letters + string.digits
@@ -95,7 +93,7 @@ class PasswordChangeView(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     def get(self,request):
         try:
-            return redirect('https://main.d2hps9gsgzjxq.amplifyapp.com/auth/find/SetNewPassword/')
+            return redirect('https://www.sasm.co.kr/auth/find/SetNewPassword/')
         except:
             return Response({
                         'status': 'error',
