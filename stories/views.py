@@ -8,10 +8,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from .models import Story
+from rest_framework.serializers import ValidationError
+
+from .models import Story, StoryComment
 from users.models import User
-from .serializers import StoryListSerializer, StoryDetailSerializer
+from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer
 from places.serializers import MapMarkerSerializer
+from core.permissions import IsStoryCommentWriterOrReadOnly
+from sasmproject.swagger import StoryCommentViewSet_list_params
+
+from drf_yasg.utils import swagger_auto_schema
+
 
 class StoryLikeView(viewsets.ModelViewSet):
     '''
@@ -19,9 +26,10 @@ class StoryLikeView(viewsets.ModelViewSet):
     '''
     queryset = Story.objects.all()
     serializer_class = StoryDetailSerializer
-    permission_classes=[
+    permission_classes = [
         IsAuthenticated
     ]
+
     def post(self, request):
         id = request.data['id']
         story = get_object_or_404(Story, pk=id)
@@ -35,24 +43,26 @@ class StoryLikeView(viewsets.ModelViewSet):
                 story.story_like_cnt -= 1
                 story.save()
                 return Response({
-                'status': 'success',
-            }, status=status.HTTP_201_CREATED)
+                    'status': 'success',
+                }, status=status.HTTP_201_CREATED)
             else:
                 story.story_likeuser_set.add(profile)
                 story.story_like_cnt += 1
                 story.save()
                 return Response({
-                'status': 'success',
-            }, status=status.HTTP_201_CREATED)
+                    'status': 'success',
+                }, status=status.HTTP_201_CREATED)
         else:
             return Response({
                 'status': 'success',
             }, status=status.HTTP_401_UNAUTHORIZED)
 
+
 class BasicPagination(PageNumberPagination):
     page_size = 4
     page_size_query_param = 'page_size'
-    
+
+
 class StoryListView(viewsets.ModelViewSet):
     '''
         Story의 list 정보를 주는 API
@@ -63,18 +73,19 @@ class StoryListView(viewsets.ModelViewSet):
         AllowAny,
     ]
     pagination_class = BasicPagination
-    
+
     def get(self, request):
         qs = self.get_queryset()
-        search = request.GET.get('search','')
-        search_list = qs.filter(Q(title__icontains=search)|Q(address__place_name__icontains=search))
+        search = request.GET.get('search', '')
+        search_list = qs.filter(Q(title__icontains=search) | Q(
+            address__place_name__icontains=search))
         array = request.query_params.getlist('filter[]', '배열')
         query = None
         if array != '배열':
-            for a in array: 
-                if query is None: 
-                    query = Q(address__category=a) 
-                else: 
+            for a in array:
+                if query is None:
+                    query = Q(address__category=a)
+                else:
                     query = query | Q(address__category=a)
             print(query)
             story = search_list.filter(query)
@@ -82,13 +93,15 @@ class StoryListView(viewsets.ModelViewSet):
         else:
             page = self.paginate_queryset(search_list)
         if page is not None:
-            serializer = self.get_paginated_response(self.get_serializer(page, many=True).data) 
+            serializer = self.get_paginated_response(
+                self.get_serializer(page, many=True).data)
         else:
             serializer = self.get_serializer(page, many=True)
         return Response({
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
+
 
 class StoryDetailView(generics.RetrieveAPIView):
     '''
@@ -97,19 +110,23 @@ class StoryDetailView(generics.RetrieveAPIView):
     queryset = Story.objects.all()
     serializer_class = StoryDetailSerializer
     permission_classes = [AllowAny]
-    #get
+    # get
+
     def retrieve(self, request):
         id = request.GET['id']
-        detail_story = get_object_or_404(self.get_queryset(),pk=id)
+        detail_story = get_object_or_404(self.get_queryset(), pk=id)
         story = self.get_queryset().filter(pk=id)
         # 쿠키 초기화할 시간. 당일 자정
-        change_date = datetime.datetime.replace(timezone.datetime.now(), hour=23, minute=59, second=0)
+        change_date = datetime.datetime.replace(
+            timezone.datetime.now(), hour=23, minute=59, second=0)
         # %a: locale 요일(단축 표기), %b: locale 월 (단축 표기), %d: 10진수 날짜, %Y: 10진수 4자리 년도
         # strftime: 서식 지정 날짜 형식 변경.
-        expires = datetime.datetime.strftime(change_date, "%a, %d-%b-%Y %H:%M:%S GMT")
+        expires = datetime.datetime.strftime(
+            change_date, "%a, %d-%b-%Y %H:%M:%S GMT")
 
         # response를 미리 받기
-        serializer = self.get_serializer(story, many=True, context={'request': request})
+        serializer = self.get_serializer(
+            story, many=True, context={'request': request})
         response = Response({
             'status': 'success',
             'data': serializer.data,
@@ -130,12 +147,14 @@ class StoryDetailView(generics.RetrieveAPIView):
             detail_story.save()
             return response
 
-        serializer = self.get_serializer(story, many=True, context={'request': request})
+        serializer = self.get_serializer(
+            story, many=True, context={'request': request})
         response = Response({
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
         return response
+
 
 class GoToMapView(viewsets.ModelViewSet):
     '''
@@ -146,7 +165,7 @@ class GoToMapView(viewsets.ModelViewSet):
     permission_classes = [
         AllowAny,
     ]
-    
+
     def get(self, request):
         story_id = request.GET['id']
         story = self.queryset.get(id=story_id)
@@ -155,4 +174,126 @@ class GoToMapView(viewsets.ModelViewSet):
         return Response({
             'status': 'success',
             'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+
+class StoryCommentPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+
+
+class StoryCommentView(viewsets.ModelViewSet):
+    '''
+        Story 하위 comment 관련 작업 API
+    '''
+    queryset = StoryComment.objects.all().order_by('id')
+    serializer_class = StoryCommentSerializer
+    permission_classes = [
+        IsStoryCommentWriterOrReadOnly,
+    ]
+    pagination_class = StoryCommentPagination
+
+    # def get_serializer_class(self):
+    #     if self.action in ['create', 'update', 'destroy']:
+    #         return StoryCommentWriteSerializer  # writer field 미사용
+    #     return StoryCommentReadSerializer  # writer field 사용
+
+    @swagger_auto_schema(operation_id='api_stories_comments_get')
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        return Response({
+            'status': 'success',
+            'data': response.data,
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_stories_comments_list', manual_parameters=[StoryCommentViewSet_list_params])
+    def list(self, request, *args, **kwargs):
+        '''특정 스토리 하위 댓글 조회'''
+
+        story_id = request.GET.get('story')
+
+        serializer = self.get_serializer(
+            StoryComment.objects.filter(story=story_id),
+            many=True,
+            context={
+                "story": Story.objects.get(id=story_id),
+            }
+        )
+        # 댓글, 대댓글별 pagination 따로 사용하는 대신, 댓글 group(parent+childs)별로 정렬
+        # 댓글의 경우 id값을, 대댓글의 경우 parent(상위 댓글의 id)값을 대표값으로 설정해 정렬(tuple의 1번째 값)
+        # 댓글 group 내에서는 id 값을 기준으로 정렬(tuple의 2번째 값)
+        serializer_data = sorted(
+            serializer.data, key=lambda k: (k['parent'], k['id']) if k['parent'] else (k['id'], k['id']))
+        page = self.paginate_queryset(serializer_data)
+
+        if page is not None:
+            serializer = self.get_paginated_response(page)
+        else:
+            serializer = self.get_serializer(page, many=True)
+
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_stories_comments_post')
+    def create(self, request, *args, **kwargs):
+        if 'writer' in request.data:
+            return Response({
+                'status': 'fail',
+                'message': 'writer should be excluded in data',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # comment writer 값 설정
+        request.data['writer'] = request.user.id
+        try:
+            super().create(request, *args, **kwargs)
+        except ValidationError as e:
+            return Response({
+                'status': 'fail',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_stories_comments_put')
+    def update(self, request, *args, **kwargs):
+        # comment, mention만 수정 가능
+        if 'story' in request.data or 'parent' in request.data \
+                or 'isParent' in request.data or 'writer' in request.data:
+            return Response({
+                'status': 'fail',
+                'message': 'story, parent, isParent, writer fields should be excluded in data',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # partial update
+            kwargs['partial'] = True
+            super().update(request, *args, **kwargs)
+        except ValidationError as e:
+            return Response({
+                'status': 'fail',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_stories_comments_delete')
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return Response({
+            'status': 'success',
         }, status=status.HTTP_200_OK)

@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from stories.models import Story, StoryPhoto
+from stories.models import Story, StoryPhoto, StoryComment
 from users.models import User
 from places.models import Place
 
@@ -176,3 +176,36 @@ class StoryListSerializer(serializers.ModelSerializer):
             else:
                 ret_result = ret_result + result[i] + ', '
         return ret_result
+
+
+class StoryCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoryComment
+        ordering = ['id']
+        fields = [
+            'id',
+            'story',
+            'content',
+            'isParent',
+            'parent',
+            'writer',
+            'mention',
+        ]
+
+    def validate(self, data):
+        if 'parent' in data:
+            parent = data['parent']
+
+            # child comment를 parent로 설정 시 reject
+            if parent and not parent.isParent:
+                raise serializers.ValidationError(
+                    'can not set the child comment as parent comment')
+            # parent가 null이 아닌데(자신이 child), isParent가 true인 경우 reject
+            if parent is not None and data['isParent']:
+                raise serializers.ValidationError(
+                    'child comment has isParent value be false')
+            # parent가 null인데(자신이 parent), isParent가 false인 경우 reject
+            if data['parent'] is None and not data['isParent']:
+                raise serializers.ValidationError(
+                    'parent comment has isParent value be true')
+        return data
