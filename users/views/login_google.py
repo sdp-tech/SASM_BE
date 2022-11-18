@@ -1,6 +1,9 @@
 from allauth.socialaccount.providers.google import views as google_view
 from ..models import User
 from .social_login import *
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+
 # random state 생성하기
 state = getattr(settings, 'STATE')
 STATE_LENGTH = 15
@@ -20,6 +23,7 @@ def google_login(request):
         f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}"
     )
 
+@api_view(["GET", "POST"])
 def google_callback(request):
     client_id = getattr(settings, "SOCIAL_AUTH_GOOGLE_CLIENT_ID")
     client_secret = getattr(settings, "SOCIAL_AUTH_GOOGLE_SECRET")
@@ -32,7 +36,11 @@ def google_callback(request):
     token_req_json = token_req.json()
     error = token_req_json.get("error")
     if error is not None:
-        raise JSONDecodeError(error)
+        return Response({
+                        'status': 'error',
+                        'message': 'JSON_DECODE_ERROR',
+                        'code': 400
+                    }, status=status.HTTP_400_BAD_REQUEST)
     access_token = token_req_json.get('access_token')
 
     email_req = requests.get(
@@ -41,29 +49,32 @@ def google_callback(request):
     email_req_status = email_req.status_code
     
     if email_req_status != 200:
-        return JsonResponse(
-            {'err_msg': 'failed to get email'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({
+                        'status': 'error',
+                        'message': 'failed to get email',
+                        'code': 400
+                    }, status=status.HTTP_400_BAD_REQUEST)
     email_req_json = email_req.json()
     email = email_req_json.get('email')
-
+    nickname = email.split("@")[0]
+    
     try:
         user = User.objects.get(email=email)    
-        if user is None:
-            print("user")    
         social_user = SocialAccount.objects.get(user=user)
-        
         if social_user is None:
-            return JsonResponse(
-                {'err_msg': 'email exists but not social user'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({
+                        'status': 'error',
+                        'message': 'Email exists but not social user',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
+        
         if social_user.provider != 'google':
-            return JsonResponse(
-                {'err_msg': 'no matching social type'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({
+                        'status': 'error',
+                        'message': 'Social type does not match',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
+            
         data = {'access_token': access_token, 'code': code}
         accept = requests.post(
             f"{BASE_URL}users/google/login/finish/", data=data
@@ -71,31 +82,50 @@ def google_callback(request):
         accept_status = accept.status_code
         
         if accept_status != 200:
-            return JsonResponse(
-                {'err_msg': 'failed to signin'},
-                status=accept_status
-            )
+            return Response({
+                        'status': 'error',
+                        'message': 'Failed to signin',
+                        'code': accept_status
+                    }, status=accept_status)
         accept_json = accept.json()
         accept_json.pop('user', None)
-
-        return JsonResponse(accept_json)
+        
+        response = {
+                'access': accept_json.get('access_token'),
+                'refresh': accept_json.get('refresh_token'),
+                'nickname' : nickname
+            }
+        return Response({
+                    'status': 'success',
+                    'data': response,
+                }, status=status.HTTP_200_OK)
+        
     except User.DoesNotExist:
-
         data = {'access_token': access_token, 'code': code}
-        
         accept = requests.post(
             f"{BASE_URL}users/google/login/finish/", data=data
         )
         accept_status = accept.status_code
         
         if accept_status != 200:
-            return JsonResponse(
-                {'err_msg': 'failed to signup'},
-                status=accept_status
-            )
+            return Response({
+                        'status': 'error',
+                        'message': 'Failed to signup',
+                        'code': accept_status
+                    }, status=accept_status)
+            
         accept_json = accept.json()
         accept_json.pop('user', None)
-        return JsonResponse(accept_json)
+        
+        response = {
+                'access': accept_json.get('access_token'),
+                'refresh': accept_json.get('refresh_token'),
+                'nickname' : nickname
+            }
+        return Response({
+                    'status': 'success',
+                    'data': response,
+                }, status=status.HTTP_200_OK)
 
 class GoogleLogin(SocialLoginView):
     adapter_class = google_view.GoogleOAuth2Adapter
