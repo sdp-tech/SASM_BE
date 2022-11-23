@@ -1,4 +1,5 @@
 # !/bin/bash
+TAG=$1
 
 # docker가 없다면, docker 설치
 if ! type docker > /dev/null
@@ -24,4 +25,6 @@ then
 fi
 
 echo "start docker-compose up: ubuntu"
-sudo docker-compose -f /home/ubuntu/SASM_BE/docker-compose.yml up --build -d # 하이라이트 명령어
+aws ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin 851125685257.dkr.ecr.ap-northeast-2.amazonaws.com
+sudo docker pull 851125685257.dkr.ecr.ap-northeast-2.amazonaws.com/sasm:$TAG
+sudo TAG=$TAG docker-compose -f /home/ubuntu/SASM_BE/docker-compose.prod.yml up -d # 하이라이트 명령어

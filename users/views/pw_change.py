@@ -21,8 +21,6 @@ from email.mime.image import MIMEImage
 
 jwt_decode_handler= api_settings.JWT_DECODE_HANDLER
 jwt_payload_get_user_id_handler = api_settings.JWT_PAYLOAD_GET_USER_ID_HANDLER
-def urlsend():
-    return redirect('http://localhost:3000/auth/find/SetNewPassword/')
 def email_auth_string():
     LENGTH = 5
     string_pool = string.ascii_letters + string.digits
@@ -48,17 +46,18 @@ class PwResetEmailSendView(APIView):
                 html_content = render_to_string('users/password_reset.html', {
                     'user': user,
                     'nickname' : user.nickname,
-                    'domain': 'localhost:8000',
+                    'domain': 'api.sasmbe.com',
                     'uid': force_str(urlsafe_base64_encode(force_bytes(user.pk))),
                     'token': jwt_token,
                     'code': code,
                 })
                 user.code = code
+                print('code',code)
                 user.save()
-                print(html_content)
+                print('유저의 코드',user.code)
                 mail_subject = '[SDP] 비밀번호 변경 메일입니다'
                 to_email = user.email
-                from_email = 'lina19197@daum.net'
+                from_email = 'sdpygl@gmail.com'
                 msg = EmailMultiAlternatives(mail_subject,plaintext,from_email, [to_email])
                 msg.attach_alternative(html_content, "text/html")
                 imagefile = 'SASM_LOGO_BLACK.png'
@@ -94,7 +93,7 @@ class PasswordChangeView(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     def get(self,request):
         try:
-            return redirect('http://localhost:3000/auth/find/SetNewPassword/')
+            return redirect('https://www.sasm.co.kr/auth/find/SetNewPassword/')
         except:
             return Response({
                         'status': 'error',
@@ -103,8 +102,10 @@ class PasswordChangeView(viewsets.ModelViewSet):
                     }, status=status.HTTP_400_BAD_REQUEST) 
     def post(self, request):
         serializer = PwChangeSerializer(data=request.data)
+        print(request.data)
         if serializer.is_valid():
             code = serializer.data['code']
+            print(code)
             if User.objects.filter(code = code).exists():
                 user = User.objects.get(code = code)
                 if serializer.data['password']:

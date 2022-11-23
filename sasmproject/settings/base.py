@@ -15,26 +15,34 @@ from pathlib import Path
 import os
 import json
 import sys
+import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+env = environ.Env(DEBUG=(bool, True))
 
+env_file = os.path.join(BASE_DIR, '.env')
+if os.path.exists(env_file):
+    environ.Env.read_env(
+        env_file=env_file
+    )
 
-SECRET_BASE_FILE = os.path.join(BASE_DIR, 'secrets.json')
-secrets = json.loads(open(SECRET_BASE_FILE).read())
-for key, value in secrets.items():
-    setattr(sys.modules[__name__], key, value)
+SECRET_KEY = env('SECRET_KEY')
 
+STATE = env('STATE')
+KAKAO_REST_API_KEY = env('KAKAO_REST_API_KEY')
+KAKAO_SECRET_KEY = env('KAKAO_SECRET_KEY')
+SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
+SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
+NAVER_CLIENT_ID = env('NAVER_CLIENT_ID')
+NAVER_SECRET_KEY = env('NAVER_SECRET_KEY')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-f45=x^bapsz5k-2q3r0oe4^28lf-+%p0m5zbpfww8mz5p92c9%'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost','3.38.89.18']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '3.38.89.18']
 
 # Application definition
 
@@ -52,6 +60,7 @@ PROJECT_APPS = [
     "places.apps.PlacesConfig",
     "stories.apps.StoriesConfig",
     "core.apps.CoreConfig",
+    "sdp_admin.apps.SdpAdminConfig",
 ]
 THIRD_APPS = [
     'rest_framework',
@@ -113,7 +122,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'sasmproject.wsgi.application'
 
 
-
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
@@ -149,7 +157,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated",],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated", ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.TokenAuthentication",
@@ -169,33 +177,34 @@ REST_USE_JWT = True
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=28),
-    'ROTATE_REFRESH_TOKENS': False, # true면 토큰 갱신 시 refresh도 같이 갱신
+    'ROTATE_REFRESH_TOKENS': False,  # true면 토큰 갱신 시 refresh도 같이 갱신
     'BLACKLIST_AFTER_ROTATION': True,
 }
-
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
-#이메일 인증
+# 이메일 인증
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = secrets['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD = secrets['EMAIL_HOST_PASSWORD']
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = secrets['EMAIL_HOST_USER']
+DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
-#corheaders
-CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000','http://localhost:3000','http://127.0.0.1:8000','https://api.sasmbe.com','https://main.d2hps9gsgzjxq.amplifyapp.com')
+# corheaders
+CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000', 'http://localhost:3000', 'http://127.0.0.1:8000',
+                         'https://api.sasmbe.com', 'https://main.d2hps9gsgzjxq.amplifyapp.com',
+                         'https://www.sasm.co.kr')
 CORS_ALLOW_CREDENTIALS = True
 
-#aws s3
+# aws s3
 # AWS 정보
-AWS_STORAGE_BUCKET_NAME = secrets['AWS_STORAGE_BUCKET_NAME']
-AWS_ACCESS_KEY_ID = secrets['AWS_ACCESS_KEY_ID']
-AWS_SECRET_ACCESS_KEY = secrets['AWS_SECRET_ACCESS_KEY']
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
 
 AWS_S3_CUSTOM_DOMAIN = '{}.s3.amazonaws.com'.format(AWS_STORAGE_BUCKET_NAME)
 
@@ -206,7 +215,8 @@ AWS_QUERYSTRING_AUTH = False
 # static files setting
 STATICFILES_LOCATION = 'static'
 STATICFILES_STORAGE = 'sasmproject.custom_storages.StaticStorage'
-STATIC_URL = 'https://{}/{}/'.format(AWS_S3_CUSTOM_DOMAIN, STATICFILES_LOCATION)
+STATIC_URL = 'https://{}/{}/'.format(AWS_S3_CUSTOM_DOMAIN,
+                                     STATICFILES_LOCATION)
 
 # media files setting
 MEDIAFILES_LOCATION = 'media'
@@ -217,17 +227,17 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
-]#debug-tool-bar
+]  # debug-tool-bar
 INTERNAL_IPS = [
     '127.0.0.1',
 ]
-#django silk
+# django silk
 SILKY_PYTHON_PROFILER = True
 SILKY_INTERCEPT_PERCENT = 5
 SILKY_AUTHENTICATION = True
 SILKY_AUTHORISATION = True
 
-#drf-yasg
+# drf-yasg
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Bearer': {
