@@ -118,7 +118,7 @@ class Place(core_models.TimeStampedModel):
         def __str__(self):
             return self.category_content
 
-class VisitorReviewCategory(core_models.modelsTimeStampedModel):
+class VisitorReviewCategory(core_models.TimeStampedModel):
     # place_category = models.CharField(max_length=80)
     category = models.ForeignKey("CategoryContent", on_delete=models.CASCADE)
     category_choice = models.ManyToManyField("VisitorReview")
@@ -128,7 +128,7 @@ class VisitorReviewCategory(core_models.modelsTimeStampedModel):
 
 class VisitorReview(core_models.TimeStampedModel):
     place = models.ForeignKey("Place", on_delete=models.CASCADE) #방문자리뷰 모델은 Place 모델을 속성으로 가져야 함
-    visitor_name = models.ForeignKey("User", on_delete=models.CASCADE)  #리뷰다는 사람 이름
+    visitor_name = models.ForeignKey("users.User", on_delete=models.CASCADE)  #리뷰다는 사람 이름
     contents = models.TextField(help_text="리뷰를 작성해주세요.", blank=False, null=False) #내용 작성
     # category_choice = models.ManyToManyField(CategoryContent)
 
