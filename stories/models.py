@@ -40,3 +40,26 @@ class Story(core_models.TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+
+class StoryComment(core_models.TimeStampedModel):
+    story = models.ForeignKey(
+        'Story', related_name='comments', on_delete=models.CASCADE)
+    content = models.TextField(max_length=1000)
+    # isParent: true일 경우 parent 댓글, false일 경우 child 댓글
+    isParent = models.BooleanField(null=False, blank=False, default=True)
+    # parent 댓글이 삭제되어도, child 댓글은 유지, parent를 null 설정
+    parent = models.ForeignKey(
+        'StoryComment', related_name='childs', on_delete=models.SET_NULL, null=True, blank=False)
+    # 댓글 writer가 회원 탈퇴해도, 댓글은 유지, writer를 null 설정
+    writer = models.ForeignKey(
+        'users.User', related_name='comments', on_delete=models.SET_NULL, null=True, blank=False)
+    # 멘션된 사용자가 회원 탈퇴하더라도, 댓글은 유지, mention을 null 설정
+    mention = models.ForeignKey(
+        'users.User', related_name='mentionedComments', on_delete=models.SET_NULL, null=True, blank=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return '{} {}'.format(self.story.title, str(self.id))

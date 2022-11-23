@@ -65,14 +65,14 @@ class UserSerializer(serializers.ModelSerializer):
         html_content = render_to_string('users/user_activate_email.html', {
             'user': user,
             'nickname': user.nickname,
-            'domain': 'localhost:8000',
+            'domain': 'api.sasmbe.com',
             'uid': force_str(urlsafe_base64_encode(force_bytes(user.pk))),
             'token': jwt_token,
         })
         print(html_content)
         mail_subject = '[SDP] 회원가입 인증 메일입니다'
         to_email = user.email
-        from_email = 'lina19197@daum.net'
+        from_email = 'sdpygl@gmail.com'
         msg = EmailMultiAlternatives(
             mail_subject, plaintext, from_email, [to_email])
         msg.attach_alternative(html_content, "text/html")

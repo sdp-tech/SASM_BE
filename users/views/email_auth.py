@@ -33,7 +33,7 @@ class UserActivateView(APIView):
                 if int(real_uid) == int(user_id):
                     user.is_active = True
                     user.save()
-                    return redirect('http://localhost:3000/auth')
+                    return redirect('https://sasm.co.kr/auth')
                 return Response({
                         'status': 'error',
                         'message': 'signup URL expired',
