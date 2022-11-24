@@ -3,19 +3,14 @@ from django.utils.decorators import method_decorator
 from allauth.socialaccount.providers.kakao import views as kakao_view
 from ..models import User
 from .social_login import *
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
 BASE_URL = 'http://127.0.0.1:8000/'
-KAKAO_CALLBACK_URI = BASE_URL + 'users/kakao/callback/'
-
-# 카카오 소셜 로그인 - 코드 요청
-@method_decorator(csrf_exempt)
-def kakao_login(request):
-    rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
-    return redirect(
-        f"https://kauth.kakao.com/oauth/authorize?client_id={rest_api_key}&redirect_uri={KAKAO_CALLBACK_URI}&response_type=code"
-    )
+KAKAO_CALLBACK_URI = 'http://127.0.0.1:3000/users/kakao/callback/'
 
 # 카카오 소셜 로그인 - 토큰 요청
+@api_view(["GET", "POST"])
 @method_decorator(csrf_exempt)
 def kakao_callback(request):
     rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
@@ -25,62 +20,97 @@ def kakao_callback(request):
     token_req = requests.get(
         f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={rest_api_key}&redirect_uri={redirect_uri}&code={code}"
     )
+    
     token_req_json = token_req.json()
     error = token_req_json.get("error")
     if error is not None:
-        raise JSONDecodeError(error)
+        return Response({
+                        'status': 'error',
+                        'message': 'JSON_DECODE_ERROR',
+                        'code': 400
+                    }, status=status.HTTP_400_BAD_REQUEST)
+        
     access_token = token_req_json.get("access_token")
 
     profile_request = requests.get('https://kapi.kakao.com/v2/user/me', headers={"Authorization": f'Bearer ${access_token}'})
-
     profile_json = profile_request.json()
-
     kakao_account = profile_json.get('kakao_account')
 
     # 이메일 외에도 프로필 이미지, 배경 이미지 url 등 가져올 수 있음
-    
     email = kakao_account.get('email', None)
+    profile = kakao_account.get('profile', None)
+    nickname = profile.get('nickname', None)
 
     try:
         user = User.objects.get(email=email)
         social_user = SocialAccount.objects.get(user=user)
         if social_user is None:
-            return JsonResponse(
-                {'err_msg': 'email exists but not social user'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({
+                        'status': 'error',
+                        'message': 'Email exists but not social user',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
         if social_user.provider != 'kakao':
-            return JsonResponse(
-                {'err_msg': 'no matching social type'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({
+                        'status': 'error',
+                        'message': 'Social type does not match',
+                        'code': 404
+                    }, status=status.HTTP_404_NOT_FOUND)
+            
         data = {'access_token': access_token, 'code': code}
+        
         accept = requests.post(
-            f"{BASE_URL}users/kakao/login/finish", data=data
+            f"{BASE_URL}users/kakao/login/finish/", data=data
         )
         accept_status = accept.status_code
+        
         if accept_status != 200:
-            return JsonResponse(
-                {'err_msg': 'failed to signin'},
-                status=accept_status
-            )
+            return Response({
+                        'status': 'error',
+                        'message': 'Failed to signin',
+                        'code': accept_status
+                    }, status=accept_status)
         accept_json = accept.json()
+
         accept_json.pop('user', None)
-        return JsonResponse(accept_json)
+        response = {
+                'access': accept_json.get('access_token'),
+                'refresh': accept_json.get('refresh_token'),
+                'nickname' : nickname
+            }
+        print(response)
+        return Response({
+                    'status': 'success',
+                    'data': response,
+                }, status=status.HTTP_200_OK)
+        
     except User.DoesNotExist:
         data = {'access_token': access_token, 'code': code}
         accept = requests.post(
             f"{BASE_URL}users/kakao/login/finish/", data=data
         )
         accept_status = accept.status_code
+        
         if accept_status != 200:
-            return JsonResponse(
-                {'err_msg': 'failed to signup'},
-                status=accept_status
-            )
+            return Response({
+                        'status': 'error',
+                        'message': 'Failed to signup',
+                        'code': accept_status
+                    }, status=accept_status)
+            
         accept_json = accept.json()
         accept_json.pop('user', None)
-        return JsonResponse(accept_json)
+    
+        response = {
+                'access': accept_json.get('access_token'),
+                'refresh': accept_json.get('refresh_token'),
+                'nickname' : nickname
+            }
+        print(response)
+        return Response({
+                    'status': 'success',
+                    'data': response,
+                }, status=status.HTTP_200_OK)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class KakaoLogin(SocialLoginView):
