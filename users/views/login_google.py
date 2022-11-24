@@ -12,16 +12,7 @@ for i in range(STATE_LENGTH):
     state += random.choice(string_pool)
 
 BASE_URL = 'http://127.0.0.1:8000/'
-GOOGLE_CALLBACK_URI = BASE_URL + 'users/google/callback/'
-
-
-# 구글 소셜 로그인
-def google_login(request):
-    scope = "https://www.googleapis.com/auth/userinfo.email"
-    client_id = getattr(settings, "SOCIAL_AUTH_GOOGLE_CLIENT_ID")
-    return redirect(
-        f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&redirect_uri={GOOGLE_CALLBACK_URI}&scope={scope}"
-    )
+GOOGLE_CALLBACK_URI = BASE_URL + 'http://127.0.0.1:3000/users/google/callback/'
 
 @api_view(["GET", "POST"])
 def google_callback(request):

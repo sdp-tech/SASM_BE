@@ -7,15 +7,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 BASE_URL = 'http://127.0.0.1:8000/'
-KAKAO_CALLBACK_URI = BASE_URL + 'users/kakao/callback/'
-
-# 카카오 소셜 로그인 - 코드 요청
-@method_decorator(csrf_exempt)
-def kakao_login(request):
-    rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
-    return redirect(
-        f"https://kauth.kakao.com/oauth/authorize?client_id={rest_api_key}&redirect_uri={KAKAO_CALLBACK_URI}&response_type=code"
-    )
+KAKAO_CALLBACK_URI = 'http://127.0.0.1:3000/users/kakao/callback/'
 
 # 카카오 소셜 로그인 - 토큰 요청
 @api_view(["GET", "POST"])
@@ -86,6 +78,7 @@ def kakao_callback(request):
                 'refresh': accept_json.get('refresh_token'),
                 'nickname' : nickname
             }
+        print(response)
         return Response({
                     'status': 'success',
                     'data': response,
@@ -113,6 +106,7 @@ def kakao_callback(request):
                 'refresh': accept_json.get('refresh_token'),
                 'nickname' : nickname
             }
+        print(response)
         return Response({
                     'status': 'success',
                     'data': response,

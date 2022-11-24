@@ -1,6 +1,6 @@
 from allauth.socialaccount.providers.naver import views as naver_view
 from ..models import User
-#소셜 로그인 관련 설정들
+# 소셜 로그인 관련 설정들
 from .social_login import *
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -13,16 +13,7 @@ for i in range(STATE_LENGTH):
     state += random.choice(string_pool)
 
 BASE_URL = 'http://127.0.0.1:8000/'
-NAVER_CALLBACK_URI = BASE_URL + 'users/naver/callback/'
-
-
-# 네이버 소셜 로그인
-def naver_login(request):
-    client_id = getattr(settings, "NAVER_CLIENT_ID")
-    return redirect(
-       f"https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id={client_id}&state={state}&redirect_uri={NAVER_CALLBACK_URI}"
-    )
-
+NAVER_CALLBACK_URI = BASE_URL + 'http://127.0.0.1:3000/users/naver/callback/'
 
 @api_view(["GET", "POST"])
 def naver_callback(request):
