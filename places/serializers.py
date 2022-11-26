@@ -72,7 +72,7 @@ class PlaceSerializer(serializers.ModelSerializer):
         left = self.context.get('left')
         right = self.context.get('right')
         my_location = (float(left), float(right))
-        place_location = (obj['latitude'], obj['longitude'])
+        place_location = (obj.latitude, obj.longitude)
         distance = hs.haversine(my_location, place_location)
         return float(distance)
             
@@ -82,15 +82,15 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
         a = datetime.datetime.today().weekday()
-        return obj[days[a]]
+        place = Place.objects.filter(id = obj.id).values(days[a])[0]
+        return place[days[a]]
 
     def get_place_like(self,obj):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
-        place = Place.objects.get(id=obj['id'])
         re_user =  self.context['request'].user.id
-        if place.place_likeuser_set.filter(id=re_user).exists():
+        if obj.place_likeuser_set.filter(id=re_user).exists():
             return 'ok'
         else:
             return 'none'
