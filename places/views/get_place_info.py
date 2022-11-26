@@ -35,7 +35,7 @@ class PlaceListView(viewsets.ModelViewSet):
     '''
         place의 list의 정보를 주는 API
     '''
-    queryset = Place.objects.all().values('place_name', 'category', 'place_review', 'address', 'rep_pic', 'latitude', 'longitude', 'id')
+    queryset = Place.objects.prefetch_related('place_likeuser_set').values()
     serializer_class = PlaceSerializer
     permission_classes=[
         AllowAny,
@@ -54,6 +54,7 @@ class PlaceListView(viewsets.ModelViewSet):
     def search_if_given(self,search):
         if(search):
             qs = self.get_queryset().filter(Q(place_name__icontains=search))
+            return qs
         else:
             qs = self.get_queryset()
         return qs
@@ -99,7 +100,7 @@ class PlaceDetailView(viewsets.ModelViewSet):
     '''
         place의 detail 정보를 주는 API
     '''
-    queryset = Place.objects.all()
+    queryset = Place.objects.select_related('story')
     serializer_class = PlaceDetailSerializer
     permission_classes=[
         AllowAny,
@@ -111,7 +112,7 @@ class PlaceDetailView(viewsets.ModelViewSet):
             Place의 detail한 정보를 주는 api
         '''
         pk = request.GET.get('id', '')
-        place = Place.objects.get(id=pk)
+        place = self.get_queryset().get(id=pk)
         return Response({
             'status': 'success',
             'data': PlaceDetailSerializer(place,context={'request': request}).data,

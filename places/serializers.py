@@ -71,7 +71,6 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         left = self.context.get('left')
         right = self.context.get('right')
-        
         my_location = (float(left), float(right))
         place_location = (obj['latitude'], obj['longitude'])
         distance = hs.haversine(my_location, place_location)
@@ -83,8 +82,7 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
         a = datetime.datetime.today().weekday()
-        place = Place.objects.filter(id=obj['id']).values(days[a])[0]
-        return place[days[a]]
+        return obj[days[a]]
 
     def get_place_like(self,obj):
         '''
@@ -92,14 +90,10 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         place = Place.objects.get(id=obj['id'])
         re_user =  self.context['request'].user.id
-        like_id = place.place_likeuser_set.all()
-        users = User.objects.filter(id__in=like_id)
-        if users.filter(id=re_user).exists():
+        if place.place_likeuser_set.filter(id=re_user).exists():
             return 'ok'
         else:
-            return 'none'   
-        
-        
+            return 'none'
 
 class PlaceDetailSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
@@ -138,23 +132,22 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'story_id',
             'place_like',
             ]
+            
     def get_open_hours(self,obj):
         '''
         오늘 요일만 보내주기 위한 함수
         '''
         days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
         a = datetime.datetime.today().weekday()
-        place = Place.objects.filter(id=obj.id).values(days[a])[0]
+        place = Place.objects.filter(id = obj.id).values(days[a])[0]
         return place[days[a]]
-    
+        
     def get_story_id(self, obj):
         '''
             스토리 id를 보내 주기 위한 함수
         '''
-        place = Place.objects.get(id=obj.id)
         try:
-            place.story
-            return place.story.id
+            return obj.story.id
         except ObjectDoesNotExist:
             pass
 
@@ -162,11 +155,8 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
-        place = Place.objects.get(id=obj.id)
         re_user =  self.context['request'].user.id
-        like_id = place.place_likeuser_set.all()
-        users = User.objects.filter(id__in=like_id)
-        if users.filter(id=re_user).exists():
+        if obj.place_likeuser_set.filter(id=re_user).exists():
             return 'ok'
         else:
-            return 'none' 
+            return 'none'
