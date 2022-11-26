@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import PlaceDetailView, PlaceLikeView, PlaceListView, MapMarkerView
-
+from .views.get_place_info import PlaceDetailView, PlaceListView, MapMarkerView
+from .views.like_place import PlaceLikeView
+# from .views.save_place_excel import save_place_db
 urlpatterns =[
     # path('save_place/', save_place_db),
     path('map_info/', MapMarkerView.as_view({'get': 'get'}), name="map_info"),

@@ -7,12 +7,11 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from silk.profiling.profiler import silk_profile
 from drf_yasg.utils import swagger_auto_schema
 from places.models import SNSUrl, SNSType, PlacePhoto, Place
 from ..serializers.places_serializers import PlacesAdminSerializer, PlacePhotoAdminSerializer, SNSTypeAdminSerializer, SNSUrlAdminSerializer
 from core.permissions import IsSdpStaff
-from places.views import addr_to_lat_lon
+from places.views.save_place_excel import addr_to_lat_lon
 from sasmproject.swagger import SAMPLE_RESP, param_place_name, param_pk, OVERLAP_RESP
 
 class SetPartialMixin:

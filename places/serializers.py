@@ -43,33 +43,36 @@ class PlaceSerializer(serializers.ModelSerializer):
             'id',
             'place_name',
             'category',
-            'vegan_category',
-            'tumblur_category',
-            'reusable_con_category',
-            'pet_category',
+            #'vegan_category',
+            #'tumblur_category',
+            #'reusable_con_category',
+            #'pet_category',
             'open_hours',
-            'etc_hours',
+            #'etc_hours',
             'place_review',
             'address',
             'rep_pic',
-            'short_cur',
+            #'short_cur',
             'latitude',
             'longitude',
             'place_like',
             'distance',
         ]
-        
+    
+    # #클래스 변수에 접근해야해서 classmethod 사용
+    # @classmethod
+    # def only_queryset(cls, queryset):
+    #     queryset = queryset.values(*cls.Meta.fields)
+    #     return queryset
+
     def get_distance(self, obj):
         '''
             거리순 정렬을 위해 거리를 계산하는 함수
         '''
         left = self.context.get('left')
         right = self.context.get('right')
-        
         my_location = (float(left), float(right))
-        
-        place = Place.objects.get(id=obj.id)
-        place_location = (place.latitude, place.longitude)
+        place_location = (obj['latitude'], obj['longitude'])
         distance = hs.haversine(my_location, place_location)
         return float(distance)
             
@@ -79,23 +82,18 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
         a = datetime.datetime.today().weekday()
-        place = Place.objects.filter(id=obj.id).values(days[a])[0]
-        return place[days[a]]
+        return obj[days[a]]
 
     def get_place_like(self,obj):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
-        place = Place.objects.get(id=obj.id)
+        place = Place.objects.get(id=obj['id'])
         re_user =  self.context['request'].user.id
-        like_id = place.place_likeuser_set.all()
-        users = User.objects.filter(id__in=like_id)
-        if users.filter(id=re_user).exists():
+        if place.place_likeuser_set.filter(id=re_user).exists():
             return 'ok'
         else:
-            return 'none'   
-        
-        
+            return 'none'
 
 class PlaceDetailSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
@@ -110,12 +108,12 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'id',
             'place_name',
             'category',
-            'vegan_category',
-            'tumblur_category',
-            'reusable_con_category',
-            'pet_category',
+            #'vegan_category',
+            #'tumblur_category',
+            #'reusable_con_category',
+            #'pet_category',
             'open_hours',
-            'etc_hours',
+            #'etc_hours',
             'mon_hours',
             'tues_hours',
             'wed_hours',
@@ -134,23 +132,22 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'story_id',
             'place_like',
             ]
+            
     def get_open_hours(self,obj):
         '''
         오늘 요일만 보내주기 위한 함수
         '''
         days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
         a = datetime.datetime.today().weekday()
-        place = Place.objects.filter(id=obj.id).values(days[a])[0]
+        place = Place.objects.filter(id = obj.id).values(days[a])[0]
         return place[days[a]]
-    
+        
     def get_story_id(self, obj):
         '''
             스토리 id를 보내 주기 위한 함수
         '''
-        place = Place.objects.get(id=obj.id)
         try:
-            place.story
-            return place.story.id
+            return obj.story.id
         except ObjectDoesNotExist:
             pass
 
@@ -158,11 +155,8 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
-        place = Place.objects.get(id=obj.id)
         re_user =  self.context['request'].user.id
-        like_id = place.place_likeuser_set.all()
-        users = User.objects.filter(id__in=like_id)
-        if users.filter(id=re_user).exists():
+        if obj.place_likeuser_set.filter(id=re_user).exists():
             return 'ok'
         else:
-            return 'none' 
+            return 'none'
