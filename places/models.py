@@ -91,32 +91,32 @@ class Place(core_models.TimeStampedModel):
         return self.place_name
 
 
-    class CategoryContent(models.Model):
-        COMMON = "공통"
-        PLACE1 = "식당 및 카페"
-        PLACE2 = "전시 및 체험공간"
-        PLACE3 = "제로웨이스트 샵"
-        PLACE4 = "도시 재생 및 친환경 건출물"
-        PLACE5 = "복합 문화 공간"
-        PLACE6 = "녹색 공간"
-        PLACE7 = "그 외"
-        PLACE_CHOICES = (
-            (COMMON, "공통"),
-            (PLACE1, "식당 및 카페"),
-            (PLACE2, "전시 및 체험공간"),
-            (PLACE3, "제로웨이스트 샵"),
-            (PLACE4, "도시 재생 및 친환경 건출물"),
-            (PLACE5, "복합 문화 공간"),
-            (PLACE6, "녹색 공간"),
-            (PLACE7, "그 외"),
-        )
+class CategoryContent(models.Model):
+    COMMON = "공통"
+    PLACE1 = "식당 및 카페"
+    PLACE2 = "전시 및 체험공간"
+    PLACE3 = "제로웨이스트 샵"
+    PLACE4 = "도시 재생 및 친환경 건출물"
+    PLACE5 = "복합 문화 공간"
+    PLACE6 = "녹색 공간"
+    PLACE7 = "그 외"
+    PLACE_CHOICES = (
+        (COMMON, "공통"),
+        (PLACE1, "식당 및 카페"),
+        (PLACE2, "전시 및 체험공간"),
+        (PLACE3, "제로웨이스트 샵"),
+        (PLACE4, "도시 재생 및 친환경 건출물"),
+        (PLACE5, "복합 문화 공간"),
+        (PLACE6, "녹색 공간"),
+        (PLACE7, "그 외"),
+    )
 
-        category_content = models.CharField(max_length=100)
-        category_group = models.CharField(choices=PLACE_CHOICES, max_length=30, blank=True)
+    category_content = models.CharField(max_length=100)
+    category_group = models.CharField(choices=PLACE_CHOICES, max_length=30, blank=True)
 
 
-        def __str__(self):
-            return self.category_content
+    def __str__(self):
+        return self.category_content
 
 class VisitorReviewCategory(core_models.TimeStampedModel):
     # place_category = models.CharField(max_length=80)
@@ -134,3 +134,9 @@ class VisitorReview(core_models.TimeStampedModel):
 
     def __str__(self):
         return self.contents
+
+def image_upload_path(instance, filename):
+    return 'reviewphoto/{}'.format(filename)
+class ReviewPhoto(core_models.TimeStampedModel):
+    imgfile = models.ImageField(null=True, upload_to=image_upload_path, blank=True)
+    review = models.ForeignKey("VisitorReview", related_name='photos', on_delete=models.CASCADE)

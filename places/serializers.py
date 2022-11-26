@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 import haversine as hs
-from places.models import Place, PlacePhoto, SNSUrl
+from places.models import Place, PlacePhoto, SNSUrl, VisitorReview, ReviewPhoto, VisitorReviewCategory
 from users.models import User
 
 class PlacePhotoSerializer(serializers.ModelSerializer):
@@ -166,3 +166,78 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             return 'ok'
         else:
             return 'none' 
+
+class VisitorReviewCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VisitorReviewCategory
+        fields = [
+            'category',
+            'category_choice',
+        ]
+
+class ReviewPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewPhoto
+        fields = [
+            'imgfile',
+        ]
+
+
+class VisitorReviewSerializer(serializers.ModelSerializer):
+    photos = ReviewPhotoSerializer(many=True,read_only=True)
+    category = VisitorReviewCategorySerializer(many=True,read_only=True)
+
+    class Meta:
+        model = VisitorReview
+        fields = [
+            'place',
+            'visitor_name',
+            'contents',
+            'photos',
+            'category',
+            # 'created',
+            # 'updated',
+        ]
+
+    # context={
+    #     "request":request
+    # }
+
+    def create(self, validated_data):
+        print(validated_data)
+        photos_data = self.context['request'].FILES
+        print(photos_data)
+        review = VisitorReview.objects.create(**validated_data)
+        for photo_data in photos_data.getlist('photos'):
+            print(photo_data)   
+            ReviewPhoto.objects.create(review=review, imgfile=photo_data)
+        return review
+
+    # def get_visitor_id(self, obj):
+    #     '''
+    #     작성자 id를 가지고 오기 위한 함수
+    #     '''
+    #     visitor = User.objects.get(id=obj.id)
+    #     try:
+    #         visitor.
+    #         return visitor.name.id
+    #     except ObjectDoesNotExist:
+    #         pass
+
+    
+    # def get_visit_date(self, obj):
+    #     '''
+    #     작성한 날짜를 가지고 오기 위한 함수
+    #     '''
+    #     date = datetime.today()
+    #     return date
+
+
+
+    # def get_category(self, obj):
+    #     '''
+    #     장소별 카테고리를 알려주기 위한 함수
+    #     '''
+    #     place = Place.objects.get(id=obj.id)
+    #     return place.category
+

@@ -11,15 +11,18 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view
 from silk.profiling.profiler import silk_profile
-# import pandas as pd
+import pandas as pd
 import boto3
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .models import Place, PlacePhoto, SNSType, SNSUrl
+from .models import Place, PlacePhoto, SNSType, SNSUrl, VisitorReview
 from users.models import User
-from places.serializers import PlaceSerializer,PlaceDetailSerializer, MapMarkerSerializer
+from places.serializers import PlaceSerializer,PlaceDetailSerializer, MapMarkerSerializer, VisitorReviewSerializer
 from users.serializers import UserSerializer
 from sasmproject.swagger import param_search,param_filter,param_id,PlaceLikeView_post_params
+
+from rest_framework.decorators import action
+
 # Create your views here.
 aws_access_key_id = getattr(settings,'AWS_ACCESS_KEY_ID')
 aws_secret_access_key = getattr(settings,'AWS_SECRET_ACCESS_KEY')
@@ -216,6 +219,45 @@ def addr_to_lat_lon(addr):
     x=float(match_first['x'])
     y=float(match_first['y'])
     return (x, y)
+
+class PlaceReviewView(viewsets.ModelViewSet):
+    queryset = VisitorReview.objects.all().order_by('-created')
+    serializer_class = VisitorReviewSerializer
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    # @swagger_auto_schema(operation_id='api_places_review_post')
+    
+    @action(detail=False, methods=['post'])
+    def save_review(self, request):
+        '''
+        장소 리뷰를 저장하는 api
+        '''
+        review_info = request.data
+        serializer = VisitorReviewSerializer(data=review_info, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                    "status" : "success",
+                    "data" : serializer.data,
+                },status=status.HTTP_200_OK)
+        return Response({
+            "status" : "fail",
+            "data" : serializer.errors,
+        })
+
+    # @action(detail=False, methods=['post'])
+    # def save_picture(Self, request):
+    #     '''
+    #     장소 리뷰 사진 업로드
+    #     '''
+    #     place_info = request.data
+        
+    #     serializer = self.
+    
+
+
 
 # @swagger_auto_schema(operation_id='func_places_save_place_get', method='get',responses={200:'success'},security=[])
 # @api_view(['GET'])
