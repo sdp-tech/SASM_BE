@@ -20,3 +20,19 @@ class PlaceAdmin(admin.ModelAdmin):
 @admin.register(models.SNSUrl)
 class PlaceAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(models.CategoryContent)
+class CategoryContentAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(models.VisitorReviewCategory)
+class VisitorReviewCategoryAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(models.VisitorReview)
+class VisitorReviewAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(models.ReviewPhoto)
+class ReviewPhotoAdmin(admin.ModelAdmin):
+    pass
