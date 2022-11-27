@@ -42,7 +42,12 @@ class PlaceListView(viewsets.ModelViewSet):
     ]
     pagination_class=BasicPagination
 
-    def filter_if_given(array):
+    def filter_if_given(self, qs, query):
+        if(query):
+            qs = qs.filter(query)
+        return qs
+
+    def get_filter_query(self, array):
         query = None
         for a in array: 
             if query is None: 
@@ -54,7 +59,6 @@ class PlaceListView(viewsets.ModelViewSet):
     def search_if_given(self,search):
         if(search):
             qs = self.get_queryset().filter(Q(place_name__icontains=search))
-            return qs
         else:
             qs = self.get_queryset()
         return qs
@@ -69,8 +73,8 @@ class PlaceListView(viewsets.ModelViewSet):
         qs = self.search_if_given(search)
         array = request.query_params.getlist('filter[]', '배열')
         if array != '배열':
-            query = self.filter_if_given(array)
-            qs = qs.filter(query)
+            query = self.get_filter_query(array)
+            qs = self.filter_if_given(qs, query)
         serializer = self.get_serializer(
             qs,
             many=True,
