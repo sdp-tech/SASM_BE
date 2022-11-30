@@ -10,3 +10,7 @@ DATABASES = {
 }
 
 ALLOWED_HOSTS = ['0.0.0.0','127.0.0.1','localhost']
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+}
