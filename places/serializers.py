@@ -1,9 +1,12 @@
+import io
+import time
 import datetime
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.images import ImageFile
 from rest_framework import serializers
 import haversine as hs
-from places.models import Place, PlacePhoto, SNSUrl, VisitorReview, ReviewPhoto, VisitorReviewCategory
+from places.models import Place, PlacePhoto, SNSUrl, VisitorReview, ReviewPhoto, VisitorReviewCategory, CategoryContent
 from users.models import User
 
 class PlacePhotoSerializer(serializers.ModelSerializer):
@@ -179,59 +182,93 @@ class ReviewPhotoSerializer(serializers.ModelSerializer):
 
 class VisitorReviewSerializer(serializers.ModelSerializer):
     photos = ReviewPhotoSerializer(many=True,read_only=True)
-    category = VisitorReviewCategorySerializer(many=True,read_only=True)
-
+    #category = VisitorReviewCategorySerializer(many=True,read_only=True)
+    nickname = serializers.SerializerMethodField()
+    category_statistics = serializers.SerializerMethodField()
+    writer = serializers.SerializerMethodField()
     class Meta:
         model = VisitorReview
         fields = [
+            'id',
+            'nickname',
             'place',
-            'visitor_name',
             'contents',
             'photos',
-            'category',
-            # 'created',
-            # 'updated',
+            #'category',
+            'created',
+            'updated',
+            'category_statistics',
+            'writer',
         ]
 
-    # context={
-    #     "request":request
-    # }
+    def get_nickname(self, obj):
+        return obj.visitor_name.nickname
 
+    def get_writer(self, obj):
+        return obj.visitor_name.email
+        
     def create(self, validated_data):
-        print(validated_data)
         photos_data = self.context['request'].FILES
-        print(photos_data)
-        review = VisitorReview.objects.create(**validated_data)
-        for photo_data in photos_data.getlist('photos'):
-            print(photo_data)   
-            ReviewPhoto.objects.create(review=review, imgfile=photo_data)
+        user = self.context['request'].user
+        review = VisitorReview.objects.create(**validated_data, visitor_name=user)
+        photos = photos_data.getlist('photos')
+        for photo_data in photos:
+            #파일 경로 설정
+            ext = photo_data.name.split(".")[-1]
+            file_path = '{}/{}/{}.{}'.format(validated_data['place'],review.id,str(int(time.time())),ext)
+            image = ImageFile(io.BytesIO(photo_data.read()), name=file_path)
+            ReviewPhoto.objects.create(review=review, imgfile=image)
+        for category_data in self.context['request'].POST.getlist('category'):
+            instance = VisitorReviewCategory.objects.create(category_id=category_data)
+            instance.category_choice.add(review)
         return review
 
-    # def get_visitor_id(self, obj):
-    #     '''
-    #     작성자 id를 가지고 오기 위한 함수
-    #     '''
-    #     visitor = User.objects.get(id=obj.id)
-    #     try:
-    #         visitor.
-    #         return visitor.name.id
-    #     except ObjectDoesNotExist:
-    #         pass
+    def update(self, instance, validated_data):
+        # print(self.context['request'].data['photos'][0])
+        # print(self.context['request'].data['photos'][1])
+        # print(self.context['request'].PUT.getlist('photos'))
+        if(self.context['request'].FILES):
+            print('dd')
+        instance.contents = validated_data.get('contents', instance.contents)
+        return instance
 
-    
-    # def get_visit_date(self, obj):
-    #     '''
-    #     작성한 날짜를 가지고 오기 위한 함수
-    #     '''
-    #     date = datetime.today()
-    #     return date
+    def get_category_statistics(self, obj):
+        TOP_COUNTS = 3
+        statistic = []
+        place = obj.place
+        place_review_category_total, category_count = self.count_place_review_category(place)
+        category_count = sorted(category_count.items(), key=lambda x: x[1], reverse=True)[:TOP_COUNTS]
+        for i in category_count:
+            l = [i[0], round(i[1]/place_review_category_total*100)]
+            statistic.append(l)
+        return statistic
 
+    def count_place_review_category(self, place):
+        count = 0
+        category_count = {}
+        l = VisitorReview.objects.filter(place=place).prefetch_related('category')
+        for visitor_review_obj in l:
+            #역참조
+            p = visitor_review_obj.category.all()
+            for visitor_review_category_obj in p:
+                count+=1
+                category_content = visitor_review_category_obj.category.category_content
+                category_count = self.is_in_category_count(category_content, category_count)
+        return count, category_count
 
+    def is_in_category_count(self, category_content, category_count):
+        if category_content in category_count.keys():
+            category_count[category_content] += 1
+            return category_count
+        category_count[category_content] = 1
+        return category_count
 
-    # def get_category(self, obj):
-    #     '''
-    #     장소별 카테고리를 알려주기 위한 함수
-    #     '''
-    #     place = Place.objects.get(id=obj.id)
-    #     return place.category
+    def validate(self, data):
+        for category_data in self.context['request'].POST.getlist('category'):
+            instance = CategoryContent.objects.get(id=category_data)
+            if(instance.category_group == '공통'):
+                continue
+            if(data['place'].category != category_data):
+                raise serializers.ValidationError("장소 리뷰와 장소의 category가 일치하지 않습니다.")
+        return data
 
