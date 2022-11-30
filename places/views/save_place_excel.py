@@ -1,9 +1,14 @@
 import boto3
 import json
 import requests
-# import pandas as pd
+#import pandas as pd
 
 from django.conf import settings
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from places.models import Place, PlacePhoto, SNSType, SNSUrl
 
 aws_access_key_id = getattr(settings,'AWS_ACCESS_KEY_ID')
 aws_secret_access_key = getattr(settings,'AWS_SECRET_ACCESS_KEY')
@@ -35,11 +40,11 @@ def addr_to_lat_lon(addr):
     y=float(match_first['y'])
     return (x, y)
 
-# @swagger_auto_schema(operation_id='func_places_save_place_get', method='get',responses={200:'success'},security=[])
+# #@swagger_auto_schema(operation_id='func_places_save_place_get', method='get',responses={200:'success'},security=[])
 # @api_view(['GET'])
 # def save_place_db(request):
 #     '''
-#         SASM_DB 엑셀파일을 읽어 Place,PlacePhoto,SNS를 DB에 저장하는 함수
+#        SASM_DB 엑셀파일을 읽어 Place,PlacePhoto,SNS를 DB에 저장하는 함수
 #     '''
 #     df = pd.read_excel("SASM_DB.xlsx", engine="openpyxl")
 #     df = df.fillna('')
