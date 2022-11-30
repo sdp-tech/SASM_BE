@@ -27,4 +27,4 @@ fi
 echo "start docker-compose up: ubuntu"
 aws ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin 851125685257.dkr.ecr.ap-northeast-2.amazonaws.com
 sudo docker pull 851125685257.dkr.ecr.ap-northeast-2.amazonaws.com/sasm:$TAG
-sudo TAG=$TAG docker-compose -f /home/ubuntu/SASM_BE/docker-compose.prod.yml up -d # 하이라이트 명령어
+sudo TAG=$TAG docker-compose -f /home/ubuntu/SASM_BE/docker-compose.prod.yml up -d --build # nginx, web 컨테이너 실행
