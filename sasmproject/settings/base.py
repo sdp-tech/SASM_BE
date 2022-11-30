@@ -163,7 +163,6 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
-    'EXCEPTION_HANDLER': 'sasmproject.exceptions.custom_exception_handler',
 }
 
 # username 필드 사용 X email 필드 사용
