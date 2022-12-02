@@ -163,7 +163,6 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
-    'EXCEPTION_HANDLER': 'sasmproject.exceptions.custom_exception_handler',
 }
 
 # username 필드 사용 X email 필드 사용
@@ -195,10 +194,11 @@ EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
 # corheaders
-CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000', 'http://localhost:3000', 'http://127.0.0.1:8000',
-                         'https://api.sasmbe.com', 'https://main.d2hps9gsgzjxq.amplifyapp.com',
-                         'https://www.sasm.co.kr')
+#CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000', 'http://localhost:3000', 'http://127.0.0.1:8000',
+#                        'https://api.sasmbe.com', 'https://main.d2hps9gsgzjxq.amplifyapp.com',
+#                        'https://www.sasm.co.kr')
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 # aws s3
 # AWS 정보
