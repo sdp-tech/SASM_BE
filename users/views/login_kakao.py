@@ -4,7 +4,8 @@ from allauth.socialaccount.providers.kakao import views as kakao_view
 from ..models import User
 from .social_login import *
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
 BASE_URL = 'http://127.0.0.1:8000/'
 KAKAO_CALLBACK_URI = 'http://127.0.0.1:3000/users/kakao/callback/'
@@ -12,6 +13,7 @@ KAKAO_CALLBACK_URI = 'http://127.0.0.1:3000/users/kakao/callback/'
 # 카카오 소셜 로그인 - 토큰 요청
 @api_view(["GET", "POST"])
 @method_decorator(csrf_exempt)
+@permission_classes([AllowAny])
 def kakao_callback(request):
     rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
     code = request.GET.get("code")
@@ -34,6 +36,7 @@ def kakao_callback(request):
 
     profile_request = requests.get('https://kapi.kakao.com/v2/user/me', headers={"Authorization": f'Bearer ${access_token}'})
     profile_json = profile_request.json()
+    
     kakao_account = profile_json.get('kakao_account')
 
     # 이메일 외에도 프로필 이미지, 배경 이미지 url 등 가져올 수 있음
@@ -71,14 +74,13 @@ def kakao_callback(request):
                         'code': accept_status
                     }, status=accept_status)
         accept_json = accept.json()
-
         accept_json.pop('user', None)
         response = {
                 'access': accept_json.get('access_token'),
                 'refresh': accept_json.get('refresh_token'),
                 'nickname' : nickname
             }
-        print(response)
+        
         return Response({
                     'status': 'success',
                     'data': response,
@@ -89,6 +91,11 @@ def kakao_callback(request):
         accept = requests.post(
             f"{BASE_URL}users/kakao/login/finish/", data=data
         )
+        
+        user = User.objects.get(email=email)
+        user.is_active = True
+        user.nickname = nickname
+        user.save()
         accept_status = accept.status_code
         
         if accept_status != 200:
@@ -106,7 +113,7 @@ def kakao_callback(request):
                 'refresh': accept_json.get('refresh_token'),
                 'nickname' : nickname
             }
-        print(response)
+        
         return Response({
                     'status': 'success',
                     'data': response,
