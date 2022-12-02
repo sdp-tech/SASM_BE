@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -15,10 +15,18 @@ class BasicPagination(PageNumberPagination):
 class PlaceReviewView(viewsets.ModelViewSet):
     queryset = VisitorReview.objects.select_related('visitor_name').order_by('-created')
     serializer_class = VisitorReviewSerializer
-    permission_classes = [
-        IsAuthenticated
-    ]
     pagination_class=BasicPagination
+
+    def get_permissions(self):
+        """
+        함수에 따른 permissions customize
+        """
+        if self.action == 'save_review' or self.action == 'put':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [AllowAny]
+        print(permission_classes)
+        return [permission() for permission in permission_classes]
 
     @swagger_auto_schema(operation_id='api_places_save_review_post')
     @action(detail=False, methods=['post'])
@@ -53,7 +61,7 @@ class PlaceReviewView(viewsets.ModelViewSet):
     @swagger_auto_schema(operation_id='api_places_place_review_list_get',manual_parameters=[param_id])
     def list(self, request):
         '''
-        장소 list를 반환하는 api
+        장소에 대한 review list를 반환하는 api
         '''
         pk = request.GET.get('id','')
         queryset = VisitorReview.objects.filter(place_id=pk)
