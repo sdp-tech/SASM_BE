@@ -105,6 +105,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
     sns = SNSUrlSerializer(many=True,read_only=True)
     story_id = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()
+    category_statistics = serializers.SerializerMethodField()
     class Meta:
         model = Place
         fields = [
@@ -134,6 +135,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'sns',
             'story_id',
             'place_like',
+            'category_statistics',
             ]
             
     def get_open_hours(self,obj):
@@ -163,80 +165,10 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             return 'ok'
         else:
             return 'none' 
-
-class VisitorReviewCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VisitorReviewCategory
-        fields = [
-            'category',
-            'category_choice',
-        ]
-
-class ReviewPhotoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ReviewPhoto
-        fields = [
-            'imgfile',
-        ]
-
-
-class VisitorReviewSerializer(serializers.ModelSerializer):
-    photos = ReviewPhotoSerializer(many=True,read_only=True)
-    #category = VisitorReviewCategorySerializer(many=True,read_only=True)
-    nickname = serializers.SerializerMethodField()
-    category_statistics = serializers.SerializerMethodField()
-    writer = serializers.SerializerMethodField()
-    class Meta:
-        model = VisitorReview
-        fields = [
-            'id',
-            'nickname',
-            'place',
-            'contents',
-            'photos',
-            #'category',
-            'created',
-            'updated',
-            'category_statistics',
-            'writer',
-        ]
-
-    def get_nickname(self, obj):
-        return obj.visitor_name.nickname
-
-    def get_writer(self, obj):
-        return obj.visitor_name.email
-        
-    def create(self, validated_data):
-        photos_data = self.context['request'].FILES
-        user = self.context['request'].user
-        review = VisitorReview.objects.create(**validated_data, visitor_name=user)
-        photos = photos_data.getlist('photos')
-        for photo_data in photos:
-            #파일 경로 설정
-            ext = photo_data.name.split(".")[-1]
-            file_path = '{}/{}/{}.{}'.format(validated_data['place'],review.id,str(int(time.time())),ext)
-            image = ImageFile(io.BytesIO(photo_data.read()), name=file_path)
-            ReviewPhoto.objects.create(review=review, imgfile=image)
-        for category_data in self.context['request'].POST.getlist('category'):
-            instance = VisitorReviewCategory.objects.create(category_id=category_data)
-            instance.category_choice.add(review)
-        return review
-
-    def update(self, instance, validated_data):
-        # print(self.context['request'].data['photos'][0])
-        # print(self.context['request'].data['photos'][1])
-        # print(self.context['request'].PUT.getlist('photos'))
-        if(self.context['request'].FILES):
-            print('dd')
-        instance.contents = validated_data.get('contents', instance.contents)
-        return instance
-
     def get_category_statistics(self, obj):
         TOP_COUNTS = 3
         statistic = []
-        place = obj.place
-        place_review_category_total, category_count = self.count_place_review_category(place)
+        place_review_category_total, category_count = self.count_place_review_category(obj)
         category_count = sorted(category_count.items(), key=lambda x: x[1], reverse=True)[:TOP_COUNTS]
         for i in category_count:
             l = [i[0], round(i[1]/place_review_category_total*100)]
@@ -263,12 +195,84 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
         category_count[category_content] = 1
         return category_count
 
+class VisitorReviewCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VisitorReviewCategory
+        fields = [
+            'category',
+            'category_choice',
+        ]
+
+class ReviewPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewPhoto
+        fields = [
+            'imgfile',
+        ]
+
+
+class VisitorReviewSerializer(serializers.ModelSerializer):
+    photos = ReviewPhotoSerializer(many=True,read_only=True)
+    #category = VisitorReviewCategorySerializer(many=True,read_only=True)
+    nickname = serializers.SerializerMethodField()
+    # category_statistics = serializers.SerializerMethodField()
+    writer = serializers.SerializerMethodField()
+    class Meta:
+        model = VisitorReview
+        fields = [
+            'id',
+            'nickname',
+            'place',
+            'contents',
+            'photos',
+            #'category',
+            'created',
+            'updated',
+            # 'category_statistics',
+            'writer',
+        ]
+
+    def get_nickname(self, obj):
+        return obj.visitor_name.nickname
+
+    def get_writer(self, obj):
+        return obj.visitor_name.email
+        
+    def create(self, validated_data):
+        photos_data = self.context['request'].FILES
+        user = self.context['request'].user
+        review = VisitorReview.objects.create(**validated_data, visitor_name=user)
+        photos = photos_data.getlist('photos')
+        for photo_data in photos:
+            #파일 경로 설정
+            ext = photo_data.name.split(".")[-1]
+            file_path = '{}/{}/{}.{}'.format(validated_data['place'],review.id,str(datetime.datetime.now()),ext)
+            image = ImageFile(io.BytesIO(photo_data.read()), name=file_path)
+            ReviewPhoto.objects.create(review=review, imgfile=image)
+        for category_data in self.context['request'].POST.getlist('category')[0].split(','):
+            try:
+                instance = VisitorReviewCategory.objects.create(category_id=category_data)
+                instance.category_choice.add(review)
+            except Exception as e:
+                print(e)
+        return review
+
+    def update(self, instance, validated_data):
+        # print(self.context['request'].data['photos'][0])
+        # print(self.context['request'].data['photos'][1])
+        # print(self.context['request'].PUT.getlist('photos'))
+        if(self.context['request'].FILES):
+            print('dd')
+        instance.contents = validated_data.get('contents', instance.contents)
+        return instance
+
     def validate(self, data):
-        for category_data in self.context['request'].POST.getlist('category'):
-            instance = CategoryContent.objects.get(id=category_data)
-            if(instance.category_group == '공통'):
-                continue
-            if(data['place'].category != category_data):
-                raise serializers.ValidationError("장소 리뷰와 장소의 category가 일치하지 않습니다.")
+        if self.context['request'].POST.getlist('category') != ['']:
+            for category_data in self.context['request'].POST.getlist('category')[0].split(','):
+                instance = CategoryContent.objects.get(id=category_data)
+                if(instance.category_group == '공통'):
+                    continue
+                if(data['place'].category != category_data):
+                    raise serializers.ValidationError("장소 리뷰와 장소의 category가 일치하지 않습니다.")
         return data
 
