@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
-BASE_URL = 'https://api.sasmbe.com/'
+BASE_URL = 'https://api.sasm.co.kr/'
 KAKAO_CALLBACK_URI = 'https://sasm.co.kr/users/kakao/callback/'
 
 # 카카오 소셜 로그인 - 토큰 요청
