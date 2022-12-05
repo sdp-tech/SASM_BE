@@ -179,6 +179,8 @@ class StoryListSerializer(serializers.ModelSerializer):
 
 
 class StoryCommentSerializer(serializers.ModelSerializer):
+    nickname = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
     class Meta:
         model = StoryComment
         ordering = ['id']
@@ -190,7 +192,14 @@ class StoryCommentSerializer(serializers.ModelSerializer):
             'parent',
             'writer',
             'mention',
+            'nickname',
+            'email',
         ]
+    def get_nickname(self, obj):
+        return obj.writer.nickname
+
+    def get_email(self, obj):
+        return obj.writer.email
 
     def validate(self, data):
         if 'parent' in data:
