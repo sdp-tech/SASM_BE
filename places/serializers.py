@@ -200,7 +200,7 @@ class VisitorReviewCategorySerializer(serializers.ModelSerializer):
         model = VisitorReviewCategory
         fields = [
             'category',
-            'category_choice',
+            #'category_choice',
         ]
 
 class ReviewPhotoSerializer(serializers.ModelSerializer):
@@ -213,7 +213,7 @@ class ReviewPhotoSerializer(serializers.ModelSerializer):
 
 class VisitorReviewSerializer(serializers.ModelSerializer):
     photos = ReviewPhotoSerializer(many=True,read_only=True)
-    #category = VisitorReviewCategorySerializer(many=True,read_only=True)
+    category = VisitorReviewCategorySerializer(many=True,read_only=True)
     nickname = serializers.SerializerMethodField()
     # category_statistics = serializers.SerializerMethodField()
     writer = serializers.SerializerMethodField()
@@ -225,7 +225,7 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
             'place',
             'contents',
             'photos',
-            #'category',
+            'category',
             'created',
             'updated',
             # 'category_statistics',
