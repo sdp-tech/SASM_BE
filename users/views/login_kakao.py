@@ -59,6 +59,8 @@ def kakao_callback(request):
     try:
         user = User.objects.get(email=email)
         social_user = SocialAccount.objects.get(user=user)
+        logger.inf0("user exists")
+        logger.info(user)
         if social_user is None:
             return Response({
                         'status': 'error',
@@ -103,8 +105,13 @@ def kakao_callback(request):
         accept = requests.post(
             f"{BASE_URL}users/kakao/login/finish/", data=data
         )
+        logger.info("로그인 완료")
+        logger.info(accept)
+        logger.info(accept.status_code)
         
         user = User.objects.get(email=email)
+        logger.info("유저")
+        logger.info(user)
         user.is_active = True
         user.nickname = nickname
         user.save()
