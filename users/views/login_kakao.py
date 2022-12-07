@@ -31,12 +31,15 @@ def kakao_callback(request):
     token_req = requests.get(
         f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={rest_api_key}&redirect_uri={redirect_uri}&code={code}"
     )
-    logger.info("토큰 받기", token_req)
+    logger.info("토큰 받기")
+    logger.info(token_req)
     
     token_req_json = token_req.json()
-    logger.info("토큰 디코드", token_req_json)
+    logger.info("토큰 디코드")
+    logger.info(token_req_json)
     error = token_req_json.get("error")
-    logger.info("에러", error)
+    logger.info("에러")
+    logger.info(error)
 
     if error is not None:
         return Response({
