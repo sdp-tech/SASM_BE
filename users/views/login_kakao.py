@@ -11,7 +11,6 @@ import logging
 
 BASE_URL = 'http://127.0.0.1:8000/'
 KAKAO_CALLBACK_URI = 'http://127.0.0.1:3000/users/kakao/callback/'
-
 logger = logging.getLogger("login_kakao")
 logger.setLevel(logging.INFO)
 
@@ -23,6 +22,7 @@ def kakao_callback(request):
     rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
     code = request.GET.get("code")
     logger.info(code)
+
     redirect_uri = KAKAO_CALLBACK_URI
     
     token_req = requests.get(
@@ -34,6 +34,7 @@ def kakao_callback(request):
     logger.info("토큰 디코드", token_req_json)
     error = token_req_json.get("error")
     logger.info("에러", error)
+
     if error is not None:
         return Response({
                         'status': 'error',
