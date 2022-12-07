@@ -101,7 +101,9 @@ def kakao_callback(request):
                 }, status=status.HTTP_200_OK)
         
     except User.DoesNotExist:
+        logger.info("유저 없음")
         data = {'access_token': access_token, 'code': code}
+        logger.info(data)
         accept = requests.post(
             f"{BASE_URL}users/kakao/login/finish/", data=data
         )
