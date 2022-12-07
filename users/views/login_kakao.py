@@ -9,8 +9,9 @@ from rest_framework.permissions import AllowAny
 
 import logging
 
-BASE_URL = 'http://127.0.0.1:8000/'
-KAKAO_CALLBACK_URI = 'http://127.0.0.1:3000/users/kakao/callback/'
+BASE_URL = 'https://api.sasm.co.kr/'
+KAKAO_CALLBACK_URI = 'https://sasm.co.kr/users/kakao/callback/'
+
 logger = logging.getLogger("login_kakao")
 logger.setLevel(logging.INFO)
 
