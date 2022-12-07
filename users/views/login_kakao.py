@@ -105,6 +105,8 @@ def kakao_callback(request):
         )
         
         user = User.objects.get(email=email)
+        logger.info("유저")
+        logger.info(user)
         user.is_active = True
         user.nickname = nickname
         user.save()
