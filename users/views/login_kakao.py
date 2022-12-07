@@ -12,8 +12,6 @@ import logging
 BASE_URL = 'https://api.sasm.co.kr/'
 KAKAO_CALLBACK_URI = 'https://www.sasm.co.kr/users/kakao/callback/'
 
-
-
 logger = logging.getLogger("login_kakao")
 logger.setLevel(logging.INFO)
 stream_handler = logging.StreamHandler()
