@@ -111,12 +111,6 @@ def kakao_callback(request):
         logger.info(accept)
         logger.info(accept.status_code)
         
-        user = User.objects.get(email=email)
-        logger.info("유저")
-        logger.info(user)
-        user.is_active = True
-        user.nickname = nickname
-        user.save()
         accept_status = accept.status_code
         
         if accept_status != 200:
@@ -125,7 +119,14 @@ def kakao_callback(request):
                         'message': 'Failed to signup',
                         'code': accept_status
                     }, status=accept_status)
-            
+        
+        user = User.objects.get(email=email)
+        logger.info("유저")
+        logger.info(user)
+        user.is_active = True
+        user.nickname = nickname
+        user.save()
+        
         accept_json = accept.json()
         accept_json.pop('user', None)
     
