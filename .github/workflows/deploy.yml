@@ -24,7 +24,7 @@ jobs: # 아래의 jobs를 수행
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: create remote directory # ec2 서버에 접속해 리모트 디렉토리 생성
-        uses: appleboy/ssh-action@master@v0.1.5
+        uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.HOST }}
           username: ubuntu
