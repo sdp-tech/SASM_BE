@@ -14,6 +14,8 @@ KAKAO_CALLBACK_URI = 'https://sasm.co.kr/users/kakao/callback/'
 
 logger = logging.getLogger("login_kakao")
 logger.setLevel(logging.INFO)
+stream_handler = logging.StreamHandler()
+logger.addHandler(stream_handler)
 
 # 카카오 소셜 로그인 - 토큰 요청
 @api_view(["GET", "POST"])
