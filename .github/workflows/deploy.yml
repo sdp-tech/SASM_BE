@@ -53,7 +53,7 @@ jobs: # 아래의 jobs를 수행
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
       - name: executing remote ssh commands using password # 서버로 접속해 .env 파일 생성 후
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.HOST }}
           username: ubuntu
@@ -62,7 +62,7 @@ jobs: # 아래의 jobs를 수행
             echo '${{ secrets.ENV_VARS }}' >> /home/ubuntu/SASM_BE/.env
 
       - name: executing remote ssh commands using password # deploy.sh 파일 실행
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.HOST }}
           username: ubuntu
