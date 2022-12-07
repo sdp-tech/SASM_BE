@@ -1,3 +1,5 @@
+import traceback
+
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from allauth.socialaccount.providers.kakao import views as kakao_view
@@ -104,9 +106,15 @@ def kakao_callback(request):
         logger.info("유저 없음")
         data = {'access_token': access_token, 'code': code}
         logger.info(data)
-        accept = requests.post(
-            f"{BASE_URL}users/kakao/login/finish/", data=data
-        )
+        
+        try:
+            accept = requests.post(
+                f"{BASE_URL}users/kakao/login/finish/", data=data
+            )
+        except:
+            logger.info(traceback.print_exc())
+        
+        
         logger.info("로그인 완료")
         logger.info(accept)
         logger.info(accept.status_code)
