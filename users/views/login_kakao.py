@@ -24,22 +24,16 @@ logger.addHandler(stream_handler)
 def kakao_callback(request):
     rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
     code = request.GET.get("code")
-    logger.info(code)
-
     redirect_uri = KAKAO_CALLBACK_URI
     
     token_req = requests.get(
         f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={rest_api_key}&redirect_uri={redirect_uri}&code={code}"
     )
-    logger.info("토큰 받기")
-    logger.info(token_req)
-    
+
     token_req_json = token_req.json()
     logger.info("토큰 디코드")
     logger.info(token_req_json)
     error = token_req_json.get("error")
-    logger.info("에러")
-    logger.info(error)
 
     if error is not None:
         return Response({
@@ -59,7 +53,9 @@ def kakao_callback(request):
     email = kakao_account.get('email', None)
     profile = kakao_account.get('profile', None)
     nickname = profile.get('nickname', None)
-
+    logger.info("이메일")
+    logger.info(email)
+    
     try:
         user = User.objects.get(email=email)
         social_user = SocialAccount.objects.get(user=user)
