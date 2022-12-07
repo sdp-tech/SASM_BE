@@ -12,6 +12,9 @@ import logging
 BASE_URL = 'http://127.0.0.1:8000/'
 KAKAO_CALLBACK_URI = 'http://127.0.0.1:3000/users/kakao/callback/'
 
+logger = logging.getLogger("login_kakao")
+logger.setLevel(logging.INFO)
+
 # 카카오 소셜 로그인 - 토큰 요청
 @api_view(["GET", "POST"])
 @method_decorator(csrf_exempt)
@@ -19,18 +22,18 @@ KAKAO_CALLBACK_URI = 'http://127.0.0.1:3000/users/kakao/callback/'
 def kakao_callback(request):
     rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
     code = request.GET.get("code")
-    logging.info(code)
+    logger.info(code)
     redirect_uri = KAKAO_CALLBACK_URI
     
     token_req = requests.get(
         f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={rest_api_key}&redirect_uri={redirect_uri}&code={code}"
     )
-    logging.info("토큰 받기", token_req)
+    logger.info("토큰 받기", token_req)
     
     token_req_json = token_req.json()
-    logging.info("토큰 디코드", token_req_json)
+    logger.info("토큰 디코드", token_req_json)
     error = token_req_json.get("error")
-    logging.info("에러", error)
+    logger.info("에러", error)
     if error is not None:
         return Response({
                         'status': 'error',
