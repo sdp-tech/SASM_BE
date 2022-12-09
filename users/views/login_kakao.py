@@ -60,9 +60,11 @@ def kakao_callback(request):
     
     try:
         user = User.objects.get(email=email)
-        social_user = SocialAccount.objects.get(user=user)
-        logger.inf0("user exists")
+        logger.info("user exists")
         logger.info(user)
+        social_user = SocialAccount.objects.get(user=user)
+        logger.info("social user exists")
+        logger.info(social_user)
         if social_user is None:
             return Response({
                         'status': 'error',
