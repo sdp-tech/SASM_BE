@@ -1,5 +1,3 @@
-import traceback
-
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from allauth.socialaccount.providers.kakao import views as kakao_view
@@ -14,6 +12,7 @@ import logging
 BASE_URL = 'https://api.sasm.co.kr/'
 KAKAO_CALLBACK_URI = 'https://www.sasm.co.kr/users/kakao/callback/'
 
+# logger 설정
 logger = logging.getLogger("login_kakao")
 logger.setLevel(logging.INFO)
 stream_handler = logging.StreamHandler()
@@ -33,8 +32,6 @@ def kakao_callback(request):
     )
 
     token_req_json = token_req.json()
-    logger.info("토큰 디코드")
-    logger.info(token_req_json)
     error = token_req_json.get("error")
 
     if error is not None:
@@ -55,16 +52,10 @@ def kakao_callback(request):
     email = kakao_account.get('email', None)
     profile = kakao_account.get('profile', None)
     nickname = profile.get('nickname', None)
-    logger.info("이메일")
-    logger.info(email)
     
     try:
         user = User.objects.get(email=email)
-        logger.info("user exists")
-        logger.info(user)
         social_user = SocialAccount.objects.get(user=user)
-        logger.info("social user exists")
-        logger.info(social_user)
         if social_user is None:
             return Response({
                         'status': 'error',
@@ -105,21 +96,11 @@ def kakao_callback(request):
                 }, status=status.HTTP_200_OK)
         
     except User.DoesNotExist:
-        logger.info("유저 없음")
         data = {'access_token': access_token, 'code': code}
-        logger.info(data)
         
-        try:
-            accept = requests.post(
+        accept = requests.post(
                 f"{BASE_URL}users/kakao/login/finish/", data=data
             )
-        except:
-            logger.info(traceback.print_exc())
-        
-        
-        logger.info("로그인 완료")
-        logger.info(accept)
-        logger.info(accept.status_code)
         
         accept_status = accept.status_code
         
@@ -131,8 +112,6 @@ def kakao_callback(request):
                     }, status=accept_status)
         
         user = User.objects.get(email=email)
-        logger.info("유저")
-        logger.info(user)
         user.is_active = True
         user.nickname = nickname
         user.save()
