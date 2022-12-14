@@ -15,8 +15,7 @@ from users.models import User
 from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer
 from places.serializers import MapMarkerSerializer
 from core.permissions import IsStoryCommentWriterOrReadOnly
-from sasmproject.swagger import StoryCommentViewSet_list_params
-
+from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
 from drf_yasg.utils import swagger_auto_schema
 
 
@@ -101,7 +100,26 @@ class StoryListView(viewsets.ModelViewSet):
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-
+    
+    @swagger_auto_schema(operation_id='api_stories_recommend_story_get',manual_parameters=[param_id])
+    def recommend_story(self, request):
+        id = request.GET.get('id', '')
+        qs = self.get_queryset()
+        story = Story.objects.get(id=id)
+        #story의 category와 같은 스토리 return
+        qs = qs.filter(address__category=story.address.category).exclude(id=id)
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_paginated_response(
+                self.get_serializer(page, many=True).data
+            )
+        else:
+            serializer = self.get_serializer(page, many=True)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+        
 
 class StoryDetailView(generics.RetrieveAPIView):
     '''
