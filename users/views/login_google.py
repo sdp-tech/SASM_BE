@@ -105,6 +105,11 @@ def google_callback(request):
                         'code': accept_status
                     }, status=accept_status)
             
+        user = User.objects.get(email=email)
+        user.is_active = True
+        user.nickname = nickname
+        user.save()
+            
         accept_json = accept.json()
         accept_json.pop('user', None)
         
