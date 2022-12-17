@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.serializers import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from places.models import VisitorReview
@@ -35,16 +36,20 @@ class PlaceReviewView(viewsets.ModelViewSet):
         '''
         review_info = request.data
         serializer = VisitorReviewSerializer(data=review_info, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
+        
+        try:
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                        "status" : "success",
+                        "data" : serializer.data,
+                    },status=status.HTTP_200_OK)
+        except:
             return Response({
-                    "status" : "success",
-                    "data" : serializer.data,
-                },status=status.HTTP_200_OK)
-        return Response({
-            "status" : "fail",
-            "data" : serializer.errors,
-        })
+                "status" : "fail",
+                "data" : serializer.errors,
+                "message" : "can upload upto three"
+            })
 
     @swagger_auto_schema(operation_id='api_places_place_review_retreive_get',manual_parameters=[param_pk])
     def retrieve(self, request, *args, **kwargs):
