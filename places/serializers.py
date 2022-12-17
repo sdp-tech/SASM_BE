@@ -208,10 +208,33 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
         photos_data = self.context['request'].FILES
         print(photos_data)
         review = VisitorReview.objects.create(**validated_data)
+        # print(review)
+
+        photo_list = photos_data.getlist('photos')
+        count = len(photo_list)
+        # print(count)
+        if(count > 3):
+            raise serializers.ValidationError()
+        # raise Exception('사진은 최대 3개까지 업로드 가능합니다.')
         for photo_data in photos_data.getlist('photos'):
             print(photo_data)   
             ReviewPhoto.objects.create(review=review, imgfile=photo_data)
+        # except Exception as e:    
+        #     print("예외가 발생했습니다.", e)
+        print(review)
         return review
+
+    # def update(self, instance, validated_data):
+    #     print(validated_data)
+    #     photos_data = self.context['request'].FILES
+    #     review = VisitorReview.objects.update(**validated_data)
+
+    #     photo
+
+    #     return super().update(instance, validated_data)
+        
+
+        
 
     # def get_visitor_id(self, obj):
     #     '''

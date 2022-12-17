@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view
+from rest_framework.serializers import ValidationError
 from silk.profiling.profiler import silk_profile
 import pandas as pd
 import boto3
@@ -236,16 +237,34 @@ class PlaceReviewView(viewsets.ModelViewSet):
         '''
         review_info = request.data
         serializer = VisitorReviewSerializer(data=review_info, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
+
+        try:
+            if serializer.is_valid():
+                serializer.save()
+
+                return Response({
                     "status" : "success",
                     "data" : serializer.data,
                 },status=status.HTTP_200_OK)
-        return Response({
-            "status" : "fail",
-            "data" : serializer.errors,
-        })
+        except ValidationError as e:
+            return Response({
+                "status" : "fail",
+                "data" : serializer.errors,
+                "message" : "can upload upto three",
+            })
+
+
+        # if serializer.is_valid():
+        #     serializer.save()
+
+        #     return Response({
+        #             "status" : "success",
+        #             "data" : serializer.data,
+        #         },status=status.HTTP_200_OK)
+        # return Response({
+        #     "status" : "fail",
+        #     "data" : serializer.errors,
+        # })
 
     # @action(detail=False, methods=['post'])
     # def save_picture(Self, request):
