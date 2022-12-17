@@ -4,7 +4,7 @@ services:
   web:
     image: 851125685257.dkr.ecr.ap-northeast-2.amazonaws.com/sasm:${TAG}
     container_name: web
-    command: gunicorn sasmproject.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn sasmproject.wsgi:application --capture-output --bind 0.0.0.0:8000 --timeout 60 --threads 2
     environment:
       DJANGO_SETTINGS_MODULE: sasmproject.settings.prod # prod.py > .env 파일에 있는 값들을 환경변수로 설정
     env_file:

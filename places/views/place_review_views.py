@@ -25,7 +25,6 @@ class PlaceReviewView(viewsets.ModelViewSet):
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [AllowAny]
-        print(permission_classes)
         return [permission() for permission in permission_classes]
 
     @swagger_auto_schema(operation_id='api_places_save_review_post')

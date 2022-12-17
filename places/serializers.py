@@ -200,7 +200,7 @@ class VisitorReviewCategorySerializer(serializers.ModelSerializer):
         model = VisitorReviewCategory
         fields = [
             'category',
-            'category_choice',
+            #'category_choice',
         ]
 
 class ReviewPhotoSerializer(serializers.ModelSerializer):
@@ -213,7 +213,7 @@ class ReviewPhotoSerializer(serializers.ModelSerializer):
 
 class VisitorReviewSerializer(serializers.ModelSerializer):
     photos = ReviewPhotoSerializer(many=True,read_only=True)
-    #category = VisitorReviewCategorySerializer(many=True,read_only=True)
+    category = VisitorReviewCategorySerializer(many=True,read_only=True)
     nickname = serializers.SerializerMethodField()
     # category_statistics = serializers.SerializerMethodField()
     writer = serializers.SerializerMethodField()
@@ -225,7 +225,7 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
             'place',
             'contents',
             'photos',
-            #'category',
+            'category',
             'created',
             'updated',
             # 'category_statistics',
@@ -258,12 +258,19 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
         return review
 
     def update(self, instance, validated_data):
-        # print(self.context['request'].data['photos'][0])
-        # print(self.context['request'].data['photos'][1])
-        # print(self.context['request'].PUT.getlist('photos'))
+        category = self.context['request'].data['category'].split(',')
+        p = instance.category.all()
+        count = 0
+        for visitor_review_category_obj in p:
+            if visitor_review_category_obj.category.id != category[count]:
+                visitor_review = VisitorReviewCategory.objects.create(category_id=category[count])
+                visitor_review.category_choice.add(instance)
+                visitor_review_category_obj.delete()
+            count += 1
         if(self.context['request'].FILES):
             print('dd')
         instance.contents = validated_data.get('contents', instance.contents)
+        instance.save()
         return instance
 
     def validate(self, data):
@@ -272,7 +279,6 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
                 instance = CategoryContent.objects.get(id=category_data)
                 if(instance.category_group == '공통'):
                     continue
-                if(data['place'].category != category_data):
+                if(data['place'].category != instance.category_group):
                     raise serializers.ValidationError("장소 리뷰와 장소의 category가 일치하지 않습니다.")
         return data
-
