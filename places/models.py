@@ -24,7 +24,7 @@ class PlacePhoto(core_models.TimeStampedModel):
     """PlacePhoto Model Definition"""
     image = models.ImageField(
         upload_to=get_upload_path, default='place_image.png')
-    place = models.ForeignKey("Place",related_name='photos',on_delete=models.CASCADE)
+    place = models.ForeignKey("Place", related_name='photos', on_delete=models.CASCADE)
     
     def __str__(self):
         return self.place.place_name
@@ -35,7 +35,7 @@ class Place(core_models.TimeStampedModel):
     PLACE1 = "식당 및 카페"
     PLACE2 = "전시 및 체험공간"
     PLACE3 = "제로웨이스트 샵"
-    PLACE4 = "도시 재생 및 친환경 건출물"
+    PLACE4 = "도시 재생 및 친환경 건축물"
     PLACE5 = "복합 문화 공간"
     PLACE6 = "녹색 공간"
     PLACE7 = "그 외"
@@ -43,7 +43,7 @@ class Place(core_models.TimeStampedModel):
         (PLACE1, "식당 및 카페"),
         (PLACE2, "전시 및 체험공간"),
         (PLACE3, "제로웨이스트 샵"),
-        (PLACE4, "도시 재생 및 친환경 건출물"),
+        (PLACE4, "도시 재생 및 친환경 건축물"),
         (PLACE5, "복합 문화 공간"),
         (PLACE6, "녹색 공간"),
         (PLACE7, "그 외"),
@@ -114,14 +114,13 @@ class CategoryContent(models.Model):
     category_content = models.CharField(max_length=100)
     category_group = models.CharField(choices=PLACE_CHOICES, max_length=30, blank=True)
 
-
     def __str__(self):
         return self.category_content
 
 class VisitorReviewCategory(core_models.TimeStampedModel):
     # place_category = models.CharField(max_length=80)
     category = models.ForeignKey("CategoryContent", on_delete=models.CASCADE)
-    category_choice = models.ManyToManyField("VisitorReview")
+    category_choice = models.ManyToManyField("VisitorReview", related_name='category')
 
     # def __str__(self):
     #     return self.category
@@ -130,7 +129,6 @@ class VisitorReview(core_models.TimeStampedModel):
     place = models.ForeignKey("Place", on_delete=models.CASCADE) #방문자리뷰 모델은 Place 모델을 속성으로 가져야 함
     visitor_name = models.ForeignKey("users.User", on_delete=models.CASCADE)  #리뷰다는 사람 이름
     contents = models.TextField(help_text="리뷰를 작성해주세요.", blank=False, null=False) #내용 작성
-    # category_choice = models.ManyToManyField(CategoryContent)
 
     def __str__(self):
         return self.contents

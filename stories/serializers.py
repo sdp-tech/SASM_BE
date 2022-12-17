@@ -42,9 +42,8 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         '''
         스토리의 좋아요 여부를 알려주기 위한 함수
         '''
-        story = Story.objects.get(id=obj.id)
         re_user = self.context['request'].user.id
-        like_id = story.story_likeuser_set.all()
+        like_id = obj.story_likeuser_set.all()
         users = User.objects.filter(id__in=like_id)
         if users.filter(id=re_user).exists():
             return 'ok'
@@ -55,15 +54,14 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         '''
             스토리의 category를 알려 주기 위한 함수
         '''
-        story = Story.objects.get(id=obj.id)
-        place = story.address
+        place = obj.address
         return place.category
 
     def get_semi_category(self, obj):
         '''
             스토리의 세부 category를 알려 주기 위한 함수
         '''
-        place = Story.objects.get(id=obj.id).address
+        place = obj.address
         result = []
         vegan = place.vegan_category
         if vegan != '':
@@ -93,8 +91,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         '''
             스토리에 매핑되는 장소 이름을 알려 주기 위한 함수
         '''
-        story = Story.objects.get(id=obj.id)
-        place = story.address
+        place = obj.address
         return place.place_name
 
 
@@ -116,23 +113,22 @@ class StoryListSerializer(serializers.ModelSerializer):
             'semi_category',
             'views',
             'rep_pic',
+            'created',
         ]
 
     def get_place_name(self, obj):
         '''
             스토리에 매핑되는 장소 이름을 알려 주기 위한 함수
         '''
-        story = Story.objects.get(id=obj.id)
-        place = story.address
+        place = obj.address
         return place.place_name
 
     def get_story_like(self, obj):
         '''
         스토리의 좋아요 여부를 알려주기 위한 함수
         '''
-        story = Story.objects.get(id=obj.id)
         re_user = self.context['request'].user.id
-        like_id = story.story_likeuser_set.all()
+        like_id = obj.story_likeuser_set.all()
         users = User.objects.filter(id__in=like_id)
         if users.filter(id=re_user).exists():
             return 'ok'
@@ -143,15 +139,14 @@ class StoryListSerializer(serializers.ModelSerializer):
         '''
             스토리의 category를 알려 주기 위한 함수
         '''
-        story = Story.objects.get(id=obj.id)
-        place = story.address
+        place = obj.address
         return place.category
 
     def get_semi_category(self, obj):
         '''
             스토리의 세부 category를 알려 주기 위한 함수
         '''
-        place = Story.objects.get(id=obj.id).address
+        place = obj.address
         result = []
         vegan = place.vegan_category
         if vegan != '':
@@ -179,6 +174,8 @@ class StoryListSerializer(serializers.ModelSerializer):
 
 
 class StoryCommentSerializer(serializers.ModelSerializer):
+    nickname = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
     class Meta:
         model = StoryComment
         ordering = ['id']
@@ -190,7 +187,14 @@ class StoryCommentSerializer(serializers.ModelSerializer):
             'parent',
             'writer',
             'mention',
+            'nickname',
+            'email',
         ]
+    def get_nickname(self, obj):
+        return obj.writer.nickname
+
+    def get_email(self, obj):
+        return obj.writer.email
 
     def validate(self, data):
         if 'parent' in data:

@@ -1,9 +1,12 @@
+import io
+import time
 import datetime
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.images import ImageFile
 from rest_framework import serializers
 import haversine as hs
-from places.models import Place, PlacePhoto, SNSUrl, VisitorReview, ReviewPhoto, VisitorReviewCategory
+from places.models import Place, PlacePhoto, SNSUrl, VisitorReview, ReviewPhoto, VisitorReviewCategory, CategoryContent
 from users.models import User
 
 class PlacePhotoSerializer(serializers.ModelSerializer):
@@ -43,33 +46,36 @@ class PlaceSerializer(serializers.ModelSerializer):
             'id',
             'place_name',
             'category',
-            'vegan_category',
-            'tumblur_category',
-            'reusable_con_category',
-            'pet_category',
+            #'vegan_category',
+            #'tumblur_category',
+            #'reusable_con_category',
+            #'pet_category',
             'open_hours',
-            'etc_hours',
+            #'etc_hours',
             'place_review',
             'address',
             'rep_pic',
-            'short_cur',
+            #'short_cur',
             'latitude',
             'longitude',
             'place_like',
             'distance',
         ]
-        
+    
+    # #클래스 변수에 접근해야해서 classmethod 사용
+    # @classmethod
+    # def only_queryset(cls, queryset):
+    #     queryset = queryset.values(*cls.Meta.fields)
+    #     return queryset
+
     def get_distance(self, obj):
         '''
             거리순 정렬을 위해 거리를 계산하는 함수
         '''
         left = self.context.get('left')
         right = self.context.get('right')
-        
         my_location = (float(left), float(right))
-        
-        place = Place.objects.get(id=obj.id)
-        place_location = (place.latitude, place.longitude)
+        place_location = (obj.latitude, obj.longitude)
         distance = hs.haversine(my_location, place_location)
         return float(distance)
             
@@ -79,23 +85,18 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
         a = datetime.datetime.today().weekday()
-        place = Place.objects.filter(id=obj.id).values(days[a])[0]
+        place = Place.objects.filter(id = obj.id).values(days[a])[0]
         return place[days[a]]
 
     def get_place_like(self,obj):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
-        place = Place.objects.get(id=obj.id)
         re_user =  self.context['request'].user.id
-        like_id = place.place_likeuser_set.all()
-        users = User.objects.filter(id__in=like_id)
-        if users.filter(id=re_user).exists():
+        if obj.place_likeuser_set.filter(id=re_user).exists():
             return 'ok'
         else:
-            return 'none'   
-        
-        
+            return 'none'
 
 class PlaceDetailSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
@@ -104,18 +105,19 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
     sns = SNSUrlSerializer(many=True,read_only=True)
     story_id = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()
+    category_statistics = serializers.SerializerMethodField()
     class Meta:
         model = Place
         fields = [
             'id',
             'place_name',
             'category',
-            'vegan_category',
-            'tumblur_category',
-            'reusable_con_category',
-            'pet_category',
+            #'vegan_category',
+            #'tumblur_category',
+            #'reusable_con_category',
+            #'pet_category',
             'open_hours',
-            'etc_hours',
+            #'etc_hours',
             'mon_hours',
             'tues_hours',
             'wed_hours',
@@ -133,24 +135,24 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'sns',
             'story_id',
             'place_like',
+            'category_statistics',
             ]
+            
     def get_open_hours(self,obj):
         '''
         오늘 요일만 보내주기 위한 함수
         '''
         days = ['mon_hours','tues_hours','wed_hours','thurs_hours','fri_hours','sat_hours','sun_hours']
         a = datetime.datetime.today().weekday()
-        place = Place.objects.filter(id=obj.id).values(days[a])[0]
+        place = Place.objects.filter(id = obj.id).values(days[a])[0]
         return place[days[a]]
-    
+        
     def get_story_id(self, obj):
         '''
             스토리 id를 보내 주기 위한 함수
         '''
-        place = Place.objects.get(id=obj.id)
         try:
-            place.story
-            return place.story.id
+            return obj.story.id
         except ObjectDoesNotExist:
             pass
 
@@ -158,21 +160,47 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
-        place = Place.objects.get(id=obj.id)
         re_user =  self.context['request'].user.id
-        like_id = place.place_likeuser_set.all()
-        users = User.objects.filter(id__in=like_id)
-        if users.filter(id=re_user).exists():
+        if obj.place_likeuser_set.filter(id=re_user).exists():
             return 'ok'
         else:
             return 'none' 
+    def get_category_statistics(self, obj):
+        TOP_COUNTS = 3
+        statistic = []
+        place_review_category_total, category_count = self.count_place_review_category(obj)
+        category_count = sorted(category_count.items(), key=lambda x: x[1], reverse=True)[:TOP_COUNTS]
+        for i in category_count:
+            l = [i[0], round(i[1]/place_review_category_total*100)]
+            statistic.append(l)
+        return statistic
+
+    def count_place_review_category(self, place):
+        count = 0
+        category_count = {}
+        l = VisitorReview.objects.filter(place=place).prefetch_related('category')
+        for visitor_review_obj in l:
+            #역참조
+            p = visitor_review_obj.category.all()
+            for visitor_review_category_obj in p:
+                count+=1
+                category_content = visitor_review_category_obj.category.category_content
+                category_count = self.is_in_category_count(category_content, category_count)
+        return count, category_count
+
+    def is_in_category_count(self, category_content, category_count):
+        if category_content in category_count.keys():
+            category_count[category_content] += 1
+            return category_count
+        category_count[category_content] = 1
+        return category_count
 
 class VisitorReviewCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = VisitorReviewCategory
         fields = [
             'category',
-            'category_choice',
+            #'category_choice',
         ]
 
 class ReviewPhotoSerializer(serializers.ModelSerializer):
@@ -186,81 +214,74 @@ class ReviewPhotoSerializer(serializers.ModelSerializer):
 class VisitorReviewSerializer(serializers.ModelSerializer):
     photos = ReviewPhotoSerializer(many=True,read_only=True)
     category = VisitorReviewCategorySerializer(many=True,read_only=True)
-
+    nickname = serializers.SerializerMethodField()
+    # category_statistics = serializers.SerializerMethodField()
+    writer = serializers.SerializerMethodField()
     class Meta:
         model = VisitorReview
         fields = [
+            'id',
+            'nickname',
             'place',
-            'visitor_name',
             'contents',
             'photos',
             'category',
-            # 'created',
-            # 'updated',
+            'created',
+            'updated',
+            # 'category_statistics',
+            'writer',
         ]
 
-    # context={
-    #     "request":request
-    # }
+    def get_nickname(self, obj):
+        return obj.visitor_name.nickname
 
+    def get_writer(self, obj):
+        return obj.visitor_name.email
+        
     def create(self, validated_data):
-        print(validated_data)
         photos_data = self.context['request'].FILES
-        print(photos_data)
-        review = VisitorReview.objects.create(**validated_data)
-        # print(review)
-
-        photo_list = photos_data.getlist('photos')
-        count = len(photo_list)
-        # print(count)
-        if(count > 3):
+        user = self.context['request'].user
+        review = VisitorReview.objects.create(**validated_data, visitor_name=user)
+        photos = photos_data.getlist('photos')
+        count = len(photos)
+        if (count > 3):
             raise serializers.ValidationError()
-        # raise Exception('사진은 최대 3개까지 업로드 가능합니다.')
-        for photo_data in photos_data.getlist('photos'):
-            print(photo_data)   
-            ReviewPhoto.objects.create(review=review, imgfile=photo_data)
-        # except Exception as e:    
-        #     print("예외가 발생했습니다.", e)
-        print(review)
+        for photo_data in photos:
+            #파일 경로 설정
+            ext = photo_data.name.split(".")[-1]
+            file_path = '{}/{}/{}.{}'.format(validated_data['place'],review.id,str(datetime.datetime.now()),ext)
+            image = ImageFile(io.BytesIO(photo_data.read()), name=file_path)
+            ReviewPhoto.objects.create(review=review, imgfile=image)
+        for category_data in self.context['request'].POST.getlist('category')[0].split(','):
+            try:
+                instance = VisitorReviewCategory.objects.create(category_id=category_data)
+                instance.category_choice.add(review)
+            except Exception as e:
+                print(e)
         return review
 
-    # def update(self, instance, validated_data):
-    #     print(validated_data)
-    #     photos_data = self.context['request'].FILES
-    #     review = VisitorReview.objects.update(**validated_data)
+    def update(self, instance, validated_data):
+        category = self.context['request'].data['category'].split(',')
+        p = instance.category.all()
+        count = 0
+        for visitor_review_category_obj in p:
+            if visitor_review_category_obj.category.id != category[count]:
+                visitor_review = VisitorReviewCategory.objects.create(category_id=category[count])
+                visitor_review.category_choice.add(instance)
+                visitor_review_category_obj.delete()
+            count += 1
+        if(self.context['request'].FILES):
+            print('dd')
+        instance.contents = validated_data.get('contents', instance.contents)
+        instance.save()
+        return instance
 
-    #     photo
-
-    #     return super().update(instance, validated_data)
-        
-
-        
-
-    # def get_visitor_id(self, obj):
-    #     '''
-    #     작성자 id를 가지고 오기 위한 함수
-    #     '''
-    #     visitor = User.objects.get(id=obj.id)
-    #     try:
-    #         visitor.
-    #         return visitor.name.id
-    #     except ObjectDoesNotExist:
-    #         pass
-
-    
-    # def get_visit_date(self, obj):
-    #     '''
-    #     작성한 날짜를 가지고 오기 위한 함수
-    #     '''
-    #     date = datetime.today()
-    #     return date
-
-
-
-    # def get_category(self, obj):
-    #     '''
-    #     장소별 카테고리를 알려주기 위한 함수
-    #     '''
-    #     place = Place.objects.get(id=obj.id)
-    #     return place.category
-
+    def validate(self, data):
+        if self.context['request'].POST.getlist('category') != ['']:
+            for category_data in self.context['request'].POST.getlist('category')[0].split(','):
+                instance = CategoryContent.objects.get(id=category_data)
+                if(instance.category_group == '공통'):
+                    continue
+                if(data['place'].category != instance.category_group):
+                    raise serializers.ValidationError("장소 리뷰와 장소의 category가 일치하지 않습니다.")
+        return data

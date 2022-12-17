@@ -1,3 +1,5 @@
+import traceback
+
 from functools import partial
 from django.contrib.auth import get_user_model
 from django.db.models import Q
@@ -156,11 +158,35 @@ class MeView(APIView):
             'data': UserSerializer(request.user).data,
         }, status=status.HTTP_200_OK)
 
+# TODO: refactor - 파라미터를 기존 type, email/nickname에서 type, value로 바꾸기
+
     def post(self, request):
-        print(request.data)
         serializer = UserSerializer(
             request.user, data=request.data, partial=True)
         if serializer.is_valid():
+            # email 수정 시 reject
+            if 'email' in serializer.validated_data:
+                return Response({
+                    'status': 'fail',
+                    'message': '이메일은 변경할 수 없습니다.',
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # 중복된 닉네임 수정 시 reject
+            if 'nickname' in serializer.validated_data:
+                try:
+                    nickname = serializer.validated_data['nickname']
+                    if check_email_nickname_rep('nickname', nickname):
+                        return Response({
+                            'status': 'fail',
+                            'message': '이미 사용 중인 닉네임입니다.',
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                except Exception as e:
+                    return Response({
+                        'status': 'error',
+                        'message': 'Unknown',
+                        'code': 400,
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
             serializer.save()
 
             if 'nickname' in serializer.validated_data:  # nickname이 변경되었을 경우
@@ -279,6 +305,8 @@ def findemail(request):
                     'data': serializer.errors,
                     }, status=status.HTTP_400_BAD_REQUEST)
 
+# TODO: refactor - 파라미터를 기존 type, email/nickname에서 type, value로 바꾸기
+
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -286,24 +314,58 @@ def rep_check(request):
     '''
     중복 체크를 수행하는 API
     '''
-    serializer = RepetitionCheckSerializer(data=request.data)
-    if serializer.is_valid():
-        type = serializer.data['type']
+    try:
+        type = request.data['type']
         if type == 'email':
-            if User.objects.filter(email=serializer.data['email']).exists():
-                data = '이미 사용 중인 이메일입니다',
-            else:
-                data = '사용 가능한 이메일입니다',
+            value = request.data['email']
         elif type == 'nickname':
-            if User.objects.filter(nickname=serializer.data['nickname']).exists():
-                data = '이미 사용 중인 닉네임입니다'
-            else:
-                data = '사용 가능한 닉네임입니다'
+            value = request.data['nickname']
+
+        if check_email_nickname_rep(type, value):
+            if type == 'email':
+                data = '이미 사용 중인 이메일입니다.'
+            elif type == 'nickname':
+                data = '이미 사용 중인 닉네임입니다.'
+        else:
+            if type == 'email':
+                data = '사용 가능한 이메일입니다.'
+            elif type == 'nickname':
+                data = '사용 가능한 닉네임입니다.'
         return Response({
             'status': 'success',
             'data': data,
         }, status=status.HTTP_200_OK)
-    return Response({
-                    'status': 'fail',
-                    'data': serializer.errors,
-                    }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(str(e))
+        traceback.print_exc()
+        return Response({
+                        'status': 'error',
+                        'message': 'Unknown',
+                        'code': 400,
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
+# TODO: refactor - 파라미터를 기존 type, email/nickname에서 type, value로 바꾸기
+
+
+def check_email_nickname_rep(type, value):
+    if type == 'email':
+        data = {'type': type, 'email': value}
+    elif type == 'nickname':
+        data = {'type': type, 'nickname': value}
+
+    serializer = RepetitionCheckSerializer(data=data)
+
+    if serializer.is_valid():
+        type = serializer.data['type']
+        if type == 'email':
+            if User.objects.filter(email=serializer.data['email']).exists():
+                return True
+            else:
+                return False
+        elif type == 'nickname':
+            if User.objects.filter(nickname=serializer.data['nickname']).exists():
+                return True
+            else:
+                return False
+    else:
+        raise Exception('data validation fails')
