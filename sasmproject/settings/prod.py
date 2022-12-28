@@ -7,12 +7,12 @@ ALLOWED_HOSTS = ['*']
 
 DATABASES = {
     'default': {
-        'ENGINE': env('DB_ENGINE'),
-        'NAME': env('DB_NAME'),
-        "USER": env('DB_USER'),
-        "PASSWORD": env('DB_PASSWORD'),
-        "HOST": env('DB_HOST'),
-        "PORT": env('DB_PORT'),
+        'ENGINE': env('SASM_BE_DB_ENGINE'),
+        'NAME': env('SASM_BE_DB_NAME'),
+        "USER": env('SASM_BE_DB_USER'),
+        "PASSWORD": env('SASM_BE_DB_PASSWORD'),
+        "HOST": env('SASM_BE_DB_HOST'),
+        "PORT": env('SASM_BE_DB_PORT'),
     }
 }
 
