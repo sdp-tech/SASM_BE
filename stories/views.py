@@ -73,6 +73,27 @@ class StoryListView(viewsets.ModelViewSet):
     ]
     pagination_class = BasicPagination
 
+    # @swagger_auto_schema(operation_id='api_sdp_admin_stories_get')
+    def story_order(self, request):    
+        order_condition = request.GET.get('order')
+
+        if order_condition == 'recent':
+            queryset = Story.objects.all().order_by('-created')
+        if order_condition == 'old':
+            queryset = Story.objects.all().order_by('created')
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_paginated_response(
+                self.get_serializer(page, many=True).data)
+        else:
+            serializer = self.get_serializer(page, many=True)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+        
     def get(self, request):
         qs = self.get_queryset()
         search = request.GET.get('search', '')
