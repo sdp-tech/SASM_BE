@@ -14,6 +14,4 @@ urlpatterns = [
           StoryCommentView.as_view({'get': 'list', 'post': 'create'}), name='story_comments'),
      path('comments/<int:pk>/',
           StoryCommentView.as_view({'get': 'retrieve', 'patch': 'update', 'delete': 'destroy'}), name='story_comment'),
-     path('story_order/',
-          StoryListView.as_view({'get': 'story_order'}), name='order_condition'),
 ]
