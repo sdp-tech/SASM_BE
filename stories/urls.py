@@ -2,6 +2,8 @@ from django.urls import path
 from .views import StoryDetailView, StoryLikeView, StoryListView, GoToMapView, StoryCommentView
 
 urlpatterns = [
+     path('story_order/',
+          StoryListView.as_view({'get': 'story_order'}), name='order_condition'),
      path('story_like/',
           StoryLikeView.as_view({'post': 'post'}), name="story_like"),
      path('story_detail/', StoryDetailView.as_view(), name='story_detail'),
