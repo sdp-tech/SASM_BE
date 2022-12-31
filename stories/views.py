@@ -73,24 +73,47 @@ class StoryListView(viewsets.ModelViewSet):
     ]
     pagination_class = BasicPagination
 
+    @swagger_auto_schema(operation_id='api_stories_story_order_get')
+    def story_order(self, request):    
+        order_condition = request.GET.get('order', 'true')
+
+        if order_condition == 'true': #최신순
+            queryset = Story.objects.all().order_by('-created')
+        if order_condition == 'false' : #오래된 순
+            queryset = Story.objects.all().order_by('created')
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_paginated_response(
+                self.get_serializer(page, many=True).data)
+        else:
+            serializer = self.get_serializer(page, many=True)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
     def get(self, request):
         qs = self.get_queryset()
         search = request.GET.get('search', '')
         search_list = qs.filter(Q(title__icontains=search) | Q(
             address__place_name__icontains=search))
-        array = request.query_params.getlist('filter[]', '배열')
+        array = request.query_params.getlist('filter')
         query = None
-        if array != '배열':
+
+        if len(array) > 0:
             for a in array:
                 if query is None:
                     query = Q(address__category=a)
                 else:
                     query = query | Q(address__category=a)
-            print(query)
             story = search_list.filter(query)
             page = self.paginate_queryset(story)
+
         else:
             page = self.paginate_queryset(search_list)
+
         if page is not None:
             serializer = self.get_paginated_response(
                 self.get_serializer(page, many=True).data)
