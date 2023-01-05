@@ -2,7 +2,7 @@ from django.db import models
 from core.models import TimeStampedModel
 
 
-class Board():
+class Board(models.Model):
     name = models.CharField(max_length=200)
     supports_hashtags = models.BooleanField(
         null=False, blank=False, default=False)
@@ -50,7 +50,7 @@ class PostLike(TimeStampedModel):
 
 class PostComment(TimeStampedModel):
     post = models.ForeignKey(
-        'Post', related_name='likes', on_delete=models.CASCADE, null=False, blank=False)
+        'Post', related_name='comments', on_delete=models.CASCADE, null=False, blank=False)
     content = models.TextField(max_length=1000)
     # isParent: true일 경우 parent 댓글, false일 경우 child 댓글
     isParent = models.BooleanField(null=False, blank=False, default=True)
