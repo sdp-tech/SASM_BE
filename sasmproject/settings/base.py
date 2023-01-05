@@ -61,6 +61,7 @@ PROJECT_APPS = [
     "stories.apps.StoriesConfig",
     "core.apps.CoreConfig",
     "sdp_admin.apps.SdpAdminConfig",
+    "community.apps.CommunityConfig",
 ]
 THIRD_APPS = [
     'rest_framework',
