@@ -20,11 +20,11 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env(DEBUG=(bool, True))
 
-# env_file = os.path.join(BASE_DIR, '.env')
-# if os.path.exists(env_file):
-#     environ.Env.read_env(
-#         env_file=env_file
-#     )
+env_file = os.path.join(BASE_DIR, '.env')
+if os.path.exists(env_file):
+    environ.Env.read_env(
+        env_file=env_file
+    )
 
 SECRET_KEY = env('SASM_BE_SECRET_KEY')
 

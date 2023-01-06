@@ -8,6 +8,10 @@ class Board(models.Model):
         null=False, blank=False, default=False)
     supports_photos = models.BooleanField(
         null=False, blank=False, default=False)
+    supports_comments = models.BooleanField(
+        null=False, blank=False, default=False)
+    supports_commentphotos = models.BooleanField(
+        null=False, blank=False, default=False)
 
 
 class Post(TimeStampedModel):
@@ -63,3 +67,31 @@ class PostComment(TimeStampedModel):
     # 멘션된 사용자가 회원 탈퇴하더라도, 댓글은 유지, mention을 null 설정
     mention = models.ForeignKey(
         'users.User', related_name='mentioned_post_comments', on_delete=models.SET_NULL, null=True, blank=True)
+
+def get_upload_path(instance, filename):
+    return 'posts/comment/img/{}'.format(filename)
+
+class PostCommentPhoto(TimeStampedModel):
+    image = models.ImageField(
+        upload_to=get_upload_path, default='comment_image.png')
+    comment = models.ForeignKey(
+        'PostComment', related_name='comment_photos', on_delete=models.CASCADE, null=False, blank=False)
+
+class Report(models.Model):
+    """Report Category Definition"""
+    REPORT1 = "게시판 성격에 부적절함"
+    REPORT2 = "음란물/불건전한 만남 및 대화"
+    REPORT3 = "사칭/사기성 게시글"
+    REPORT4 = "욕설/비하"
+    REPORT5 = "낚시/도배성 게시글"
+    REPORT6 = "상업적 광고 및 판매"
+    REPORT_CHOICES = (
+        (REPORT1, "게시판 성격에 부적절함"),
+        (REPORT2, "음란물/불건전한 만남 및 대화"),
+        (REPORT3, "사칭/사기성 게시글"),
+        (REPORT4, "욕설/비하"),
+        (REPORT5, "낚시/도배성 게시글"),
+        (REPORT6, "상업적 광고 및 판매"),
+    )
+
+    report_reason = models.CharField(choices=REPORT_CHOICES, max_length=30)

@@ -30,3 +30,11 @@ class PostLikeAdmin(admin.ModelAdmin):
 @admin.register(models.PostComment)
 class PostCommentAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(models.PostCommentPhoto)
+class PostCommentPhotoAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(models.Report)
+class ReportAdmin(admin.ModelAdmin):
+    pass
