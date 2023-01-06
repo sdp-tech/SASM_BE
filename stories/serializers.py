@@ -176,6 +176,7 @@ class StoryListSerializer(serializers.ModelSerializer):
 class StoryCommentSerializer(serializers.ModelSerializer):
     nickname = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
+    profile_image = serializers.SerializerMethodField()
 
     class Meta:
         model = StoryComment
@@ -190,6 +191,9 @@ class StoryCommentSerializer(serializers.ModelSerializer):
             'mention',
             'nickname',
             'email',
+            'profile_image',
+            'created_at',
+            'updated_at',
         ]
 
     def get_nickname(self, obj):
@@ -197,6 +201,10 @@ class StoryCommentSerializer(serializers.ModelSerializer):
 
     def get_email(self, obj):
         return obj.writer.email
+
+    def get_profile_image(self, obj):
+        # print(obj.writer.profile_image)
+        return obj.writer.profile_image.url
 
     def validate(self, data):
         if 'parent' in data:
