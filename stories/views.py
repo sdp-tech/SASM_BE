@@ -97,6 +97,7 @@ class StoryListView(viewsets.ModelViewSet):
     def get(self, request):
         qs = self.get_queryset()
         search = request.GET.get('search', '')
+        order_condition = request.GET.get('order', 'true')
         search_list = qs.filter(Q(title__icontains=search) | Q(
             address__place_name__icontains=search))
         array = request.query_params.getlist('filter')
@@ -113,6 +114,11 @@ class StoryListView(viewsets.ModelViewSet):
 
         else:
             page = self.paginate_queryset(search_list)
+
+        if order_condition == 'true': #최신순
+            page = page.order_by('-created')
+        if order_condition == 'false' : #오래된 순
+            page = page.order_by('created')
 
         if page is not None:
             serializer = self.get_paginated_response(
