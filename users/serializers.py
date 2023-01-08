@@ -1,7 +1,6 @@
 import os
 from .utils import (
     email_isvalid,
-    username_isvalid,
 )
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -43,15 +42,11 @@ class UserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id",)
 
+    # TODO: refactor : 아래 email, nickname과 같은 도메인 로직은 model layer로 이동
     def validate_email(self, obj):
         if email_isvalid(obj):
             return obj
         raise serializers.ValidationError('메일 형식이 올바르지 않습니다.')
-
-    def validate_username(self, obj):
-        if username_isvalid(obj):
-            return obj
-        raise serializers.ValidationError('닉네임은 한 글자 이상이어야 합니다.')
 
     def create(self, validated_data):
         #password = validated_data.get("password")
