@@ -39,9 +39,6 @@ NAVER_SECRET_KEY = env('SASM_BE_NAVER_SECRET_KEY')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '3.38.89.18']
 
 # Application definition
