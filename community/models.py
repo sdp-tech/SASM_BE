@@ -8,9 +8,9 @@ class Board(models.Model):
         null=False, blank=False, default=False)
     supports_post_photos = models.BooleanField(
         null=False, blank=False, default=False)
-    supports_comment_photos = models.BooleanField(
+    supports_post_comment_photos = models.BooleanField(
         null=False, blank=False, default=False)
-    supports_comments = models.BooleanField(
+    supports_post_comments = models.BooleanField(
         null=False, blank=False, default=False)
 
 

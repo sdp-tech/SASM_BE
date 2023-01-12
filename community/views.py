@@ -13,9 +13,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 
-from .models import Board, Post, PostComment, PostCommentPhoto, PostReport, PostCommentReport
+from .models import Post, PostComment, PostReport, PostCommentReport
 from users.models import User
-from .serializers import PostCommentSerializer, PostCommentCreateSerializer, PostCommentUpdateSerializer, PostReportSerializer, PostCommentReportSerializer
+from .serializers import PostCommentSerializer, PostCommentCreateSerializer, PostCommentUpdateSerializer, PostReportCreateSerializer, PostCommentReportCreateSerializer
 from core.permissions import CommentWriterOrReadOnly
 from sasmproject.swagger import PostCommentViewSet_list_params, param_id
 from drf_yasg.utils import swagger_auto_schema
@@ -91,7 +91,6 @@ class PostCommentView(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         try:
             super().create(request, *args, **kwargs)
-
         except ValidationError as e:
             return Response({
                 'status': 'fail',
@@ -109,8 +108,7 @@ class PostCommentView(viewsets.ModelViewSet):
 
     @swagger_auto_schema(operation_id='api_post_comments_patch')
     def update(self, request, pk, *args, **kwargs):
-        try:
-            # partial update                   
+        try:              
             kwargs['partial'] = True
             super().update(request, *args, **kwargs)
         except ValidationError as e:
@@ -137,107 +135,34 @@ class PostCommentView(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
 
-class ReportPagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = 'page_size'
-
-
-class ReportListView(viewsets.ModelViewSet):
-    '''
-        Report의 list 정보를 주는 API
-    '''
-    pagination_class = ReportPagination
-
-    #retrieve에 사용
-    serializer_class_post_report = PostReportSerializer
-    serializer_class_post_comment_report = PostCommentReportSerializer
-
-    @swagger_auto_schema(operation_id='api_report_get', manual_parameters=[PostCommentViewSet_list_params])
-    def list(self, request):
-        post_report_queryset = PostReport.objects.all()
-        post_comment_report_queryset = PostCommentReport.objects.all()
-
-        serializer_post_report = self.serializer_class_post_report(post_report_queryset, many=True).data
-        serializer_post_comment_report = self.serializer_class_post_comment_report(post_comment_report_queryset, many=True).data
-        serializer_data = serializer_post_report + serializer_post_comment_report
-
-        page = self.paginate_queryset(serializer_data)
-
-        if page is not None:
-            serializer = self.get_paginated_response(page)
-            return Response({
-                'status': 'success',
-                'data': serializer.data,
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-    @swagger_auto_schema(operation_id='api_report_post')
-    @action(detail=False, methods=['post'])
-    def create(self, request):
-        #게시글 신고
-        if 'post' in request.POST :
-            post_report_info = request.data
-            serializer = PostReportSerializer(data=post_report_info, context={'request': request})
-            try:
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({
-                        "status" : "success",
-                        "data" : serializer.data,
-                    }, status=status.HTTP_200_OK)
-            except ValidationError as e:
-                return Response({
-                    'status': 'fail',
-                    'message': str(e),
-                }, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                print(e)
-                return Response({
-                    'status': 'fail',
-                    'message': 'unknown',
-                }, status=status.HTTP_400_BAD_REQUEST)
-        #댓글 신고
-        elif 'comment' in request.POST :
-            post_comment_report_info =request.data
-            serializer = PostCommentReportSerializer(data=post_comment_report_info, context={'request': request})
-            try:
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({
-                        "status" : "success",
-                        "data" : serializer.data,
-                    }, status=status.HTTP_200_OK)
-            except ValidationError as e:
-                return Response({
-                    'status': 'fail',
-                    'message': str(e),
-                }, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                print(e)
-                return Response({
-                    'status': 'fail',
-                    'message': 'unknown',
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-
 class PostReportView(viewsets.ModelViewSet):
     '''
         Post Report 관련 작업 API
     '''    
     queryset = PostReport.objects.all()
-    serializer_class = PostReportSerializer
-    # permission_class = [
-    #     AllowAny,
-    # ]
-    pagination_class = ReportPagination
-  
-    @swagger_auto_schema(operation_id='api_post_report_delete')
-    def destroy(self, request, *args, **kwargs):
-        super().destroy(request, *args, **kwargs)
+    serializer_class = PostReportCreateSerializer #Read, Update, Delete at sdp_admin app
+    permission_class = [IsAuthenticated,]
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
+    @swagger_auto_schema(operation_id='api_post_report_create')
+    def create(self, request, *args, **kwargs):
+        try:
+            super().create(request, *args, **kwargs)
+        except ValidationError as e:
+            return Response({
+                'status': 'fail',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)
@@ -248,15 +173,29 @@ class PostCommentReportView(viewsets.ModelViewSet):
         Post Comment Report 관련 작업 API
     '''    
     queryset = PostCommentReport.objects.all()
-    serializer_class = PostCommentReportSerializer
-    # permission_class = [
-    #     AllowAny,
-    # ]
-    pagination_class = ReportPagination 
+    serializer_class = PostCommentReportCreateSerializer #Read, Update, Delete at sdp_admin app
+    permission_class = [IsAuthenticated,]
 
-    @swagger_auto_schema(operation_id='api_post_comment_report_delete')
-    def destroy(self, request, *args, **kwargs):
-        super().destroy(request, *args, **kwargs)
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
+    @swagger_auto_schema(operation_id='api_post_comment_report_create')
+    def create(self, request, *args, **kwargs):
+        try:
+            super().create(request, *args, **kwargs)
+        except ValidationError as e:
+            return Response({
+                'status': 'fail',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)

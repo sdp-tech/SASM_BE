@@ -84,17 +84,18 @@ class PostCommentCreateSerializer(PostCommentSerializer):
 
         """ 사진 저장 """
         # 최대 장수 3장으로 가정
-        photo_data = self.context['request'].FILES
-        photos = photo_data.getlist('photo')
+        available_photo_key = ['photo1', 'photo2', 'photo3']
+        all_photos = self.context['request'].FILES
+        photo_key = all_photos.keys()
 
-        if (len(photos) > 3):
-            raise serializers.ValidationError()
-        for photo in photos:
-            ext = photo.name.split(".")[-1]
-            file_path = '{}/{}.{}'.format(
-                    comment.id,photos.index(photo)+1,ext)
-            image = ImageFile(io.BytesIO(photo.read()), name=file_path)
-            PostCommentPhoto.objects.create(comment=comment, image=image)
+        for p in available_photo_key:
+            if p in photo_key:
+                # photo key가 중복으로 들어올 때 첫번째 파일만 취급
+                photo_file = all_photos.getlist(p)[0]
+                ext = photo_file.name.split(".")[-1]
+                file_path = '{}/{}.{}'.format(comment.id,p.strip()[-1],ext)
+                image = ImageFile(io.BytesIO(photo_file.read()), name=file_path)
+                PostCommentPhoto.objects.create(comment=comment, image=image)
         return comment
 
 
@@ -113,6 +114,23 @@ class PostCommentUpdateSerializer(PostCommentSerializer):
             'mention',
             'photos'
         ]
+    
+    def update(self, instance, validated_data):
+        """ 사진 수정 """
+        # 최대 장수 3장으로 가정
+        available_photo_key = ['photo1', 'photo2', 'photo3']
+        all_photos = self.context['request'].FILES
+        photo_key = all_photos.keys()
+
+        for p in available_photo_key:
+            if p in photo_key:
+                # photo key가 중복으로 들어올 때 첫번째 파일만 취급
+                photo_file = all_photos.getlist(p)[0]
+                ext = photo_file.name.split(".")[-1]
+                file_path = '{}/{}.{}'.format(instance.id,p.strip()[-1],ext)
+                image = ImageFile(io.BytesIO(photo_file.read()), name=file_path)
+                PostCommentPhoto.objects.create(comment=instance, image=image)
+        return instance
 
 
 class PostReportSerializer(serializers.ModelSerializer):
@@ -126,6 +144,17 @@ class PostReportSerializer(serializers.ModelSerializer):
             'category'           
         ]
 
+
+class PostReportCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostReport
+        ordering = ['id']
+        fields = [
+            'id',
+            'post',
+            'user',
+            'category'           
+        ]    
     def create(self, validated_data):
         user = self.context['request'].user
         report = PostReport.objects.create(**validated_data, user=user)
@@ -142,3 +171,20 @@ class PostCommentReportSerializer(serializers.ModelSerializer):
             'user',
             'category'           
         ]
+
+
+class PostCommentReportCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostCommentReport
+        ordering = ['id']
+        fields = [
+            'id',
+            'comment',
+            'user',
+            'category'           
+        ]    
+    def create(self, validated_data):
+        reported_post_comment = PostCommentReport(**validated_data)
+        reported_post_comment.user = self.context['request'].user
+        reported_post_comment.save()
+        return reported_post_comment

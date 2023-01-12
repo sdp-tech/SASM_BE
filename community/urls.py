@@ -1,15 +1,13 @@
 from django.urls import path
-from .views import PostCommentView, ReportListView, PostReportView, PostCommentReportView
+from .views import PostCommentView, PostReportView, PostCommentReportView
 
 urlpatterns = [
-    path('comments/',
+    path('post_comments/',
         PostCommentView.as_view({'get': 'list', 'post': 'create'}), name='post_comments'),
-    path('comments/<int:pk>/',
+    path('post_comments/<int:pk>/',
         PostCommentView.as_view({'get': 'retrieve', 'patch': 'update', 'delete': 'destroy'}), name='post_comment'),
-    path('reports/',
-        ReportListView.as_view({'get': 'list', 'post': 'create'}), name='reports'),      
-    path('postreport/<int:pk>',
-        PostReportView.as_view({'delete': 'destroy'}), name='post_report'),
-    path('postcommentreport/<int:pk>',
-        PostCommentReportView.as_view({'delete': 'destroy'}), name='post_comment_report'),     
+    path('report/post/',
+        PostReportView.as_view({'post': 'create'}), name='post_report'),
+    path('report/post_comment/',
+        PostCommentReportView.as_view({'post': 'create'}), name='post_comment_report'),
 ]
