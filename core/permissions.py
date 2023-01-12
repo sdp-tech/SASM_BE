@@ -10,7 +10,7 @@ class IsSdpStaff(BasePermission):
             return False
 
 
-class IsStoryCommentWriterOrReadOnly(BasePermission):
+class CommentWriterOrReadOnly(BasePermission):
     # 작성자만 접근, 작성자가 아니면 Create/Read만 가능
     def has_object_permission(self, request, view, obj):
         if request.user.is_authenticated:

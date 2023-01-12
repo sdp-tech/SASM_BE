@@ -66,3 +66,5 @@ StoryViewSet_post_params = openapi.Schema(
 )
 StoryCommentViewSet_list_params = openapi.Parameter('story', in_=openapi.IN_QUERY, description='스토리의 id',
                                                     type=openapi.TYPE_INTEGER, required=True)
+PostCommentViewSet_list_params = openapi.Parameter('post', in_=openapi.IN_QUERY, description='게시글의 id',
+                                                    type=openapi.TYPE_INTEGER, required=True)

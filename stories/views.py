@@ -14,7 +14,7 @@ from .models import Story, StoryComment
 from users.models import User
 from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer, StoryCommentCreateSerializer, StoryCommentUpdateSerializer
 from places.serializers import MapMarkerSerializer
-from core.permissions import IsStoryCommentWriterOrReadOnly
+from core.permissions import CommentWriterOrReadOnly
 from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
 from drf_yasg.utils import swagger_auto_schema
 
@@ -236,7 +236,7 @@ class StoryCommentView(viewsets.ModelViewSet):
     queryset = StoryComment.objects.all().order_by('id')
     serializer_class = StoryCommentSerializer
     permission_classes = [
-        IsStoryCommentWriterOrReadOnly,
+        CommentWriterOrReadOnly,
     ]
     pagination_class = StoryCommentPagination
 
