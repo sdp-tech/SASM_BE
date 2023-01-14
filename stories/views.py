@@ -12,7 +12,7 @@ from rest_framework.serializers import ValidationError
 
 from .models import Story, StoryComment
 from users.models import User
-from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer
+from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer, StoryCommentCreateSerializer, StoryCommentUpdateSerializer
 from places.serializers import MapMarkerSerializer
 from core.permissions import IsStoryCommentWriterOrReadOnly
 from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
@@ -76,21 +76,48 @@ class StoryListView(viewsets.ModelViewSet):
     def get(self, request):
         qs = self.get_queryset()
         search = request.GET.get('search', '')
+        order_condition = request.GET.get('order', 'true')
         search_list = qs.filter(Q(title__icontains=search) | Q(
             address__place_name__icontains=search))
-        array = request.query_params.getlist('filter[]', '배열')
-        query = None
-        if array != '배열':
-            for a in array:
-                if query is None:
-                    query = Q(address__category=a)
-                else:
-                    query = query | Q(address__category=a)
-            print(query)
-            story = search_list.filter(query)
-            page = self.paginate_queryset(story)
+        # if len(array) > 0:
+        #     for a in array:
+        #         if query is None:
+        #             query = Q(address__category=a)
+        #         else:
+        #             query = query | Q(address__category=a)
+        #     story = search_list.filter(query)
+        #     page = self.paginate_queryset(story)
+
+        # else:
+        #     page = self.paginate_queryset(search_list)
+        # print(page)
+        if order_condition == 'true': #최신순
+            queryset = search_list.order_by('-created')
+        if order_condition == 'false' : #오래된 순
+            queryset = search_list.order_by('created')
+
+        queryset = self.paginate_queryset(queryset)
+        if queryset is not None:
+            serializer = self.get_paginated_response(
+                self.get_serializer(queryset, many=True).data)
         else:
-            page = self.paginate_queryset(search_list)
+            serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_stories_story_order_get')
+    def story_order(self, request):    
+        order_condition = request.GET.get('order', 'true')
+
+        if order_condition == 'true': #최신순
+            queryset = Story.objects.all().order_by('-created')
+        if order_condition == 'false' : #오래된 순
+            queryset = Story.objects.all().order_by('created')
+
+        page = self.paginate_queryset(queryset)
+
         if page is not None:
             serializer = self.get_paginated_response(
                 self.get_serializer(page, many=True).data)
@@ -100,13 +127,14 @@ class StoryListView(viewsets.ModelViewSet):
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-    
-    @swagger_auto_schema(operation_id='api_stories_recommend_story_get',manual_parameters=[param_id])
+        
+
+    @swagger_auto_schema(operation_id='api_stories_recommend_story_get', manual_parameters=[param_id])
     def recommend_story(self, request):
         id = request.GET.get('id', '')
         qs = self.get_queryset()
         story = Story.objects.get(id=id)
-        #story의 category와 같은 스토리 return
+        # story의 category와 같은 스토리 return
         qs = qs.filter(address__category=story.address.category).exclude(id=id)
         page = self.paginate_queryset(qs)
         if page is not None:
@@ -119,7 +147,6 @@ class StoryListView(viewsets.ModelViewSet):
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-        
 
 class StoryDetailView(generics.RetrieveAPIView):
     '''
@@ -211,10 +238,17 @@ class StoryCommentView(viewsets.ModelViewSet):
     ]
     pagination_class = StoryCommentPagination
 
-    # def get_serializer_class(self):
-    #     if self.action in ['create', 'update', 'destroy']:
-    #         return StoryCommentWriteSerializer  # writer field 미사용
-    #     return StoryCommentReadSerializer  # writer field 사용
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return StoryCommentCreateSerializer
+        elif self.action == 'update':
+            return StoryCommentUpdateSerializer
+        return StoryCommentSerializer  # read op, destroy op
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
 
     @swagger_auto_schema(operation_id='api_stories_comments_get')
     def retrieve(self, request, *args, **kwargs):
@@ -256,14 +290,6 @@ class StoryCommentView(viewsets.ModelViewSet):
 
     @swagger_auto_schema(operation_id='api_stories_comments_post')
     def create(self, request, *args, **kwargs):
-        if 'writer' in request.data:
-            return Response({
-                'status': 'fail',
-                'message': 'writer should be excluded in data',
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # comment writer 값 설정
-        request.data['writer'] = request.user.id
         try:
             super().create(request, *args, **kwargs)
         except ValidationError as e:
@@ -271,7 +297,7 @@ class StoryCommentView(viewsets.ModelViewSet):
                 'status': 'fail',
                 'message': str(e),
             }, status=status.HTTP_400_BAD_REQUEST)
-        except:
+        except Exception as e:
             return Response({
                 'status': 'fail',
                 'message': 'unknown',
@@ -281,15 +307,8 @@ class StoryCommentView(viewsets.ModelViewSet):
             'status': 'success',
         }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(operation_id='api_stories_comments_put')
+    @swagger_auto_schema(operation_id='api_stories_comments_patch')
     def update(self, request, *args, **kwargs):
-        # comment, mention만 수정 가능
-        if 'story' in request.data or 'parent' in request.data \
-                or 'isParent' in request.data or 'writer' in request.data:
-            return Response({
-                'status': 'fail',
-                'message': 'story, parent, isParent, writer fields should be excluded in data',
-            }, status=status.HTTP_400_BAD_REQUEST)
         try:
             # partial update
             kwargs['partial'] = True
