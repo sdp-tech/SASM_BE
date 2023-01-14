@@ -20,27 +20,24 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env(DEBUG=(bool, True))
 
-env_file = os.path.join(BASE_DIR, '.env')
-if os.path.exists(env_file):
-    environ.Env.read_env(
-        env_file=env_file
-    )
+# env_file = os.path.join(BASE_DIR, '.env')
+# if os.path.exists(env_file):
+#     environ.Env.read_env(
+#         env_file=env_file
+#     )
 
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = env('SASM_BE_SECRET_KEY')
 
-STATE = env('STATE')
-KAKAO_REST_API_KEY = env('KAKAO_REST_API_KEY')
-KAKAO_SECRET_KEY = env('KAKAO_SECRET_KEY')
-SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
-SOCIAL_AUTH_GOOGLE_SECRET = env('SOCIAL_AUTH_GOOGLE_SECRET')
-NAVER_CLIENT_ID = env('NAVER_CLIENT_ID')
-NAVER_SECRET_KEY = env('NAVER_SECRET_KEY')
+STATE = env('SASM_BE_STATE')
+KAKAO_REST_API_KEY = env('SASM_BE_KAKAO_REST_API_KEY')
+KAKAO_SECRET_KEY = env('SASM_BE_KAKAO_SECRET_KEY')
+SOCIAL_AUTH_GOOGLE_CLIENT_ID = env('SASM_BE_SOCIAL_AUTH_GOOGLE_CLIENT_ID')
+SOCIAL_AUTH_GOOGLE_SECRET = env('SASM_BE_SOCIAL_AUTH_GOOGLE_SECRET')
+NAVER_CLIENT_ID = env('SASM_BE_NAVER_CLIENT_ID')
+NAVER_SECRET_KEY = env('SASM_BE_NAVER_SECRET_KEY')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '3.38.89.18']
 
@@ -61,6 +58,7 @@ PROJECT_APPS = [
     "stories.apps.StoriesConfig",
     "core.apps.CoreConfig",
     "sdp_admin.apps.SdpAdminConfig",
+    "community.apps.CommunityConfig",
 ]
 THIRD_APPS = [
     'rest_framework',
@@ -188,13 +186,13 @@ SIMPLE_JWT = {
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = env('SASM_BE_EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('SASM_BE_EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
+DEFAULT_FROM_EMAIL = env('SASM_BE_EMAIL_HOST_USER')
 
 # corheaders
-#CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000', 'http://localhost:3000', 'http://127.0.0.1:8000',
+# CORS_ORIGIN_WHITELIST = ('http://127.0.0.1:3000', 'http://localhost:3000', 'http://127.0.0.1:8000',
 #                        'https://api.sasmbe.com', 'https://main.d2hps9gsgzjxq.amplifyapp.com',
 #                        'https://www.sasm.co.kr')
 CORS_ALLOW_CREDENTIALS = True
@@ -202,9 +200,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # aws s3
 # AWS 정보
-AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
-AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('SASM_BE_AWS_STORAGE_BUCKET_NAME')
+AWS_ACCESS_KEY_ID = env('SASM_BE_AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('SASM_BE_AWS_SECRET_ACCESS_KEY')
 
 AWS_S3_CUSTOM_DOMAIN = '{}.s3.amazonaws.com'.format(AWS_STORAGE_BUCKET_NAME)
 

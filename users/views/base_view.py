@@ -4,6 +4,7 @@ from functools import partial
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils.decorators import method_decorator
+from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -103,9 +104,9 @@ class UserStoryLikeView(viewsets.ModelViewSet):
         if array != '배열':
             for a in array:
                 if query is None:
-                    query = Q(category=a)
+                    query = Q(address__category=a)
                 else:
-                    query = query | Q(category=a)
+                    query = query | Q(address__category=a)
             story = like_story.filter(query)
             page = self.paginate_queryset(story)
         else:
@@ -139,7 +140,13 @@ class SignupView(SetPartialMixin, CreateAPIView):
     ]
 
     def create(self, request, *args, **kwargs):
-        super().create(request, *args, **kwargs)
+        try:
+            super().create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({
+                'status': 'fail',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
         return Response({
             'status': 'Success',
         }, status=status.HTTP_200_OK)
@@ -187,12 +194,18 @@ class MeView(APIView):
                         'code': 400,
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-            serializer.save()
+            try:
+                user = serializer.save()
+            except ValidationError as e:
+                return Response({
+                    'status': 'fail',
+                    'message': str(e),
+                }, status=status.HTTP_400_BAD_REQUEST)
 
             if 'nickname' in serializer.validated_data:  # nickname이 변경되었을 경우
                 return Response({
                     'status': 'success',
-                    'data': {"nickname": serializer.validated_data['nickname']},
+                    'data': {"nickname": user.nickname},
                 }, status=status.HTTP_200_OK)
 
             else:

@@ -176,6 +176,8 @@ class StoryListSerializer(serializers.ModelSerializer):
 class StoryCommentSerializer(serializers.ModelSerializer):
     nickname = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
+    profile_image = serializers.SerializerMethodField()
+
     class Meta:
         model = StoryComment
         ordering = ['id']
@@ -189,12 +191,20 @@ class StoryCommentSerializer(serializers.ModelSerializer):
             'mention',
             'nickname',
             'email',
+            'profile_image',
+            'created_at',
+            'updated_at',
         ]
+
     def get_nickname(self, obj):
         return obj.writer.nickname
 
     def get_email(self, obj):
         return obj.writer.email
+
+    def get_profile_image(self, obj):
+        # print(obj.writer.profile_image)
+        return obj.writer.profile_image.url
 
     def validate(self, data):
         if 'parent' in data:
@@ -213,3 +223,35 @@ class StoryCommentSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     'parent comment has isParent value be true')
         return data
+
+
+class StoryCommentUpdateSerializer(StoryCommentSerializer):
+    class Meta:
+        model = StoryComment
+        ordering = ['id']
+        fields = [
+            'id',
+            'content',
+            'mention',
+        ]
+
+
+class StoryCommentCreateSerializer(StoryCommentSerializer):
+    class Meta:
+        model = StoryComment
+        ordering = ['id']
+        fields = [
+            'id',
+            'story',
+            'content',
+            'isParent',
+            'parent',
+            'mention',
+        ]
+
+    def create(self, validated_data):
+        comment = StoryComment(**validated_data)
+        comment.writer = self.context['request'].user
+        comment.save()
+
+        return comment

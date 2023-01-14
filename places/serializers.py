@@ -243,6 +243,9 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         review = VisitorReview.objects.create(**validated_data, visitor_name=user)
         photos = photos_data.getlist('photos')
+        count = len(photos)
+        if (count > 3):
+            raise serializers.ValidationError()
         for photo_data in photos:
             #파일 경로 설정
             ext = photo_data.name.split(".")[-1]

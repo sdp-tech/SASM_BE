@@ -1,9 +1,12 @@
 from email.policy import default
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import UserManager, PermissionsMixin
 
 # username으로 email을 사용하기 위해 UserManager의 함수를 overrinding 한다.
+
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         if not email:
@@ -39,7 +42,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     code = models.CharField(max_length=5, blank=True)
     gender = models.CharField(choices=GENDER_CHOICES,
-                                max_length=10, blank=True)
+                              max_length=10, blank=True)
     nickname = models.CharField(max_length=20, blank=True)
     birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64, unique=True)
@@ -55,6 +58,20 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     objects = UserManager()
+
+    # 닉네임 규칙 등과 같은 도메인 지식, 로직은 Model쪽에 작성
+    def clean(self, *args, **kwargs):
+        # 닉네임 규칙 1. 공백 문자 사용 불가
+        self.nickname = self.nickname.replace(' ', '')
+
+        # 닉네임 규칙 2. 닉네임 길이는 2 이상
+        if len(self.nickname) < 2:
+            print(self.nickname, len(self.nickname))
+            raise ValidationError('닉네임은 두 글자 이상이어야 합니다(공백 사용 불가).')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.email

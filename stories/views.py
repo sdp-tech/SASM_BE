@@ -73,27 +73,6 @@ class StoryListView(viewsets.ModelViewSet):
     ]
     pagination_class = BasicPagination
 
-    @swagger_auto_schema(operation_id='api_stories_story_order_get')
-    def story_order(self, request):    
-        order_condition = request.GET.get('order', 'true')
-
-        if order_condition == 'true': #최신순
-            queryset = Story.objects.all().order_by('-created')
-        if order_condition == 'false' : #오래된 순
-            queryset = Story.objects.all().order_by('created')
-
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_paginated_response(
-                self.get_serializer(page, many=True).data)
-        else:
-            serializer = self.get_serializer(page, many=True)
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-
     def get(self, request):
         qs = self.get_queryset()
         search = request.GET.get('search', '')
@@ -108,7 +87,6 @@ class StoryListView(viewsets.ModelViewSet):
         #             query = query | Q(address__category=a)
         #     story = search_list.filter(query)
         #     page = self.paginate_queryset(story)
-
         # else:
         #     page = self.paginate_queryset(search_list)
         if order_condition == 'true': #최신순
@@ -125,25 +103,6 @@ class StoryListView(viewsets.ModelViewSet):
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)       
-
-    @swagger_auto_schema(operation_id='api_stories_recommend_story_get', manual_parameters=[param_id])
-    def recommend_story(self, request):
-        id = request.GET.get('id', '')
-        qs = self.get_queryset()
-        story = Story.objects.get(id=id)
-        # story의 category와 같은 스토리 return
-        qs = qs.filter(address__category=story.address.category).exclude(id=id)
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            serializer = self.get_paginated_response(
-                self.get_serializer(page, many=True).data
-            )
-        else:
-            serializer = self.get_serializer(page, many=True)
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(operation_id='api_stories_recommend_story_get', manual_parameters=[param_id])
     def recommend_story(self, request):
