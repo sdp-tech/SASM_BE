@@ -90,12 +90,10 @@ class StoryListView(viewsets.ModelViewSet):
 
         # else:
         #     page = self.paginate_queryset(search_list)
-        # print(page)
         if order_condition == 'true': #최신순
             queryset = search_list.order_by('-created')
         if order_condition == 'false' : #오래된 순
             queryset = search_list.order_by('created')
-
         queryset = self.paginate_queryset(queryset)
         if queryset is not None:
             serializer = self.get_paginated_response(
@@ -105,29 +103,7 @@ class StoryListView(viewsets.ModelViewSet):
         return Response({
             'status': 'success',
             'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-
-    @swagger_auto_schema(operation_id='api_stories_story_order_get')
-    def story_order(self, request):    
-        order_condition = request.GET.get('order', 'true')
-
-        if order_condition == 'true': #최신순
-            queryset = Story.objects.all().order_by('-created')
-        if order_condition == 'false' : #오래된 순
-            queryset = Story.objects.all().order_by('created')
-
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_paginated_response(
-                self.get_serializer(page, many=True).data)
-        else:
-            serializer = self.get_serializer(page, many=True)
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-        
+        }, status=status.HTTP_200_OK)       
 
     @swagger_auto_schema(operation_id='api_stories_recommend_story_get', manual_parameters=[param_id])
     def recommend_story(self, request):
