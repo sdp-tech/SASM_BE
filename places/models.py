@@ -96,7 +96,7 @@ class CategoryContent(models.Model):
     PLACE1 = "식당 및 카페"
     PLACE2 = "전시 및 체험공간"
     PLACE3 = "제로웨이스트 샵"
-    PLACE4 = "도시 재생 및 친환경 건출물"
+    PLACE4 = "도시 재생 및 친환경 건축물"
     PLACE5 = "복합 문화 공간"
     PLACE6 = "녹색 공간"
     PLACE7 = "그 외"
@@ -105,7 +105,7 @@ class CategoryContent(models.Model):
         (PLACE1, "식당 및 카페"),
         (PLACE2, "전시 및 체험공간"),
         (PLACE3, "제로웨이스트 샵"),
-        (PLACE4, "도시 재생 및 친환경 건출물"),
+        (PLACE4, "도시 재생 및 친환경 건축물"),
         (PLACE5, "복합 문화 공간"),
         (PLACE6, "녹색 공간"),
         (PLACE7, "그 외"),
