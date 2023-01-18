@@ -1,7 +1,7 @@
 from .base import *
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
