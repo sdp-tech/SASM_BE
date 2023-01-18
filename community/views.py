@@ -13,13 +13,137 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 
-from .models import Post, PostComment, PostReport, PostCommentReport
+from .models import Board, Post, PostComment, PostReport, PostCommentReport
 from users.models import User
-from .serializers import PostCommentSerializer, PostCommentCreateSerializer, PostCommentUpdateSerializer, PostReportCreateSerializer, PostCommentReportCreateSerializer
+from users.serializers import UserSerializer
+from .serializers import PostDetailSerializer, PostCommentSerializer, PostCommentCreateSerializer, PostCommentUpdateSerializer, PostReportCreateSerializer, PostCommentReportCreateSerializer
 from core.permissions import CommentWriterOrReadOnly
-from sasmproject.swagger import PostCommentViewSet_list_params, param_id
+from sasmproject.swagger import PostCommentViewSet_list_params, param_id, PostLikeView_post_params
 from drf_yasg.utils import swagger_auto_schema
 from itertools import chain
+
+class BoardPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+
+class PostDetailView(viewsets.ModelViewSet):
+    queryset = Post.objects.all().order_by('-created')
+    serializer_class = PostDetailSerializer
+    pagination_class = BoardPagination
+    
+    def get_permissions(self):
+        if self.action == 'create' or self.action == 'update' or self.action == 'destroy':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
+
+    @swagger_auto_schema(operation_id='api_community_post_post')
+    def create(self, request, *args, **kwargs):
+        try:
+            super().create(request, *args, **kwargs)
+            print('super')
+        except ValidationError as e:
+            return Response({
+                'status': 'fail',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'status': 'success',
+            'message': 'posted',
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_community_post_put')
+    def update(self, request, *args, **kwargs):
+        print('aaaaa')
+        try:
+            kwargs['partial'] = True
+            super().update(request, *args, **kwargs)  #Serializer에서 update와 create 기능이 동일해서 create부름
+        except ValidationError as e:
+            return Response({
+                'status': 'fail',
+                'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'status': 'success',
+            'message': 'updated',
+        }, status=status.HTTP_200_OK)
+    
+    @swagger_auto_schema(operation_id='api_community_post_get')
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        return Response({
+            'status': 'success',
+            'data': response.data,
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_community_post_delete')
+    def destroy(self, request, *args, **kwargs):
+        super().destroy(request, *args, **kwargs)
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_200_OK)
+
+class PostLikeView(viewsets.ModelViewSet):
+    serializer_class = PostDetailSerializer
+    queryset = Post.objects.all()
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    @swagger_auto_schema(operation_id='api_community_post_like_user_get')
+    def get(self, request, pk):
+        '''
+            게시글을 좋아요한 유저 list를 반환하는 API
+        '''
+        post = get_object_or_404(Post, pk=pk)
+        like_id = post.post_likeuser_set.all()
+        users = User.objects.filter(id__in=like_id)
+        serializer = UserSerializer(users, many=True)
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_community_like_post',
+                        request_body=PostLikeView_post_params,
+                        responses={200:'success'})
+    def post(self, request):
+        '''
+            좋아요 및 좋아요 취소를 수행하는 API
+        '''
+        id = request.data['id']
+        print(id)
+        post = get_object_or_404(Post, pk=id)
+        if request.user.is_authenticated:
+            user = request.user
+            profile = User.objects.get(email=user)
+            check_like = post.post_likeuser_set.filter(pk=profile.pk)
+
+            if check_like.exists():
+                post.post_likeuser_set.remove(profile)
+                post.like_cnt -= 1
+                post.save()
+                return Response({
+                    'status': 'success',
+                    'message': 'removed',
+                }, status=status.HTTP_200_OK)
+            else:
+                post.post_likeuser_set.add(profile)
+                post.like_cnt += 1
+                post.save()
+                return Response({
+                    'status': 'success',
+                    'message': 'added',
+                }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'status': 'fail',
+                'data': { "user" : "user is not authenticated"},
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
 
 class PostCommentPagination(PageNumberPagination):
     page_size = 20

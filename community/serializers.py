@@ -4,9 +4,144 @@ import datetime
 from django.contrib.auth import get_user_model
 from django.core.files.images import ImageFile
 from rest_framework import serializers
-from community.models import Board, Post, PostComment, PostCommentPhoto, PostReport, PostCommentReport
+from community.models import Board, Post, PostPhoto, PostHashtag, PostComment, PostCommentPhoto, PostReport, PostCommentReport
 from users.models import User
 
+class PostPhotoSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = PostPhoto
+        fields = [
+            'image'
+        ]
+
+
+class PostHashtagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PostHashtag
+        fields = [
+            'name',
+        ]
+
+
+class BoardSerializer(serializers.ModelSerializer):
+   
+    class Meta:
+        model = Board
+        fields = [
+            'name',
+        ]
+
+
+class PostDetailSerializer(serializers.ModelSerializer):
+    post_like = serializers.SerializerMethodField()
+    nickname = serializers.SerializerMethodField()
+    post_photos = PostPhotoSerializer(many=True, read_only=True)
+    hashtag = PostHashtagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Post
+        fields = [
+            'id',
+            'title',
+            'content',
+            'board',
+            'like_cnt',
+            'view_cnt',
+            'comment_cnt',
+            'post_photos',
+            'hashtag',
+            'post_like',
+            'nickname',
+            'created',
+            'updated',
+        ]
+
+    def get_nickname(self, obj):
+        return obj.writer.nickname
+    
+    def to_representation(self, instance):
+        response =  super().to_representation(instance)
+        response['board'] = BoardSerializer(instance.board).data
+        print(response)
+        return response
+
+    def get_post_like(self, obj):
+        '''
+            게시글의 좋아요 여부를 알려주기 위한 함수
+        '''
+        print("like")
+        re_user = self.context['request'].user.id
+        if obj.post_likeuser_set.filter(id=re_user).exists():
+            return 'ok'
+        else:
+            return 'none'
+
+    # 댓글 개수 세기 필요
+    # def count_comment(self, comment)
+
+    def create(self, validated_data):
+        print('create')
+        post = Post(**validated_data)
+        post.writer = self.context['request'].user
+        print(post.writer)
+        post.save()
+
+        #사진 최대 10개
+        post_photos_data = self.context['request'].FILES
+        post_photos = post_photos_data.getlist('post_photos')
+        count_photo = len(post_photos)
+        if (count_photo > 10):
+            raise serializers.ValidationError()
+        for post_photo_data in post_photos:
+            # 파일 경로 설정
+            ext = post_photo_data.name.split(".")[-1]
+            file_path = '{}/{}.{}'.format(post.id, str(datetime.datetime.now()),ext)
+            image = ImageFile(io.BytesIO(post_photo_data.read()), name=file_path)
+            PostPhoto.objects.create(post=post, image=image)
+            print(post_photos)
+
+        #해시태그 최대 5개
+        hashtags_data = self.context['request'].POST.getlist('hashtag')[0].split(' ')
+        print(hashtags_data)
+        count_hashtag = len(hashtags_data)
+        print(count_hashtag)
+        if (count_hashtag > 5):
+            raise serializers.ValidationError()
+        # for hashtag_data in 
+
+        print(post)
+        return post
+
+    def update(self, instance, validated_data):
+        print('update')
+        # instance = Post(**validated_data)
+        # instance.save()
+
+        #사진 최대 10개
+        post_photos_data = self.context['request'].FILES
+        post_photos = post_photos_data.getlist('post_photos')
+        count_photo = len(post_photos)
+        if (count_photo > 10):
+            raise serializers.ValidationError()
+        for post_photo_data in post_photos:
+            # 파일 경로 설정
+            ext = post_photo_data.name.split(".")[-1]
+            file_path = '{}/{}.{}'.format(instance.id, str(datetime.datetime.now()),ext)
+            image = ImageFile(io.BytesIO(post_photo_data.read()), name=file_path)
+            PostPhoto.objects.create(post=instance, image=image)
+            print(post_photos)
+
+        #해시태그 최대 5개
+        hashtags_data = self.context['request'].POST.getlist('hashtag')[0].split(' ')
+        print(hashtags_data)
+        count_hashtag = len(hashtags_data)
+        print(count_hashtag)
+        if (count_hashtag > 5):
+            raise serializers.ValidationError()
+
+        return instance
 
 class PostCommentSerializer(serializers.ModelSerializer):
     nickname = serializers.SerializerMethodField()

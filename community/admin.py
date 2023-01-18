@@ -31,7 +31,6 @@ class PostLikeAdmin(admin.ModelAdmin):
 class PostCommentAdmin(admin.ModelAdmin):
     pass
 
-
 @admin.register(models.PostCommentPhoto)
 class PostCommentPhotoAdmin(admin.ModelAdmin):
     pass

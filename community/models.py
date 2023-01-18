@@ -14,6 +14,9 @@ class Board(models.Model):
     supports_post_comments = models.BooleanField(
         null=False, blank=False, default=False)
 
+    def __str__(self):
+        return self.name
+
 
 def validate_str_field_length(target: str):
     # string 필드가 공백을 제외한 길이가 1 이상인지 확인
@@ -34,6 +37,7 @@ class Post(TimeStampedModel):
     like_cnt = models.PositiveIntegerField(default=0)
     view_cnt = models.PositiveIntegerField(default=0)
     comment_cnt = models.PositiveIntegerField(default=0)
+    post_likeuser_set = models.ManyToManyField('users.User', related_name='PostLikeUser', blank=True)
 
     # ForeignKey와 같은 relational 필드를 제외한 non-relational 필드에 대한 기본적이고 간단한 검증 로직 포함
     # 복잡한 필드 검증이나 모델 필드 외 데이터에 대한 검증, 필드 관계 검증은 Serivce/Serializer에서 수행
@@ -62,6 +66,8 @@ class Post(TimeStampedModel):
     def set_content(self, content):
         self.content = content
 
+    def __str__(self):
+        return self.title
 
 class PostHashtag(TimeStampedModel):
     name = models.CharField(max_length=10)
@@ -111,7 +117,6 @@ class PostComment(TimeStampedModel):
 def get_comment_photo_upload_path(instance, filename):
     return 'community/post_comment/{}'.format(filename)
 
-
 class PostCommentPhoto(TimeStampedModel):
     image = models.ImageField(
         upload_to=get_comment_photo_upload_path, default='post_comment_image.png')
@@ -135,8 +140,7 @@ class Report(TimeStampedModel):
         (REPORT5, "낚시/도배성 게시글"),
         (REPORT6, "상업적 광고 및 판매"),
     )
-    category = models.CharField(
-        choices=REPORT_CATEGORY_CHOICES, max_length=30, blank=False)
+    category = models.CharField(choices=REPORT_CATEGORY_CHOICES, max_length=30, blank=False)
 
     class Meta:
         abstract = True

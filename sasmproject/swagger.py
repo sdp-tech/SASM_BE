@@ -64,6 +64,13 @@ StoryViewSet_post_params = openapi.Schema(
         'file': openapi.Schema(type=openapi.TYPE_FILE, description='Story Photo'),
     }
 )
+PostLikeView_post_params = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='게시글의 id값'),
+    }
+)
+
 StoryCommentViewSet_list_params = openapi.Parameter('story', in_=openapi.IN_QUERY, description='스토리의 id',
                                                     type=openapi.TYPE_INTEGER, required=True)
 PostCommentViewSet_list_params = openapi.Parameter('post', in_=openapi.IN_QUERY, description='게시글의 id',
