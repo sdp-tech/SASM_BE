@@ -59,15 +59,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
     objects = UserManager()
 
-    # 닉네임 규칙 등과 같은 도메인 지식, 로직은 Model쪽에 작성
-    def clean(self, *args, **kwargs):
-        # 닉네임 규칙 1. 공백 문자 사용 불가
-        self.nickname = self.nickname.replace(' ', '')
+#     # 닉네임 규칙 등과 같은 도메인 지식, 로직은 Model쪽에 작성
+#     def clean(self, *args, **kwargs):
+#         # 닉네임 규칙 1. 공백 문자 사용 불가
+#         self.nickname = self.nickname.replace(' ', '')
 
-        # 닉네임 규칙 2. 닉네임 길이는 2 이상
-        if len(self.nickname) < 2:
-            print(self.nickname, len(self.nickname))
-            raise ValidationError('닉네임은 두 글자 이상이어야 합니다(공백 사용 불가).')
+#         # 닉네임 규칙 2. 닉네임 길이는 2 이상
+#         if len(self.nickname) < 2:
+#             print(self.nickname, len(self.nickname))
+#             raise ValidationError('닉네임은 두 글자 이상이어야 합니다(공백 사용 불가).')
 
     def save(self, *args, **kwargs):
         self.full_clean()
