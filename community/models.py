@@ -1,5 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.dispatch import receiver
+
 from core.models import TimeStampedModel
 
 
@@ -46,21 +48,17 @@ class Post(TimeStampedModel):
 
         # self.content = self.content.replace("\r\n", "")
 
-    @property
-    def get_like_count(self):
-        return self.like_cnt
-
-    @property
-    def get_view_count(self):
-        return self.view_cnt
-
-    @property
-    def set_title(self, title):
+    def update_title(self, title):
         self.title = title
 
-    @property
-    def set_content(self, content):
+    def update_content(self, content):
         self.content = content
+
+    def like(self):
+        self.like_cnt += 1
+
+    def dislike(self):
+        self.like_cnt -= 1
 
 
 class PostHashtag(TimeStampedModel):
@@ -71,6 +69,14 @@ class PostHashtag(TimeStampedModel):
     def clean(self):
         if validate_str_field_length(self.name):
             raise ValidationError('해시태그의 이름은 공백 제외 최소 1글자 이상이어야 합니다.')
+
+    # 필드 name, post 조합을 unique key로 설정하여, 한 게시글이 중복된 이름을 가지는 해시태그를 가질 수 없도록 제한
+    # service 레이어에서 1차적으로 검증하나, 일관성을 좀 더 강력히 보장하고, 도메인 지식을 model 레이어에 담기 위해 추가
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'post'], name='post_can_have_hashtag_with_unique_name_constraint'),
+        ]
 
 
 def get_post_photo_upload_path(instance, filename):
@@ -84,11 +90,26 @@ class PostPhoto(TimeStampedModel):
         'Post', related_name='photos', on_delete=models.CASCADE, null=False, blank=False)
 
 
+@receiver(models.signals.post_delete, sender=PostPhoto)
+# PostPhoto가 삭제된 후(post_delete), S3 media에서 이미지 파일을 삭제하여 orphan 이미지 파일이 남지 않도록 처리
+# ref. https://stackoverflow.com/questions/47377172/django-storages-aws-s3-delete-file-from-model-record
+def remove_file_from_s3(sender, instance, using, **kwargs):
+    instance.image.delete(save=False)
+
+
 class PostLike(TimeStampedModel):
     post = models.ForeignKey(
         'Post', related_name='likes', on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey(
         'users.User', related_name='post_likes', on_delete=models.SET_NULL, null=True, blank=False)  # 좋아요를 누른 사용자가 삭제되어도 좋아요는 유지
+
+    # 필드 post, user 조합을 unique key로 설정하여, 한 유저가 한 게시글에 대해 단 한번만 좋아요를 할 수 있도록 제한
+    # service 레이어에서 1차 검증을 하나, 일관성을 좀 더 강력히 보장하고, 도메인 지식을 model 레이어에 담기 위해 추가
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['post', 'user'], name='user_can_like_post_only_once_constraint'),
+        ]
 
 
 class PostComment(TimeStampedModel):

@@ -12,14 +12,254 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
+from rest_framework import serializers
 
-from .models import Post, PostComment, PostReport, PostCommentReport
+from rest_framework.views import APIView
+from community.mixins import ApiAuthMixin
+from community.services import PostCoordinatorService
+from community.selectors import PostCoordinatorSelector, PostHashtagSelector
+
+from .models import Post, PostComment, PostReport, PostCommentReport, PostHashtag
 from users.models import User
 from .serializers import PostCommentSerializer, PostCommentCreateSerializer, PostCommentUpdateSerializer, PostReportCreateSerializer, PostCommentReportCreateSerializer
 from core.permissions import CommentWriterOrReadOnly
 from sasmproject.swagger import PostCommentViewSet_list_params, param_id
 from drf_yasg.utils import swagger_auto_schema
-from itertools import chain
+
+
+class PostCreateApi(APIView, ApiAuthMixin):
+    class InputSerializer(serializers.Serializer):
+        board = serializers.IntegerField()
+        title = serializers.CharField()
+        content = serializers.CharField()
+        hashtagList = serializers.ListField(required=False)
+        imageList = serializers.ListField(required=False)
+
+    def post(self, request):
+        serializer = self.InputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = PostCoordinatorService(
+            user=request.user
+        )
+
+        # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
+        post = service.create(
+            board_id=request.POST.get('board'),
+            title=request.POST.get('title'),
+            content=request.POST.get('content'),
+            hashtag_names=request.POST.getlist(
+                'hashtagList') if 'hashtagList' in request.POST else None,
+            image_files=request.FILES.getlist(
+                'imageList') if 'imageList' in request.FILES else None,
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': post.id},
+        }, status=status.HTTP_201_CREATED)
+
+
+class PostUpdateApi(APIView, ApiAuthMixin):
+    class InputSerializer(serializers.Serializer):
+        title = serializers.CharField()
+        content = serializers.CharField()
+        hashtagList = serializers.ListField(required=False)
+        photoList = serializers.ListField(required=False)
+        imageList = serializers.ListField(required=False)
+
+    def patch(self, request, post_id):
+        serializer = self.InputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = PostCoordinatorService(
+            user=request.user
+        )
+
+        post = service.update(
+            post_id=post_id,
+            title=request.POST.get('title'),
+            content=request.POST.get('content'),
+            hashtag_names=request.POST.getlist(
+                'hashtagList') if 'hashtagList' in request.POST else [],
+            photo_image_urls=request.POST.getlist(
+                'photoList') if 'photoList' in request.POST else [],
+            image_files=request.FILES.getlist(
+                'imageList') if 'imageList' in request.FILES else [],
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': post.id},
+        }, status=status.HTTP_200_OK)
+
+
+class PostDeleteApi(APIView, ApiAuthMixin):
+    def delete(self, request, post_id):
+
+        service = PostCoordinatorService(
+            user=request.user
+        )
+
+        service.delete(
+            post_id=post_id
+        )
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_200_OK)
+
+
+class PostLikeApi(APIView, ApiAuthMixin):
+    def post(self, request, post_id):
+        service = PostCoordinatorService(
+            user=request.user
+        )
+
+        likes = service.like_or_dislike(
+            post_id=post_id
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'likes': likes},
+        }, status=status.HTTP_200_OK)
+
+
+def get_paginated_response(*, pagination_class, serializer_class, queryset, request, view):
+    paginator = pagination_class()
+
+    page = paginator.paginate_queryset(queryset, request, view=view)
+
+    if page is not None:
+        serializer = serializer_class(page, many=True)
+    else:
+        serializer = serializer_class(queryset, many=True)
+
+    return Response({
+        'status': 'success',
+        'data': serializer.data,
+    }, status=status.HTTP_200_OK)
+
+
+class PostListApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 10
+        page_size_query_param = 'page_size'
+
+    class FilterSerializer(serializers.Serializer):
+        board = serializers.CharField(required=True)
+        query = serializers.CharField(required=False)
+        query_type = serializers.CharField(required=False)
+        latest = serializers.BooleanField(required=False)
+
+    class OutputSerializer(serializers.Serializer):
+        title = serializers.CharField()
+        nickname = serializers.CharField()
+        email = serializers.CharField()
+        like_cnt = serializers.IntegerField()
+        created = serializers.DateTimeField()
+        updated = serializers.DateTimeField()
+
+        # 게시판 지원 기능에 따라 전달 여부 결정되는 필드
+        commentCount = serializers.IntegerField(required=False)
+
+    def get(self, request):
+        filters_serializer = self.FilterSerializer(data=request.query_params)
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+
+        selector = PostCoordinatorSelector(
+            user=request.user
+        )
+        posts = selector.list(
+            board_id=filters['board'],  # 게시판 id
+            # 검색어
+            query=filters['query'] if 'query' in filters else '',
+            # 검색어 종류 (해시태그 검색 여부)
+            query_type=filters['query_type'] if 'query_type' in filters else '',
+            # 최신순 정렬 여부 (기본값: 최신순)
+            latest=filters['latest'] if 'latest' in filters else True,
+        )
+
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.OutputSerializer,
+            queryset=posts,
+            request=request,
+            view=self
+        )
+
+
+# class CommaSeperatedStringToListField(serializers.CharField):
+#     def to_representation(self, obj):
+#         if not obj:  # 빈(empty) 문자열일 경우
+#             return []
+#         return obj.split(',')
+
+#     def to_internal_value(self, data):
+#         return super().to_internal_value(self, ",".join(data))
+
+
+class PostDetailApi(APIView):
+    class OutputSerializer(serializers.Serializer):
+        title = serializers.CharField()
+        content = serializers.CharField()
+        nickname = serializers.CharField()
+        email = serializers.CharField()
+        created = serializers.DateTimeField()
+        updated = serializers.DateTimeField()
+
+        like_cnt = serializers.IntegerField()
+        view_cnt = serializers.IntegerField()
+        likes = serializers.BooleanField()
+
+        # 게시판 지원 기능에 따라 전달 여부 결정되는 필드
+        hashtagList = serializers.ListField(required=False)
+        photoList = serializers.ListField(required=False)
+
+    def get(self, request, post_id):
+        selector = PostCoordinatorSelector(
+            user=request.user
+        )
+        post = selector.detail(
+            post_id=post_id)
+
+        serializer = self.OutputSerializer(post)
+
+        return Response(serializer.data)
+
+
+class PostHashtagListApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 10
+        page_size_query_param = 'page_size'
+
+    class FilterSerializer(serializers.Serializer):
+        query = serializers.CharField(required=True)
+
+    class OutputSerializer(serializers.Serializer):
+        name = serializers.CharField()
+        postCount = serializers.IntegerField()
+
+    def get(self, request):
+        filters_serializer = self.FilterSerializer(data=request.query_params)
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+
+        selector = PostHashtagSelector()
+        hashtags = selector.list(
+            query=filters['query']  # 해당 검색어로 시작하는 모든 해시태그 리스트
+        )
+
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.OutputSerializer,
+            queryset=hashtags,
+            request=request,
+            view=self
+        )
+
 
 class PostCommentPagination(PageNumberPagination):
     page_size = 20
@@ -43,21 +283,21 @@ class PostCommentView(viewsets.ModelViewSet):
         elif self.action == 'update':
             return PostCommentUpdateSerializer
         return PostCommentSerializer
-    
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update({"request": self.request})
         return context
- 
-    @swagger_auto_schema(operation_id='api_post_comments_get')
+
+    @ swagger_auto_schema(operation_id='api_post_comments_get')
     def retrieve(self, request, *args, **kwargs):
         response = super().retrieve(request, *args, **kwargs)
         return Response({
             'status': 'success',
             'data': response.data,
-        }, status=status.HTTP_200_OK)   
+        }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(operation_id='api_post_comments_list')
+    @ swagger_auto_schema(operation_id='api_post_comments_list')
     def list(self, request, *args, **kwargs):
         '''특정 게시글 하위 댓글 조회'''
 
@@ -87,7 +327,7 @@ class PostCommentView(viewsets.ModelViewSet):
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(operation_id='api_post_comments_post')
+    @ swagger_auto_schema(operation_id='api_post_comments_post')
     def create(self, request, *args, **kwargs):
         try:
             super().create(request, *args, **kwargs)
@@ -106,9 +346,9 @@ class PostCommentView(viewsets.ModelViewSet):
             'status': 'success',
         }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(operation_id='api_post_comments_patch')
+    @ swagger_auto_schema(operation_id='api_post_comments_patch')
     def update(self, request, pk, *args, **kwargs):
-        try:              
+        try:
             kwargs['partial'] = True
             super().update(request, *args, **kwargs)
         except ValidationError as e:
@@ -127,7 +367,7 @@ class PostCommentView(viewsets.ModelViewSet):
             'status': 'success',
         }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(operation_id='api_post_comments_delete')
+    @ swagger_auto_schema(operation_id='api_post_comments_delete')
     def destroy(self, request, *args, **kwargs):
         super().destroy(request, *args, **kwargs)
         return Response({
@@ -138,17 +378,18 @@ class PostCommentView(viewsets.ModelViewSet):
 class PostReportView(viewsets.ModelViewSet):
     '''
         Post Report 관련 작업 API
-    '''    
+    '''
     queryset = PostReport.objects.all()
-    serializer_class = PostReportCreateSerializer #Read, Update, Delete at sdp_admin app
-    permission_class = [IsAuthenticated,]
-    
+    # Read, Update, Delete at sdp_admin app
+    serializer_class = PostReportCreateSerializer
+    permission_class = [IsAuthenticated, ]
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update({"request": self.request})
         return context
 
-    @swagger_auto_schema(operation_id='api_post_report_create')
+    @ swagger_auto_schema(operation_id='api_post_report_create')
     def create(self, request, *args, **kwargs):
         try:
             super().create(request, *args, **kwargs)
@@ -171,17 +412,18 @@ class PostReportView(viewsets.ModelViewSet):
 class PostCommentReportView(viewsets.ModelViewSet):
     '''
         Post Comment Report 관련 작업 API
-    '''    
+    '''
     queryset = PostCommentReport.objects.all()
-    serializer_class = PostCommentReportCreateSerializer #Read, Update, Delete at sdp_admin app
-    permission_class = [IsAuthenticated,]
+    # Read, Update, Delete at sdp_admin app
+    serializer_class = PostCommentReportCreateSerializer
+    permission_class = [IsAuthenticated, ]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context.update({"request": self.request})
         return context
 
-    @swagger_auto_schema(operation_id='api_post_comment_report_create')
+    @ swagger_auto_schema(operation_id='api_post_comment_report_create')
     def create(self, request, *args, **kwargs):
         try:
             super().create(request, *args, **kwargs)
