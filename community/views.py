@@ -236,6 +236,7 @@ class PostHashtagListApi(APIView):
         page_size_query_param = 'page_size'
 
     class FilterSerializer(serializers.Serializer):
+        board = serializers.IntegerField(required=True)
         query = serializers.CharField(required=True)
 
     class OutputSerializer(serializers.Serializer):
@@ -249,6 +250,7 @@ class PostHashtagListApi(APIView):
 
         selector = PostHashtagSelector()
         hashtags = selector.list(
+            board_id=filters['board'],
             query=filters['query']  # 해당 검색어로 시작하는 모든 해시태그 리스트
         )
 
