@@ -33,6 +33,37 @@ class BoardSerializer(serializers.ModelSerializer):
             'name',
         ]
 
+class PostListSerializer(serializers.ModelSerializer):
+    nickname = serializers.SerializerMethodField()
+    hashtag = PostHashtagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Post
+        fields = [
+            'id',
+            'title',
+            'content',
+            'like_cnt',
+            'comment_cnt',
+            'board',
+            # 'post_like',
+            'nickname',
+            'hashtag',
+            'created',
+            'updated',
+        ]
+    
+    def get_nickname(self, obj):
+        return obj.writer.nickname
+    
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        response['board'] = BoardSerializer(instance.board).data
+        print('123', response)
+        return response
+
+
+
 
 class PostDetailSerializer(serializers.ModelSerializer):
     post_like = serializers.SerializerMethodField()

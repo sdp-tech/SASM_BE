@@ -13,10 +13,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 
-from .models import Board, Post, PostComment, PostReport, PostCommentReport
+from .models import Board, Post, PostHashtag, PostComment, PostReport, PostCommentReport
 from users.models import User
 from users.serializers import UserSerializer
-from .serializers import PostDetailSerializer, PostCommentSerializer, PostCommentCreateSerializer, PostCommentUpdateSerializer, PostReportCreateSerializer, PostCommentReportCreateSerializer
+from .serializers import PostDetailSerializer, PostListSerializer, PostHashtagSerializer, PostCommentSerializer, PostCommentCreateSerializer, PostCommentUpdateSerializer, PostReportCreateSerializer, PostCommentReportCreateSerializer
 from core.permissions import CommentWriterOrReadOnly
 from sasmproject.swagger import PostCommentViewSet_list_params, param_id, PostLikeView_post_params
 from drf_yasg.utils import swagger_auto_schema
@@ -26,10 +26,85 @@ class BoardPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
 
-class PostDetailView(viewsets.ModelViewSet):
-    queryset = Post.objects.all().order_by('-created')
-    serializer_class = PostDetailSerializer
+
+class PostListView(viewsets.ModelViewSet):
+    serializer_class = PostListSerializer
+    permission_classes = [AllowAny]
     pagination_class = BoardPagination
+
+    def get_queryset(self, pk):
+        queryset_list = Post.objects.filter(board_id=pk).order_by('-created')
+        print('get_queryset', queryset_list)
+        return queryset_list
+
+    def get(self, request, pk):
+        qs = self.get_queryset(pk=pk)
+        # print('qs=', qs)
+        search = request.GET.get('search', '')
+        # print('abc', request)
+        search_list = qs.filter(Q(title__icontains=search) | Q(content__icontains=search))
+        queryset = self.paginate_queryset(search_list)
+
+        if queryset is not None:
+            serializer = self.get_paginated_response(
+                self.get_serializer(queryset, many=True).data)
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    def hashtag_get(self, instance, request, pk):
+        '''
+            Hashtag 내용이 일부만 동일해도 결과를 반환하는 API
+        '''
+        qs = self.get_queryset(pk=pk)
+        hashtag_search = request.GET.get('hashtag_search', '')
+        hashtag_search = '#'+ hashtag_search  # '#'은 검색문구에 해당되지 않음 
+        hashtag_search_list = PostHashtag.objects.filter(name__icontains=hashtag_search)
+        print('해시태그목록', hashtag_search_list)
+        hashtag_queryset = self.paginate_queryset(hashtag_search_list)
+
+        if hashtag_queryset is not None:
+            serializer = self.get_paginated_response(
+                self.get_serializer(hashtag_queryset, many=True).data)
+        else:
+            serializer = self.get_serializer(hashtag_queryset, many=True)
+
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    def hashtag_detail_get(self, request, pk):
+        '''
+            Hashtag 내용이 완전히 동일할 경우 결과를 반환하는 API
+        '''
+        qs = self.get_queryset(pk=pk)
+        hashtag_search = request.GET.get('hashtag_search', '')
+        hashtag_search = '#'+ hashtag_search
+        print(hashtag_search)
+        hashtag_detail_search_list = qs.filter(hashtags__name=hashtag_search)
+        print('+++++', hashtag_detail_search_list)
+        hashtag_detail_queryset = self.paginate_queryset(hashtag_detail_search_list)
+
+        if hashtag_detail_queryset is not None:
+            serializer = self.get_paginated_response(
+                self.get_serializer(hashtag_detail_queryset, many=True).data)
+        else:
+            serializer = self.get_serializer(hashtag_detail_queryset, many=True)
+
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+
+class PostDetailView(viewsets.ModelViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostDetailSerializer
     
     def get_permissions(self):
         if self.action == 'create' or self.action == 'update' or self.action == 'destroy':
@@ -82,6 +157,7 @@ class PostDetailView(viewsets.ModelViewSet):
     @swagger_auto_schema(operation_id='api_community_post_delete')
     def destroy(self, request, *args, **kwargs):
         super().destroy(request, *args, **kwargs)
+        print('delete')
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)
@@ -134,6 +210,7 @@ class PostLikeView(viewsets.ModelViewSet):
                 post.post_likeuser_set.add(profile)
                 post.like_cnt += 1
                 post.save()
+                print(post.like_cnt)
                 return Response({
                     'status': 'success',
                     'message': 'added',
@@ -143,6 +220,7 @@ class PostLikeView(viewsets.ModelViewSet):
                 'status': 'fail',
                 'data': { "user" : "user is not authenticated"},
             }, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 class PostCommentPagination(PageNumberPagination):
@@ -214,17 +292,24 @@ class PostCommentView(viewsets.ModelViewSet):
     @swagger_auto_schema(operation_id='api_post_comments_post')
     def create(self, request, *args, **kwargs):
         try:
+            id = request.data['post']  #post값을 id값 대신 입력받음 
+            post = get_object_or_404(Post, pk=id)
+            print(post)
+            post.comment_cnt += 1
+            print(type(post.comment_cnt))
+            print('댓글 수', post.comment_cnt)
+            post.save()
             super().create(request, *args, **kwargs)
         except ValidationError as e:
             return Response({
                 'status': 'fail',
                 'message': str(e),
             }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        # except Exception as e:
+        #     return Response({
+        #         'status': 'fail',
+        #         'message': 'unknown',
+        #     }, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({
             'status': 'success',

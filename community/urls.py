@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import PostDetailView, PostCommentView, PostReportView, PostCommentReportView, PostLikeView
+from .views import PostDetailView, PostCommentView, PostReportView, PostCommentReportView, PostLikeView, PostListView
 
 urlpatterns = [
     path('post_comments/',
@@ -16,4 +16,7 @@ urlpatterns = [
     path('post_like/<int:pk>/',
         PostLikeView.as_view({'get': 'get'}), name='post_like_list'),
     path('post_like_user/', PostLikeView.as_view({'post': 'post'}), name='post_like_user'),
+    path('post_search/<int:pk>/', PostListView.as_view({'get': 'get'}), name='post_search'),
+    path('hashtag_search/<int:pk>/', PostListView.as_view({'get': 'hashtag_get'}), name='hashtag_search'),
+    path('hashtag_detail_search/<int:pk>/', PostListView.as_view({'get': 'hashtag_detail_get'}), name='hashtag_detail_search'),
 ]
