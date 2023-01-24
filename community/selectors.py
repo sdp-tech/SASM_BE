@@ -195,14 +195,18 @@ class PostHashtagSelector:
         pass
 
     @staticmethod
-    def list(query: str):
+    def list(board_id: int, query: str):
         dtos = []
 
         # Counter를 이용해 hashtag 빈도(해당 해시태그를 가지는 게시글 수) 계산
         # query와 정확히 일치하는 순(= startswith이므로 문자열 길이가 가장 짧은 순)으로 해시태그 정렬
         # TODO: 향후 해시태그 수가 많아질 경우 성능 저하 포인트가 될 수 있음
-        hashtags = sorted(Counter(PostHashtag.objects.filter(
-            name__startswith=query).values_list('name', flat=True)).items())
+        hashtags = sorted(
+            Counter(
+                PostHashtag.objects.filter(post__board__id=board_id,
+                                           name__startswith=query)
+                .values_list('name', flat=True)).items()
+        )
 
         for hashtag in hashtags:
             name = hashtag[0]
