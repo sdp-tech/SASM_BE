@@ -72,7 +72,8 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
         # sns info 받기
         count = int(place_info['snscount'])
         sns = {}
-        if(count >0):
+        #sns data 값 없을 시 0 :: [',,']으로 data 넘어옴
+        if(place_info[str(0)]!=',,'):
             for i in range(count):
                 snstype, snstype_name, url = place_info[str(i)].split(',')
                 sns[snstype] = [snstype_name, url]
@@ -209,6 +210,7 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
 
             """ pics """
             if(len(pics) > 0):
+                print('data 들어옴')
                 for key,value in pics.items():
                     ext = value.name.split(".")[-1]
 
