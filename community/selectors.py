@@ -64,6 +64,7 @@ class GroupConcat(Aggregate):
 
 @dataclass
 class PostDto:
+    board: int
     title: str
     content: str
     nickname: str
@@ -122,6 +123,7 @@ class PostCoordinatorSelector:
         )
 
         dto = PostDto(
+            board=post.board.id,
             title=post.title,
             content=post.content,
             nickname=post.nickname,
