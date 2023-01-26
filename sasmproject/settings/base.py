@@ -243,6 +243,5 @@ SWAGGER_SETTINGS = {
             'name': 'Authorization',
             'in': 'header'
         },
-    },
-    'DEFAULT_AUTO_SCHEMA_CLASS': 'core.inspectors.SerializerExampleSchema',
+    }
 }
