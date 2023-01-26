@@ -71,8 +71,8 @@ class PostDto:
     created: datetime
     updated: datetime
 
-    likeCount: int
-    viewCount: int
+    like_cnt: int
+    view_cnt: int
     likes: bool
 
     hashtagList: list[str] = None  # optional
@@ -128,8 +128,8 @@ class PostCoordinatorSelector:
             email=post.email,
             created=post.created,
             updated=post.updated,
-            likeCount=post.likeCount,
-            viewCount=post.viewCount,
+            like_cnt=post.like_cnt,
+            view_cnt=post.view_cnt,
             likes=likes,
         )
 
@@ -170,7 +170,6 @@ class PostSelector:
         posts = Post.objects.filter(q).annotate(
             nickname=F('writer__nickname'),
             email=F('writer__email'),
-            likeCount=F('like_cnt'),
             **extra_fields
         ).order_by(order)  # .distinct
 
@@ -181,8 +180,6 @@ class PostSelector:
         return Post.objects.annotate(
             nickname=F('writer__nickname'),
             email=F('writer__email'),
-            likeCount=F('like_cnt'),
-            viewCount=F('view_cnt'),
             **extra_fields
         ).get(id=post_id)
 
