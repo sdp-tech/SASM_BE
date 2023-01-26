@@ -275,6 +275,7 @@ class PostListApi(APIView):
         latest = serializers.BooleanField(required=False)
 
     class PostListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
         title = serializers.CharField()
         nickname = serializers.CharField()
         email = serializers.CharField()
@@ -303,7 +304,7 @@ class PostListApi(APIView):
                 description="OK",
                 examples={
                     "application/json": {
-                        'board': 1,
+                        'id': 1,
                         'title': '안녕 상점 추천합니다.',
                         'nickname': 'sdpygl',
                         'email': 'sdpygl@gmail.com',
@@ -359,6 +360,7 @@ class PostListApi(APIView):
 
 class PostDetailApi(APIView):
     class PostDetailOutputSerializer(serializers.Serializer):
+        board = serializers.IntegerField()
         title = serializers.CharField()
         content = serializers.CharField()
         nickname = serializers.CharField()
@@ -384,6 +386,7 @@ class PostDetailApi(APIView):
                 description="OK",
                 examples={
                     "application/json": {
+                        'board': 1,
                         'title': '안녕 상점 추천합니다.',
                         'content': '개인적으로 좋았습니다.',
                         'nickname': 'sdpygl',
