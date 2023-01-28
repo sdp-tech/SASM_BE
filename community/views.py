@@ -277,6 +277,7 @@ class PostListApi(APIView):
     class PostListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
+        preview = serializers.CharField()
         nickname = serializers.CharField()
         email = serializers.CharField()
         likeCount = serializers.IntegerField()
@@ -306,6 +307,7 @@ class PostListApi(APIView):
                     "application/json": {
                         'id': 1,
                         'title': '안녕 상점 추천합니다.',
+                        'preview': '추천하고 싶은 이유는 ddsjfldksjflks....(최대 50자)',
                         'nickname': 'sdpygl',
                         'email': 'sdpygl@gmail.com',
                         'likeCount': 10,

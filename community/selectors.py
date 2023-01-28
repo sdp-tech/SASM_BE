@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db import transaction
 from django.http import Http404
 from django.db.models import Q, F, Value, CharField, Func, Aggregate, Count
-from django.db.models.functions import Concat
+from django.db.models.functions import Concat, Substr
 
 
 from users.models import User
@@ -170,6 +170,7 @@ class PostSelector:
             order = 'created'
 
         posts = Post.objects.filter(q).annotate(
+            preview=Substr('content', 1, 50),
             nickname=F('writer__nickname'),
             email=F('writer__email'),
             likeCount=F('like_cnt'),
