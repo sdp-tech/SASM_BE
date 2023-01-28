@@ -259,7 +259,7 @@ def get_paginated_response(*, pagination_class, serializer_class, queryset, requ
 
     return Response({
         'status': 'success',
-        'data': serializer.data,
+        'data': paginator.get_paginated_response(serializer.data).data,
     }, status=status.HTTP_200_OK)
 
 
@@ -273,6 +273,7 @@ class PostListApi(APIView):
         query = serializers.CharField(required=False)
         query_type = serializers.CharField(required=False)
         latest = serializers.BooleanField(required=False)
+        page = serializers.IntegerField(required=False)
 
     class PostListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
