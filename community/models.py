@@ -16,6 +16,10 @@ class Board(models.Model):
     supports_post_comments = models.BooleanField(
         null=False, blank=False, default=False)
 
+    # 게시판이 사용하는 글 양식 지정
+    post_content_style = models.ForeignKey(
+        'PostContentStyle', related_name='applied_boards', on_delete=models.SET_NULL, null=True, blank=True)
+
 
 def validate_str_field_length(target: str):
     # string 필드가 공백을 제외한 길이가 1 이상인지 확인
@@ -59,6 +63,11 @@ class Post(TimeStampedModel):
 
     def dislike(self):
         self.like_cnt -= 1
+
+
+class PostContentStyle(TimeStampedModel):
+    name = models.CharField(max_length=50)
+    styled_content = models.TextField(max_length=50000)
 
 
 class PostHashtag(TimeStampedModel):
