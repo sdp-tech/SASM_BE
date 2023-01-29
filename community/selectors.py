@@ -35,6 +35,16 @@ class BoardSelector:
         except Board.MultipleObjectsReturned:
             raise Http404
 
+    @staticmethod
+    def properties(board_id: int) -> Board:
+        return Board.objects.annotate(
+            supportsHashtags=F('supports_hashtags'),
+            supportsPostPhotos=F('supports_post_photos'),
+            supportsPostComments=F('supports_post_comments'),
+            supportsPostCommentPhotos=F('supports_post_comment_photos'),
+            postContentStyle=F('post_content_style__styled_content'),
+        ).get(id=board_id)
+
 
 class GroupConcat(Aggregate):
     # Postgres ArrayAgg similar(not exactly equivalent) for sqlite & mysql

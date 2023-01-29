@@ -17,7 +17,7 @@ from rest_framework import serializers
 from rest_framework.views import APIView
 from community.mixins import ApiAuthMixin
 from community.services import PostCoordinatorService
-from community.selectors import PostCoordinatorSelector, PostHashtagSelector
+from community.selectors import PostCoordinatorSelector, PostHashtagSelector, BoardSelector
 
 from .models import Post, PostComment, PostReport, PostCommentReport, PostHashtag
 from users.models import User
@@ -26,6 +26,48 @@ from core.permissions import CommentWriterOrReadOnly
 from sasmproject.swagger import PostCommentViewSet_list_params, param_id
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+
+
+class BoardPropertyDetailApi(APIView, ApiAuthMixin):
+    class BoardPropertyDetailOutputSerializer(serializers.Serializer):
+        name = serializers.CharField()
+        supportsHashtags = serializers.BooleanField()
+        supportsPostPhotos = serializers.BooleanField()
+        supportsPostComments = serializers.BooleanField()
+        supportsPostCommentPhotos = serializers.BooleanField()
+        postContentStyle = serializers.CharField()
+
+    @swagger_auto_schema(
+        operation_id='커뮤니티 게시판 속성 조회',
+        operation_description='''
+                전달된 게시판 id에 해당하는 게시글 속성을 조회합니다.<br/>
+                해당 게시판에 지정된 글양식이 없을 경우 null 값이 반환됩니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "name": "장소추천게시판",
+                        "supportsHashtags": False,
+                        "supportsPostPhotos": False,
+                        "supportsPostComments": True,
+                        "supportsPostCommentPhotos": False,
+                        "postContentStyle": "장소명:\r\n추천 이유:\r\n기타:"
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request, board_id):
+        board = BoardSelector.properties(board_id=board_id)
+
+        serializer = self.BoardPropertyDetailOutputSerializer(board)
+
+        return Response(serializer.data)
 
 
 class PostCreateApi(APIView, ApiAuthMixin):

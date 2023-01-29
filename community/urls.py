@@ -1,7 +1,9 @@
 from django.urls import path
-from .views import PostListApi, PostDetailApi, PostCreateApi, PostUpdateApi, PostDeleteApi, PostLikeApi, PostCommentView, PostReportView, PostCommentReportView, PostHashtagListApi
+from .views import BoardPropertyDetailApi, PostListApi, PostDetailApi, PostCreateApi, PostUpdateApi, PostDeleteApi, PostLikeApi, PostCommentView, PostReportView, PostCommentReportView, PostHashtagListApi
 
 urlpatterns = [
+    path('boards/<int:board_id>/',
+         BoardPropertyDetailApi.as_view(), name='board_property_detail'),
     path('posts/',
          PostListApi.as_view(), name='post_list'),
     path('posts/<int:post_id>/',
