@@ -37,7 +37,7 @@ class Post(TimeStampedModel):
     like_cnt = models.PositiveIntegerField(default=0)
     view_cnt = models.PositiveIntegerField(default=0)
     comment_cnt = models.PositiveIntegerField(default=0)
-    post_likeuser_set = models.ManyToManyField('users.User', related_name='PostLikeUser', blank=True)
+    post_likeuser_set = models.ManyToManyField('users.User', related_name='like_posts', blank=True)
 
     # ForeignKey와 같은 relational 필드를 제외한 non-relational 필드에 대한 기본적이고 간단한 검증 로직 포함
     # 복잡한 필드 검증이나 모델 필드 외 데이터에 대한 검증, 필드 관계 검증은 Serivce/Serializer에서 수행

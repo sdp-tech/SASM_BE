@@ -130,34 +130,36 @@ class PostDetailView(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(operation_id='api_community_post_put')
-    def update(self, request, *args, **kwargs):
-        print('aaaaa')
+    def update(self, request, pk, *args, **kwargs):
         try:
-            kwargs['partial'] = True
-            super().update(request, *args, **kwargs)  #Serializer에서 update와 create 기능이 동일해서 create부름
+            post = get_object_or_404(Post, id=pk)
+            if post.writer == request.user:
+                kwargs['partial'] = True
+                super().update(request, *args, **kwargs) 
         except ValidationError as e:
             return Response({
                 'status': 'fail',
                 'message': str(e),
             }, status=status.HTTP_400_BAD_REQUEST)
-
         return Response({
             'status': 'success',
             'message': 'updated',
         }, status=status.HTTP_200_OK)
     
     @swagger_auto_schema(operation_id='api_community_post_get')
-    def retrieve(self, request, *args, **kwargs):
-        response = super().retrieve(request, *args, **kwargs)
+    def retrieve(self, request, pk, *args, **kwargs):
+        response = super().retrieve(request,pk, *args, **kwargs)
         return Response({
             'status': 'success',
             'data': response.data,
         }, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(operation_id='api_community_post_delete')
-    def destroy(self, request, *args, **kwargs):
-        super().destroy(request, *args, **kwargs)
-        print('delete')
+    def destroy(self, request, pk, *args, **kwargs):
+        post = get_object_or_404(Post, id=pk)
+        if post.writer == request.user:
+            super().destroy(request, *args, **kwargs)
+            print('delete')
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)
@@ -193,33 +195,31 @@ class PostLikeView(viewsets.ModelViewSet):
         id = request.data['id']
         print(id)
         post = get_object_or_404(Post, pk=id)
-        if request.user.is_authenticated:
-            user = request.user
-            profile = User.objects.get(email=user)
-            check_like = post.post_likeuser_set.filter(pk=profile.pk)
+        user = request.user
+        profile = User.objects.get(email=user)
+        check_like = post.post_likeuser_set.filter(pk=profile.pk)
 
-            if check_like.exists():
-                post.post_likeuser_set.remove(profile)
-                post.like_cnt -= 1
-                post.save()
-                return Response({
-                    'status': 'success',
-                    'message': 'removed',
-                }, status=status.HTTP_200_OK)
-            else:
-                post.post_likeuser_set.add(profile)
-                post.like_cnt += 1
-                post.save()
-                print(post.like_cnt)
-                return Response({
-                    'status': 'success',
-                    'message': 'added',
-                }, status=status.HTTP_200_OK)
-        else:
+        if check_like.exists():
+            post.post_likeuser_set.remove(profile)
+            post.like_cnt -= 1
+            post.save()
             return Response({
-                'status': 'fail',
-                'data': { "user" : "user is not authenticated"},
-            }, status=status.HTTP_401_UNAUTHORIZED)
+                'status': 'success',
+                'message': 'removed',
+            }, status=status.HTTP_200_OK)
+        else:
+            post.post_likeuser_set.add(profile)
+            post.like_cnt += 1
+            post.save()
+            print(post.like_cnt)
+            return Response({
+                'status': 'success',
+                'message': 'added',
+            }, status=status.HTTP_200_OK)
+        # return Response({
+            # 'status': 'fail',
+            # 'data': { "user" : "user is not authenticated"},
+        # }, status=status.HTTP_401_UNAUTHORIZED)
 
 
 

@@ -59,6 +59,7 @@ class PostListSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         response = super().to_representation(instance)
         response['board'] = BoardSerializer(instance.board).data
+        response['hashtag'] = PostHashtagSerializer(instance.hashtag).data
         print('123', response)
         return response
 
@@ -68,7 +69,7 @@ class PostListSerializer(serializers.ModelSerializer):
 class PostDetailSerializer(serializers.ModelSerializer):
     post_like = serializers.SerializerMethodField()
     nickname = serializers.SerializerMethodField()
-    post_photos = PostPhotoSerializer(many=True, read_only=True)
+    photos = PostPhotoSerializer(many=True, read_only=True)
     hashtag = PostHashtagSerializer(many=True, read_only=True)
 
     class Meta:
@@ -81,7 +82,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
             'like_cnt',
             'view_cnt',
             'comment_cnt',
-            'post_photos',
+            'photos',
             'hashtag',
             'post_like',
             'nickname',
@@ -95,7 +96,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         response =  super().to_representation(instance)
         response['board'] = BoardSerializer(instance.board).data
-        print(response)
+        print('response', response)
         return response
 
     def get_post_like(self, obj):
@@ -109,8 +110,6 @@ class PostDetailSerializer(serializers.ModelSerializer):
         else:
             return 'none'
 
-    # 댓글 개수 세기 필요
-    # def count_comment(self, comment)
 
     def create(self, validated_data):
         print('create')
@@ -121,20 +120,20 @@ class PostDetailSerializer(serializers.ModelSerializer):
 
         #사진 최대 10개
         post_photos_data = self.context['request'].FILES
-        post_photos = post_photos_data.getlist('post_photos')
-        count_photo = len(post_photos)
+        photos = post_photos_data.getlist('photos')
+        count_photo = len(photos)
         if (count_photo > 10):
             raise serializers.ValidationError()
-        for post_photo_data in post_photos:
+        for post_photo_data in photos:
             # 파일 경로 설정
             ext = post_photo_data.name.split(".")[-1]
             file_path = '{}/{}.{}'.format(post.id, str(datetime.datetime.now()),ext)
             image = ImageFile(io.BytesIO(post_photo_data.read()), name=file_path)
             PostPhoto.objects.create(post=post, image=image)
-            print(post_photos)
+            print(photos)
 
         #해시태그 최대 5개
-        hashtags_data = self.context['request'].POST.getlist('hashtag')[0].split(' ')
+        hashtags_data = self.context['request'].POST.getlist('hashtag')
         print(hashtags_data)
         count_hashtag = len(hashtags_data)
         print(count_hashtag)
@@ -147,30 +146,11 @@ class PostDetailSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         print('update')
-        # instance = Post(**validated_data)
-        # instance.save()
-
-        #사진 최대 10개
-        post_photos_data = self.context['request'].FILES
-        post_photos = post_photos_data.getlist('post_photos')
-        count_photo = len(post_photos)
-        if (count_photo > 10):
-            raise serializers.ValidationError()
-        for post_photo_data in post_photos:
-            # 파일 경로 설정
-            ext = post_photo_data.name.split(".")[-1]
-            file_path = '{}/{}.{}'.format(instance.id, str(datetime.datetime.now()),ext)
-            image = ImageFile(io.BytesIO(post_photo_data.read()), name=file_path)
-            PostPhoto.objects.create(post=instance, image=image)
-            print(post_photos)
-
-        #해시태그 최대 5개
-        hashtags_data = self.context['request'].POST.getlist('hashtag')[0].split(' ')
-        print(hashtags_data)
-        count_hashtag = len(hashtags_data)
-        print(count_hashtag)
-        if (count_hashtag > 5):
-            raise serializers.ValidationError()
+        instance.title = validated_data.get('title', instance.title)
+        print(instance.title)
+        instance.content = validated_data.get('content', instance.content)
+        print(instance.content)
+        instance.save()
 
         return instance
 
