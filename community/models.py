@@ -137,6 +137,11 @@ class PostComment(TimeStampedModel):
     mention = models.ForeignKey(
         'users.User', related_name='mentioned_post_comments', on_delete=models.SET_NULL, null=True, blank=True)
 
+    def update_content(self, content):
+        self.content = content
+
+    def update_mention(self, mention):
+        self.mention = mention
 
 def get_comment_photo_upload_path(instance, filename):
     return 'community/post_comment/{}'.format(filename)
@@ -145,8 +150,12 @@ def get_comment_photo_upload_path(instance, filename):
 class PostCommentPhoto(TimeStampedModel):
     image = models.ImageField(
         upload_to=get_comment_photo_upload_path, default='post_comment_image.png')
-    comment = models.ForeignKey(
+    post_comment = models.ForeignKey(
         'PostComment', related_name='photos', on_delete=models.CASCADE, null=False, blank=False)
+
+@receiver(models.signals.post_delete, sender=PostCommentPhoto)
+def remove_file_from_s3(sender, instance, using, **kwargs):
+    instance.image.delete(save=False)
 
 
 class Report(TimeStampedModel):
@@ -175,12 +184,12 @@ class Report(TimeStampedModel):
 class PostReport(Report):
     post = models.ForeignKey(
         'Post', related_name='reports', on_delete=models.CASCADE, null=True, blank=False)
-    user = models.ForeignKey(
+    reporter = models.ForeignKey(
         'users.User', related_name='post_reports', on_delete=models.SET_NULL, null=True, blank=False)
 
 
 class PostCommentReport(Report):
     comment = models.ForeignKey(
         'PostComment', related_name='reports', on_delete=models.CASCADE, null=True, blank=False)
-    user = models.ForeignKey(
+    reporter = models.ForeignKey(
         'users.User', related_name='post_comment_reports', on_delete=models.SET_NULL, null=True, blank=False)

@@ -10,8 +10,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import exceptions
 
 from users.models import User
-from community.models import Board, Post, PostHashtag, PostPhoto, PostLike
-from .selectors import BoardSelector, PostHashtagSelector, PostSelector, PostLikeSelector
+from community.models import Board, Post, PostHashtag, PostPhoto, PostLike, PostComment, PostCommentPhoto, PostReport, PostCommentReport
+from .selectors import BoardSelector, PostHashtagSelector, PostSelector, PostLikeSelector, PostCommentSelector
 
 
 class PostCoordinatorService:
@@ -274,3 +274,231 @@ class PostLikeService:
     @staticmethod
     def dislike(post_id: int, user: User):
         PostLike.objects.get(post__id=post_id, user=user).delete()
+
+
+class PostCommentCoordinatorService:
+    def __init__(self, user: User):
+        self.user = user
+
+    @transaction.atomic
+    def create(self, post_id: int, isParent: bool, parent_id: int, content: str, mention: str, image_files: list[InMemoryUploadedFile] = None) -> PostComment:
+        post = Post.objects.get(id=post_id)
+        parent = PostComment.objects.get(id=parent_id)
+        mention = User.objects.get(email=mention)
+
+        #TODO: 에러처리 정리
+        #해당 post가 속하는 board의 댓글, 댓글사진 지원 여부 확인
+        board_id = post.board_id
+        board = Board.objects.get(id=board_id)
+
+        post_comment_service = PostCommentService()
+
+        if board.supports_post_comments: 
+            post_comment = post_comment_service.create(
+                post=post,
+                content=content,
+                isParent=isParent,
+                parent=parent,
+                mention=mention,
+                writer=self.user
+            )
+        else:
+            raise exceptions.ValidationError({"error": "댓글을 지원하지 않는 글입니다."})
+
+        if board.supports_post_comment_photos and image_files:
+            photo_service = PostCommentPhotoService(post_comment=post_comment)
+            photo_service.create(image_files=image_files)
+
+        return post_comment
+
+    @transaction.atomic
+    def update(self, post_comment_id: int, content: str, mention: str, photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> PostComment:
+        post_comment_service = PostCommentService()
+        post_comment_selector = PostCommentSelector()
+
+        # user가 해당 post_comment의 writer가 아닐 경우 에러 raise
+        if not post_comment_selector.isWriter(post_comment_id=post_comment_id, user=self.user):
+            raise exceptions.ValidationError({"error": "댓글 작성자가 아닙니다."})
+
+        post_comment = post_comment_service.update(
+            post_comment_id=post_comment_id,
+            content=content,
+            mention=mention
+        )
+
+        post_id = post_comment.post_id
+        board_id = Post.objects.get(id=post_id).board_id
+        board = Board.objects.get(id=board_id)
+
+        if board.supports_post_photos and image_files:
+            photo_service = PostCommentPhotoService(post_comment=post_comment)
+            photo_service.update(
+                photo_image_urls=photo_image_urls,
+                image_files=image_files
+            )
+
+        return post_comment
+
+    @transaction.atomic
+    def delete(self, post_comment_id: int):
+        post_comment_service = PostCommentService()
+
+        post_comment_selector = PostCommentSelector()
+
+        # user가 해당 post_comment의 writer가 아닐 경우 에러 raise
+        if not post_comment_selector.isWriter(post_comment_id=post_comment_id, user=self.user):
+            raise exceptions.ValidationError({"error": "댓글 작성자가 아닙니다."})
+
+        post_comment_service.delete(post_comment_id=post_comment_id)
+
+
+class PostCommentService:
+    def __init__(self):
+        pass
+
+    def create(self, post: Post, content: str, isParent: bool, parent: PostComment, mention: User, writer: User) -> PostComment:
+        post_comment = PostComment(
+            post=post,
+            content=content,
+            isParent=isParent,
+            parent=parent,
+            mention=mention,
+            writer=writer
+        )
+
+        post_comment.full_clean()
+        post_comment.save()
+
+        return post_comment
+
+    def update(self, post_comment_id: int, content: str, mention: str) -> PostComment:
+        post_comment = PostComment.objects.get(id=post_comment_id)
+
+        post_comment.update_content(content)
+        post_comment.update_mention(mention)
+
+        post_comment.full_clean()
+        post_comment.save()
+
+        return post_comment
+
+    def delete(self, post_comment_id: int):
+        post_comment = PostComment.objects.get(id=post_comment_id)
+
+        post_comment.delete()
+
+
+class PostCommentPhotoService:
+    def __init__(self, post_comment: PostComment):
+        self.post_comment = post_comment
+
+    def create(self, image_files: list[InMemoryUploadedFile]) -> PostCommentPhoto:
+        photos = []
+
+        for image_file in image_files:
+            ext = image_file.name.split(".")[-1]
+            file_path = '{}-{}.{}'.format(self.post_comment.id,
+                                          image_files.index(image_file)+1, ext)
+            image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
+
+            photo = PostCommentPhoto(
+                image=image,
+                post_comment=self.post_comment
+            )
+
+            photo.full_clean()
+            photo.save()
+
+            photos.append(photo)
+
+        return photos
+
+    def update(self, photo_image_urls: list[str], image_files: list[InMemoryUploadedFile]):
+        photos = []
+
+        current_photos = self.post_comment.photos.all()
+
+        # photo_image_urls에 포함되지 않은 이미지를 가진 photo 삭제
+        for current_photo in current_photos:
+            image_path = settings.MEDIA_URL + str(current_photo.image)
+            if image_path not in photo_image_urls:
+                current_photo.delete()
+            else:
+                photos.append(current_photo)
+
+        # 신규 image_file을 photo로 생성
+        photos.extend(self.create(image_files=image_files))
+
+        return photos
+
+
+class PostReportCoordinatorService:
+    def __init__(self, user: User):
+        self.user = user
+
+    @transaction.atomic
+    def create(self, post_id: int, category: str, reporter: User) -> PostReport:
+        post = Post.objects.get(id=post_id)
+
+        post_report_service = PostReportService()
+        post_report = post_report_service.create(
+            post=post,
+            reporter=reporter,
+            category=category
+        )
+
+        return post_report
+
+
+class PostReportService:
+    def __init__(self):
+        pass
+
+    def create(self, post: int, category: str, reporter: User) -> PostReport:
+
+        post_report = PostReport(
+            post=post,
+            reporter=reporter,
+            category=category
+        )
+
+        post_report.full_clean()
+        post_report.save()
+
+        return post_report
+
+
+class PostCommentReportCoordinatorService:
+    def __init__(self, user: User):
+        self.user = user
+
+    @transaction.atomic
+    def create(self, post_comment_id: int, category: str, reporter: User) -> PostCommentReport:
+        post_comment = PostComment.objects.get(id=post_comment_id)
+
+        post_comment_report_service = PostCommentReportService()
+        post_comment_report = post_comment_report_service.create(
+            post_comment=post_comment,
+            reporter=reporter,
+            category=category
+        )
+
+        return post_comment_report
+
+
+class PostCommentReportService:
+    def __init__(self):
+        pass
+
+    def create(self, post_comment: int, category: str, reporter: User) -> PostCommentReport:
+
+        post_comment_report = PostCommentReport(
+            comment=post_comment,
+            reporter=reporter,
+            category=category
+        )
+
+        post_comment_report.full_clean()
+        post_comment_report.save()
+
+        return post_comment_report
