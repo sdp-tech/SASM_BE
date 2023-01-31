@@ -527,7 +527,8 @@ class PostCommentListApi(APIView):
         content = serializers.CharField()
         nickname = serializers.CharField()
         email = serializers.CharField()
-        mention = serializers.CharField()
+        mentionEmail = serializers.CharField()
+        mentionNickname = serializers.CharField()
         created = serializers.DateTimeField()
         updated = serializers.DateTimeField()
         photoList = serializers.ListField(required=False)
@@ -547,7 +548,8 @@ class PostCommentListApi(APIView):
                         'content': '저도 추천합니다.',
                         'nickname': 'sdpygl',
                         'email': 'sdpygl@gmail.com',
-                        'mention': 'sdpygl@naver.com',
+                        'mentionEmail': 'sdpygl@naver.com',
+                        'mentionNickname': '스드프',
                         "created": "2019-08-24T14:15:22Z",
                         "updated": "2019-08-24T14:15:22Z",
                         'photoList': ['https://abc.com/1.jpg', 'https://abc.com/2.jpg'],
@@ -588,7 +590,8 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
         content = serializers.CharField()
         isParent = serializers.BooleanField()
         parent = serializers.IntegerField(required=False)
-        mention = serializers.CharField(required=False)
+        mentionEmail = serializers.CharField(required=False)
+        mentionNickname = serializers.CharField(required=False)
         imageList = serializers.ListField(required=False)
 
         class Meta:
@@ -597,7 +600,7 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
                 'content': '저도 방문했는데 좋았어요.',
                 'isParent': True,
                 'parent': 1,
-                'mention': 'sdpygl@gmail.com',
+                'mentionEmail': 'sdpygl@gmail.com',
                 'imageList': ['<IMAGE FILE BINARY>', '<IMAGE FILE BINARY>'],
             }
 
@@ -637,7 +640,8 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
             content=request.POST.get('content'),
             isParent=request.POST.get('isParent'),
             parent_id=request.POST.get('parent'), 
-            mention=request.POST.get('mention'),
+            mentioned_email=request.POST.get('mentionEmail'),
+            mentioned_nickname=request.POST.get('mentionNickname'),
             image_files=request.FILES.getlist(
                 'imageList') if 'imageList' in request.FILES else None,
         )
@@ -650,15 +654,17 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
 
 class PostCommentUpdateApi(APIView, ApiAuthMixin):
     class PostCommentUpdateInputSerializer(serializers.Serializer):
-        content = serializers.CharField(required=False)
-        mention = serializers.CharField(required=False)
+        content = serializers.CharField()
+        mentionEmail = serializers.CharField(required=False)
+        mentionNickname = serializers.CharField(required=False)
         photoList = serializers.ListField(required=False)
         imageList = serializers.ListField(required=False)
 
         class Meta:
             examples = {
                 'content': '저도 어제 방문했는데 정말 좋았어요.',
-                'mention': 'sdpygl3@gmail.com',
+                'mentionEmail': 'sdpygl3@gmail.com',
+                'mentionNickname': '스드프',
                 'photoList': ['https://abc.com/2.jpg'],
                 'imageList': ['<IMAGE FILE BINARY>', '<IMAGE FILE BINARY>'],
             }
@@ -699,7 +705,8 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
         post_comment = service.update(
             post_comment_id=post_comment_id,
             content=request.POST.get('content'),
-            mention=request.POST.get('mention'),
+            mentioned_email=request.POST.get('mentionEmail'),
+            mentioned_nickname=request.POST.get('mentionNickname'),
             photo_image_urls=request.POST.getlist(
                 'photoList') if 'photoList' in request.POST else [],
             image_files=request.FILES.getlist(

@@ -269,7 +269,7 @@ class PostPhotoSelector:
                               output_field=CharField())
         ).values_list('imageUrls', flat=True)
 
-
+'''
 @dataclass
 class PostCommentDto:
     post: int
@@ -281,8 +281,10 @@ class PostCommentDto:
     created: datetime
     updated: datetime
     mentioned_email: str
+    mentioned_nickname: str
 
     photoList: list[str] = None  # optional
+'''
 
 
 class PostCommentCoordinatorSelector:
@@ -304,16 +306,15 @@ class PostCommentSelector:
     def isWriter(self, post_comment_id: int, user: User):
         return PostComment.objects.get(id=post_comment_id).writer == user
 
+    def isPostCommentAvailable(self, post_id: int):
+        post = Post.objects.get(id=post_id)
+        board_id = post.board_id
+
+        return Board.objects.get(id=board_id).supports_post_comments
+        
     @ staticmethod
     def list(post: Post):
         q = Q(post=post)
-
-        # post_comments = PostComment.objects.filter(q).values('id','content').annotate(
-        #     # group=lambda k: (k['parent'], k['id']) if k['parent'] else (k['id'], k['id']),
-        #     # groupHead= (lambda : F('id') if F('isParent') else F('parent')),
-        #     nickname=F('writer__nickname'),
-        #     email=F('writer__email')
-        # ).order_by(group)
 
         post_comments = PostComment.objects.filter(q).annotate(
         #댓글이면 id값을, 대댓글이면 parent id값을 대표값(group)으로 설정
@@ -325,10 +326,12 @@ class PostCommentSelector:
                         then= 'parent_id'
                     ),
                     default='id'
-            )
-        ).annotate(nickname=F('writer__nickname')
-                    ,email=F('writer__email')
-                    ).order_by("group", "id")
+            ),
+            nickname=F('writer__nickname'),
+            email=F('writer__email'),
+            mentionEmail=F('mention__email'),
+            mentionNickname=F('mention__nickname')
+        ).order_by("group", "id")
 
         return post_comments
 
@@ -336,6 +339,12 @@ class PostCommentSelector:
 class PostCommentPhotoSelector:
     def __init__(self):
         pass
+
+    def isPostCommentPhotoAvailable(self, post_id: int):
+        post = Post.objects.get(id=post_id)
+        board_id = post.board_id
+
+        return Board.objects.get(id=board_id).supports_post_comment_photos
 
     @staticmethod
     def photos_of_post_comment(post_comment: PostComment):

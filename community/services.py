@@ -1,5 +1,6 @@
 import io
 import time
+import uuid
 
 from django.conf import settings
 from django.db import transaction
@@ -11,7 +12,7 @@ from rest_framework import exceptions
 
 from users.models import User
 from community.models import Board, Post, PostHashtag, PostPhoto, PostLike, PostComment, PostCommentPhoto, PostReport, PostCommentReport
-from .selectors import BoardSelector, PostHashtagSelector, PostSelector, PostLikeSelector, PostCommentSelector
+from .selectors import BoardSelector, PostHashtagSelector, PostSelector, PostLikeSelector, PostCommentSelector, PostCommentPhotoSelector
 
 
 class PostCoordinatorService:
@@ -224,14 +225,13 @@ class PostPhotoService:
         for image_file in image_files:
             ext = image_file.name.split(".")[-1]
             file_path = '{}-{}.{}'.format(self.post.id,
-                                          str(int(time.time())), ext)
+                                          str(time.time())+str(uuid.uuid4().hex), ext)
             image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
 
             photo = PostPhoto(
                 image=image,
                 post=self.post
             )
-
             photo.full_clean()
             photo.save()
 
@@ -254,7 +254,7 @@ class PostPhotoService:
 
         # 신규 image_file을 photo로 생성
         photos.extend(self.create(image_files=image_files))
-
+     
         return photos
 
 
@@ -281,38 +281,44 @@ class PostCommentCoordinatorService:
         self.user = user
 
     @transaction.atomic
-    def create(self, post_id: int, isParent: bool, parent_id: int, content: str, mention: str, image_files: list[InMemoryUploadedFile] = None) -> PostComment:
+    def create(self, post_id: int, isParent: bool, parent_id: int, content: str, mentioned_email: str, mentioned_nickname: str, image_files: list[InMemoryUploadedFile] = None) -> PostComment:
         post = Post.objects.get(id=post_id)
         parent = PostComment.objects.get(id=parent_id)
-        mention = User.objects.get(email=mention)
+        comment_selector = PostCommentSelector()
+        comment_service = PostCommentService()
 
-        #TODO: 에러처리 정리
-        #해당 post가 속하는 board의 댓글, 댓글사진 지원 여부 확인
-        board_id = post.board_id
-        board = Board.objects.get(id=board_id)
+        # 해당 post가 속하는 board의 댓글 지원 여부 확인
+        if not comment_selector.isPostCommentAvailable(post_id=post_id):
+            raise exceptions.ValidationError({"error": "댓글을 지원하지 않는 게시글입니다."})
 
-        post_comment_service = PostCommentService()
+        if mentioned_email:
+            mention = User.objects.get(email=mentioned_email)
+        elif mentioned_nickname:
+            mention = User.objects.get(nickname=mentioned_nickname)
 
-        if board.supports_post_comments: 
-            post_comment = post_comment_service.create(
-                post=post,
-                content=content,
-                isParent=isParent,
-                parent=parent,
-                mention=mention,
-                writer=self.user
-            )
-        else:
-            raise exceptions.ValidationError({"error": "댓글을 지원하지 않는 글입니다."})
+        post_comment = comment_service.create(
+            post=post,
+            content=content,
+            isParent=isParent,
+            parent=parent,
+            mentioned_email=mention,
+            writer=self.user
+        )
 
-        if board.supports_post_comment_photos and image_files:
-            photo_service = PostCommentPhotoService(post_comment=post_comment)
+        photo_selector = PostCommentPhotoSelector()
+        photo_service = PostCommentPhotoService(post_comment=post_comment)
+
+        #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
+        if not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
+             raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
+
+        if image_files:
             photo_service.create(image_files=image_files)
 
         return post_comment
 
     @transaction.atomic
-    def update(self, post_comment_id: int, content: str, mention: str, photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> PostComment:
+    def update(self, post_comment_id: int, content: str, mentioned_email: str, mentioned_nickname: str, photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> PostComment:
         post_comment_service = PostCommentService()
         post_comment_selector = PostCommentSelector()
 
@@ -320,18 +326,26 @@ class PostCommentCoordinatorService:
         if not post_comment_selector.isWriter(post_comment_id=post_comment_id, user=self.user):
             raise exceptions.ValidationError({"error": "댓글 작성자가 아닙니다."})
 
+        if mentioned_email:
+            mention = User.objects.get(email=mentioned_email)
+        elif mentioned_nickname:
+            mention = User.objects.get(nickname=mentioned_nickname)
+
         post_comment = post_comment_service.update(
             post_comment_id=post_comment_id,
             content=content,
-            mention=mention
+            mentioned_email=mention,
         )
 
         post_id = post_comment.post_id
-        board_id = Post.objects.get(id=post_id).board_id
-        board = Board.objects.get(id=board_id)
+        photo_selector = PostCommentPhotoSelector()
+        photo_service = PostCommentPhotoService(post_comment=post_comment)
 
-        if board.supports_post_photos and image_files:
-            photo_service = PostCommentPhotoService(post_comment=post_comment)
+        #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
+        if not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
+             raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
+
+        if image_files:
             photo_service.update(
                 photo_image_urls=photo_image_urls,
                 image_files=image_files
@@ -342,7 +356,6 @@ class PostCommentCoordinatorService:
     @transaction.atomic
     def delete(self, post_comment_id: int):
         post_comment_service = PostCommentService()
-
         post_comment_selector = PostCommentSelector()
 
         # user가 해당 post_comment의 writer가 아닐 경우 에러 raise
@@ -356,13 +369,13 @@ class PostCommentService:
     def __init__(self):
         pass
 
-    def create(self, post: Post, content: str, isParent: bool, parent: PostComment, mention: User, writer: User) -> PostComment:
+    def create(self, post: Post, content: str, isParent: bool, parent: PostComment, mentioned_email: User, writer: User) -> PostComment:
         post_comment = PostComment(
             post=post,
             content=content,
             isParent=isParent,
             parent=parent,
-            mention=mention,
+            mention=mentioned_email,
             writer=writer
         )
 
@@ -371,11 +384,11 @@ class PostCommentService:
 
         return post_comment
 
-    def update(self, post_comment_id: int, content: str, mention: str) -> PostComment:
+    def update(self, post_comment_id: int, content: str, mentioned_email: str) -> PostComment:
         post_comment = PostComment.objects.get(id=post_comment_id)
 
         post_comment.update_content(content)
-        post_comment.update_mention(mention)
+        post_comment.update_mention(mentioned_email)
 
         post_comment.full_clean()
         post_comment.save()
@@ -398,7 +411,7 @@ class PostCommentPhotoService:
         for image_file in image_files:
             ext = image_file.name.split(".")[-1]
             file_path = '{}-{}.{}'.format(self.post_comment.id,
-                                          image_files.index(image_file)+1, ext)
+                                          str(time.time())+str(uuid.uuid4().hex), ext)
             image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
 
             photo = PostCommentPhoto(
@@ -436,7 +449,6 @@ class PostReportCoordinatorService:
     def __init__(self, user: User):
         self.user = user
 
-    @transaction.atomic
     def create(self, post_id: int, category: str, reporter: User) -> PostReport:
         post = Post.objects.get(id=post_id)
 
@@ -472,7 +484,6 @@ class PostCommentReportCoordinatorService:
     def __init__(self, user: User):
         self.user = user
 
-    @transaction.atomic
     def create(self, post_comment_id: int, category: str, reporter: User) -> PostCommentReport:
         post_comment = PostComment.objects.get(id=post_comment_id)
 
