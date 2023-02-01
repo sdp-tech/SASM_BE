@@ -143,6 +143,7 @@ class PostComment(TimeStampedModel):
     def update_mention(self, mention):
         self.mention = mention
 
+
 def get_comment_photo_upload_path(instance, filename):
     return 'community/post_comment/{}'.format(filename)
 
@@ -152,6 +153,7 @@ class PostCommentPhoto(TimeStampedModel):
         upload_to=get_comment_photo_upload_path, default='post_comment_image.png')
     post_comment = models.ForeignKey(
         'PostComment', related_name='photos', on_delete=models.CASCADE, null=False, blank=False)
+
 
 @receiver(models.signals.post_delete, sender=PostCommentPhoto)
 def remove_file_from_s3(sender, instance, using, **kwargs):

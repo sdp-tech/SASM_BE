@@ -464,7 +464,7 @@ class PostDetailApi(APIView):
 
 class PostHashtagListApi(APIView):
     class Pagination(PageNumberPagination):
-        page_size = 10
+        page_size = 5
         page_size_query_param = 'page_size'
 
     class PostHashtagListFilterSerializer(serializers.Serializer):
@@ -511,7 +511,7 @@ class PostHashtagListApi(APIView):
 
 class PostCommentListApi(APIView):
     class Pagination(PageNumberPagination):
-        page_size = 20 #미정
+        page_size = 20  # 미정
         page_size_query_param = 'page_size'
 
     class PostCommentListFilterSerializer(serializers.Serializer):
@@ -640,8 +640,10 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
             post_id=request.POST.get('post'),
             content=request.POST.get('content'),
             isParent=request.POST.get('isParent'),
-            parent_id=request.POST.get('parent') if 'parent' in request.POST else None, 
-            mentioned_email=request.POST.get('mentionEmail') if 'mentionEmail' in request.POST else '',
+            parent_id=request.POST.get(
+                'parent') if 'parent' in request.POST else None,
+            mentioned_email=request.POST.get(
+                'mentionEmail') if 'mentionEmail' in request.POST else '',
             image_files=request.FILES.getlist(
                 'imageList') if 'imageList' in request.FILES else [],
         )
@@ -711,7 +713,8 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
         post_comment = service.update(
             post_comment_id=post_comment_id,
             content=request.POST.get('content'),
-            mentioned_email=request.POST.get('mentionEmail') if 'mentionEmail' in request.POST else '',
+            mentioned_email=request.POST.get(
+                'mentionEmail') if 'mentionEmail' in request.POST else '',
             # mentioned_nickname=request.POST.get('mentionNickname'),
             photo_image_urls=request.POST.getlist(
                 'photoList') if 'photoList' in request.POST else [],
@@ -759,7 +762,7 @@ class PostCommentDeleteApi(APIView, ApiAuthMixin):
 class PostReportCreateApi(APIView, ApiAuthMixin):
     class PostReportCreateInputSerializer(serializers.Serializer):
         post = serializers.IntegerField()
-        category =serializers.CharField()
+        category = serializers.CharField()
 
         class Meta:
             examples = {
@@ -794,7 +797,7 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
         serializer.is_valid(raise_exception=True)
 
         service = PostReportService()
-        
+
         post_id = request.POST.get('post')
         post = Post.objects.get(id=post_id)
 
@@ -814,7 +817,7 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
 class PostCommentReportCreateApi(APIView, ApiAuthMixin):
     class PostCommentReportCreateInputSerializer(serializers.Serializer):
         comment = serializers.IntegerField()
-        category =serializers.CharField()
+        category = serializers.CharField()
 
         class Meta:
             examples = {
@@ -845,7 +848,8 @@ class PostCommentReportCreateApi(APIView, ApiAuthMixin):
         },
     )
     def post(self, request):
-        serializer = self.PostCommentReportCreateInputSerializer(data=request.data)
+        serializer = self.PostCommentReportCreateInputSerializer(
+            data=request.data)
         serializer.is_valid(raise_exception=True)
 
         service = PostCommentReportService()
