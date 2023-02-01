@@ -131,9 +131,9 @@ class PostCreateApi(APIView, ApiAuthMixin):
             title=request.POST.get('title'),
             content=request.POST.get('content'),
             hashtag_names=request.POST.getlist(
-                'hashtagList') if 'hashtagList' in request.POST else None,
+                'hashtagList') if 'hashtagList' in request.POST else [],
             image_files=request.FILES.getlist(
-                'imageList') if 'imageList' in request.FILES else None,
+                'imageList') if 'imageList' in request.FILES else [],
         )
 
         return Response({
@@ -640,11 +640,10 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
             post_id=request.POST.get('post'),
             content=request.POST.get('content'),
             isParent=request.POST.get('isParent'),
-            parent_id=request.POST.get('parent'), 
-            mentioned_email=request.POST.get('mentionEmail'),
-            # mentioned_nickname=request.POST.get('mentionNickname'),
+            parent_id=request.POST.get('parent') if 'parent' in request.POST else None, 
+            mentioned_email=request.POST.get('mentionEmail') if 'mentionEmail' in request.POST else '',
             image_files=request.FILES.getlist(
-                'imageList') if 'imageList' in request.FILES else None,
+                'imageList') if 'imageList' in request.FILES else [],
         )
 
         return Response({
@@ -712,12 +711,12 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
         post_comment = service.update(
             post_comment_id=post_comment_id,
             content=request.POST.get('content'),
-            mentioned_email=request.POST.get('mentionEmail'),
+            mentioned_email=request.POST.get('mentionEmail') if 'mentionEmail' in request.POST else '',
             # mentioned_nickname=request.POST.get('mentionNickname'),
             photo_image_urls=request.POST.getlist(
                 'photoList') if 'photoList' in request.POST else [],
             image_files=request.FILES.getlist(
-                'imageList') if 'imageList' in request.FILES else None,
+                'imageList') if 'imageList' in request.FILES else [],
         )
 
         return Response({
