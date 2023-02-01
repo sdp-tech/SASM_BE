@@ -7,10 +7,11 @@ from django.db import transaction
 from django.http import Http404
 from django.db.models import Q, F, Value, CharField, Func, Aggregate, Count
 from django.db.models.functions import Concat, Substr
+from django.db.models import Case, When
 
 
 from users.models import User
-from community.models import Board, Post, PostHashtag, PostLike, PostPhoto
+from community.models import Board, Post, PostHashtag, PostLike, PostPhoto, PostComment, PostCommentPhoto
 
 # class PostSelector:
 #     def __init__(self):
@@ -263,7 +264,93 @@ class PostPhotoSelector:
     def photos_of_post(post: Post):
         return PostPhoto.objects.filter(post=post) \
             .annotate(
-            imageeUrls=Concat(Value(settings.MEDIA_URL),
+            imageUrls=Concat(Value(settings.MEDIA_URL),
                               F('image'),
                               output_field=CharField())
-        ).values_list('imageeUrls', flat=True)
+        ).values_list('imageUrls', flat=True)
+
+'''
+@dataclass
+class PostCommentDto:
+    post: int
+    content: str
+    isParent: bool
+    parent: int
+    nickname: str
+    email: str
+    created: datetime
+    updated: datetime
+    mentioned_email: str
+    mentioned_nickname: str
+
+    photoList: list[str] = None  # optional
+'''
+
+
+class PostCommentCoordinatorSelector:
+    def __init__(self, user: User):
+        self.user = user
+
+    def list(self, post_id: int):
+        post = Post.objects.get(id=post_id)
+
+        return PostCommentSelector.list(
+            post=post
+        )
+
+
+class PostCommentSelector:
+    def __init__(self):
+        pass
+
+    def isWriter(self, post_comment_id: int, user: User):
+        return PostComment.objects.get(id=post_comment_id).writer == user
+
+    def isPostCommentAvailable(self, post_id: int):
+        post = Post.objects.get(id=post_id)
+        board_id = post.board_id
+
+        return Board.objects.get(id=board_id).supports_post_comments
+        
+    @ staticmethod
+    def list(post: Post):
+        q = Q(post=post)
+
+        post_comments = PostComment.objects.filter(q).annotate(
+        #댓글이면 id값을, 대댓글이면 parent id값을 대표값(group)으로 설정
+        #group 내에서는 id값 기준으로 정렬
+        #photoList=list(PostCommentPhotoSelector.photos_of_post_comment(post_comment="id")
+            group=Case(
+                    When( 
+                        isParent=False,
+                        then= 'parent_id'
+                    ),
+                    default='id'
+            ),
+            nickname=F('writer__nickname'),
+            email=F('writer__email'),
+            mentionEmail=F('mention__email'),
+            mentionNickname=F('mention__nickname')
+        ).order_by("group", "id")
+
+        return post_comments
+
+
+class PostCommentPhotoSelector:
+    def __init__(self):
+        pass
+
+    def isPostCommentPhotoAvailable(self, post_id: int):
+        post = Post.objects.get(id=post_id)
+        board_id = post.board_id
+
+        return Board.objects.get(id=board_id).supports_post_comment_photos
+
+    @staticmethod
+    def photos_of_post_comment(post_comment: PostComment):
+        return PostCommentPhoto.objects.filter(post_comment=post_comment) \
+            .annotate(
+            imageUrls=Concat(Value(settings.MEDIA_URL),
+                              F('image'),
+                              output_field=CharField())
+        ).values_list('imageUrls', flat=True)

@@ -16,14 +16,11 @@ from rest_framework import serializers
 
 from rest_framework.views import APIView
 from community.mixins import ApiAuthMixin
-from community.services import PostCoordinatorService
-from community.selectors import PostCoordinatorSelector, PostHashtagSelector, BoardSelector
+from community.services import PostCoordinatorService, PostCommentCoordinatorService, PostReportService, PostCommentReportService
+from community.selectors import PostCoordinatorSelector, PostHashtagSelector, PostCommentCoordinatorSelector, BoardSelector
 
 from .models import Post, PostComment, PostReport, PostCommentReport, PostHashtag
 from users.models import User
-from .serializers import PostCommentSerializer, PostCommentCreateSerializer, PostCommentUpdateSerializer, PostReportCreateSerializer, PostCommentReportCreateSerializer
-from core.permissions import CommentWriterOrReadOnly
-from sasmproject.swagger import PostCommentViewSet_list_params, param_id
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
@@ -512,183 +509,359 @@ class PostHashtagListApi(APIView):
         )
 
 
-class PostCommentPagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = 'page_size'
+class PostCommentListApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 20 #미정
+        page_size_query_param = 'page_size'
 
+    class PostCommentListFilterSerializer(serializers.Serializer):
+        post = serializers.IntegerField(required=True)
+        query = serializers.CharField(required=False)
+        query_type = serializers.CharField(required=False)
+        latest = serializers.BooleanField(required=False)
 
-class PostCommentView(viewsets.ModelViewSet):
-    '''
-        Post 하위 comment 관련 작업 API
-    '''
-    queryset = PostComment.objects.all().order_by('id')
-    serializer_class = PostCommentSerializer
-    permission_classes = [
-        CommentWriterOrReadOnly
-    ]
-    pagination_class = PostCommentPagination
+    class PostCommentListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        content = serializers.CharField()
+        isParent = serializers.BooleanField()
+        group = serializers.CharField()
+        nickname = serializers.CharField()
+        email = serializers.CharField()
+        mentionEmail = serializers.CharField()
+        created = serializers.DateTimeField()
+        updated = serializers.DateTimeField()
+        photoList = serializers.ListField(required=False)
 
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return PostCommentCreateSerializer
-        elif self.action == 'update':
-            return PostCommentUpdateSerializer
-        return PostCommentSerializer
+    @swagger_auto_schema(
+        operation_id='커뮤니티 게시글 댓글 조회',
+        operation_description='''
+            해당 post의 하위 댓글을 반환합니다.<br/>
+        ''',
+        query_serializer=PostCommentListFilterSerializer,
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 2,
+                        'content': '저도 추천합니다.',
+                        'isParent': True,
+                        'group' "1"
+                        'nickname': 'sdpygl',
+                        'email': 'sdpygl@gmail.com',
+                        'mentionEmail': 'ygl@gmail.com',
+                        "created": "2019-08-24T14:15:22Z",
+                        "updated": "2019-08-24T14:15:22Z"
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request):
+        filters_serializer = self.PostCommentListFilterSerializer(
+            data=request.query_params)
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({"request": self.request})
-        return context
-
-    @ swagger_auto_schema(operation_id='api_post_comments_get')
-    def retrieve(self, request, *args, **kwargs):
-        response = super().retrieve(request, *args, **kwargs)
-        return Response({
-            'status': 'success',
-            'data': response.data,
-        }, status=status.HTTP_200_OK)
-
-    @ swagger_auto_schema(operation_id='api_post_comments_list')
-    def list(self, request, *args, **kwargs):
-        '''특정 게시글 하위 댓글 조회'''
-
-        post_id = request.GET.get('post')
-
-        serializer = self.get_serializer(
-            PostComment.objects.filter(post=post_id),
-            many=True,
-            context={
-                "post": Post.objects.get(id=post_id),
-            }
+        selector = PostCommentCoordinatorSelector(
+            user=request.user
         )
-        # 댓글, 대댓글별 pagination 따로 사용하는 대신, 댓글 group(parent+childs)별로 정렬
-        # 댓글의 경우 id값을, 대댓글의 경우 parent(상위 댓글의 id)값을 대표값으로 설정해 정렬(tuple의 1번째 값)
-        # 댓글 group 내에서는 id 값을 기준으로 정렬(tuple의 2번째 값)
-        serializer_data = sorted(
-            serializer.data, key=lambda k: (k['parent'], k['id']) if k['parent'] else (k['id'], k['id']))
-        page = self.paginate_queryset(serializer_data)
 
-        if page is not None:
-            serializer = self.get_paginated_response(page)
-        else:
-            serializer = self.get_serializer(page, many=True)
+        post_comments = selector.list(
+            post_id=filters['post']
+        )
 
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-
-    @ swagger_auto_schema(operation_id='api_post_comments_post')
-    def create(self, request, *args, **kwargs):
-        try:
-            super().create(request, *args, **kwargs)
-        except ValidationError as e:
-            return Response({
-                'status': 'fail',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({
-            'status': 'success',
-        }, status=status.HTTP_200_OK)
-
-    @ swagger_auto_schema(operation_id='api_post_comments_patch')
-    def update(self, request, pk, *args, **kwargs):
-        try:
-            kwargs['partial'] = True
-            super().update(request, *args, **kwargs)
-        except ValidationError as e:
-            return Response({
-                'status': 'fail',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            print(e)
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({
-            'status': 'success',
-        }, status=status.HTTP_200_OK)
-
-    @ swagger_auto_schema(operation_id='api_post_comments_delete')
-    def destroy(self, request, *args, **kwargs):
-        super().destroy(request, *args, **kwargs)
-        return Response({
-            'status': 'success',
-        }, status=status.HTTP_200_OK)
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.PostCommentListOutputSerializer,
+            queryset=post_comments,
+            request=request,
+            view=self
+        )
 
 
-class PostReportView(viewsets.ModelViewSet):
-    '''
-        Post Report 관련 작업 API
-    '''
-    queryset = PostReport.objects.all()
-    # Read, Update, Delete at sdp_admin app
-    serializer_class = PostReportCreateSerializer
-    permission_class = [IsAuthenticated, ]
+class PostCommentCreateApi(APIView, ApiAuthMixin):
+    class PostCommentCreateInputSerializer(serializers.Serializer):
+        post = serializers.IntegerField()
+        content = serializers.CharField()
+        isParent = serializers.BooleanField()
+        parent = serializers.IntegerField(required=False)
+        mentionEmail = serializers.CharField(required=False)
+        # mentionNickname = serializers.CharField(required=False)
+        imageList = serializers.ListField(required=False)
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({"request": self.request})
-        return context
+        class Meta:
+            examples = {
+                'post': 1,
+                'content': '저도 방문했는데 좋았어요.',
+                'isParent': True,
+                'parent': 1,
+                'mentionEmail': 'sdpygl@gmail.com',
+                'imageList': ['<IMAGE FILE BINARY>', '<IMAGE FILE BINARY>'],
+            }
 
-    @ swagger_auto_schema(operation_id='api_post_report_create')
-    def create(self, request, *args, **kwargs):
-        try:
-            super().create(request, *args, **kwargs)
-        except ValidationError as e:
-            return Response({
-                'status': 'fail',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+    @swagger_auto_schema(
+        request_body=PostCommentCreateInputSerializer,
+        security=[],
+        operation_id='커뮤니티 댓글 생성',
+        operation_description='''
+                전달된 필드를 기반으로 댓글을 생성합니다.<br/>
+                imageList는 해당 게시판의 댓글 사진 지원 여부에 따라 선택적으로 포함될 수 있습니다.<br/>
+                참고로 request body는 json 형식이 아닌 <b>multipart/form-data 형식</b>으로 전달받으므로, 리스트 값을 전달하고자 한다면 개별 원소들마다 리스트 필드 이름을 key로 설정하여, 원소 값을 value로 추가해주면 됩니다.<br/>          
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request):
+        serializer = self.PostCommentCreateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = PostCommentCoordinatorService(
+            user=request.user
+        )
+
+        # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
+        post_comment = service.create(
+            post_id=request.POST.get('post'),
+            content=request.POST.get('content'),
+            isParent=request.POST.get('isParent'),
+            parent_id=request.POST.get('parent'), 
+            mentioned_email=request.POST.get('mentionEmail'),
+            # mentioned_nickname=request.POST.get('mentionNickname'),
+            image_files=request.FILES.getlist(
+                'imageList') if 'imageList' in request.FILES else None,
+        )
 
         return Response({
             'status': 'success',
+            'data': {'id': post_comment.id},
+        }, status=status.HTTP_201_CREATED)
+
+
+class PostCommentUpdateApi(APIView, ApiAuthMixin):
+    class PostCommentUpdateInputSerializer(serializers.Serializer):
+        content = serializers.CharField()
+        mentionEmail = serializers.CharField(required=False)
+        # mentionNickname = serializers.CharField(required=False)
+        photoList = serializers.ListField(required=False)
+        imageList = serializers.ListField(required=False)
+
+        class Meta:
+            examples = {
+                'content': '저도 어제 방문했는데 정말 좋았어요.',
+                'mentionEmail': 'sdpygl3@gmail.com',
+                'photoList': ['https://abc.com/2.jpg'],
+                'imageList': ['<IMAGE FILE BINARY>', '<IMAGE FILE BINARY>'],
+            }
+
+    @swagger_auto_schema(
+        request_body=PostCommentUpdateInputSerializer,
+        security=[],
+        operation_id='커뮤니티 댓글 업데이트',
+        operation_description='''
+                전달된 id에 해당하는 댓글을 업데이트합니다.<br/>
+                전송된 모든 필드 값을 그대로 댓글에 업데이트하므로, 댓글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+                즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+                <br/>
+                photoList, imageList는 해당 게시판의 속성(게시글 이미지 지원 여부)에 따라 선택적으로 포함될 수 있습니다.<br/>
+                photoList 사용 예시로, 게시글 디테일 API에서 전달받은 photoList 값이 ['https://abc.com/1.jpg', 'https://abc.com/2.jpg'] 일 때 '1.jpg'를 지우고 싶다면 ['https://abc.com/2.jpg'] 으로 값을 설정하면 됩니다.<br/>
+                만약 새로운 photo를 추가하고 싶다면, imageList에 이미지 첨부 파일을 1개 이상 담아 전송하면 됩니다.<br/>
+                <br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def put(self, request, post_comment_id):
+        post_comment = PostComment.objects.get(id=post_comment_id)
+
+        serializer = self.PostCommentUpdateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = PostCommentCoordinatorService(
+            user=request.user
+        )
+
+        # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
+        post_comment = service.update(
+            post_comment_id=post_comment_id,
+            content=request.POST.get('content'),
+            mentioned_email=request.POST.get('mentionEmail'),
+            # mentioned_nickname=request.POST.get('mentionNickname'),
+            photo_image_urls=request.POST.getlist(
+                'photoList') if 'photoList' in request.POST else [],
+            image_files=request.FILES.getlist(
+                'imageList') if 'imageList' in request.FILES else None,
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': post_comment.id},
         }, status=status.HTTP_200_OK)
 
 
-class PostCommentReportView(viewsets.ModelViewSet):
-    '''
-        Post Comment Report 관련 작업 API
-    '''
-    queryset = PostCommentReport.objects.all()
-    # Read, Update, Delete at sdp_admin app
-    serializer_class = PostCommentReportCreateSerializer
-    permission_class = [IsAuthenticated, ]
+class PostCommentDeleteApi(APIView, ApiAuthMixin):
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({"request": self.request})
-        return context
+    @swagger_auto_schema(
+        operation_id='커뮤니티 댓글 삭제',
+        operation_description='''
+                전달된 id에 해당하는 댓글을 삭제합니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def delete(self, request, post_comment_id):
 
-    @ swagger_auto_schema(operation_id='api_post_comment_report_create')
-    def create(self, request, *args, **kwargs):
-        try:
-            super().create(request, *args, **kwargs)
-        except ValidationError as e:
-            return Response({
-                'status': 'fail',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        service = PostCommentCoordinatorService(
+            user=request.user
+        )
+
+        service.delete(
+            post_comment_id=post_comment_id
+        )
 
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)
+
+
+class PostReportCreateApi(APIView, ApiAuthMixin):
+    class PostReportCreateInputSerializer(serializers.Serializer):
+        post = serializers.IntegerField()
+        category =serializers.CharField()
+
+        class Meta:
+            examples = {
+                'post': 1,
+                'category': '게시판 성격에 부적절함'
+            }
+
+    @swagger_auto_schema(
+        request_body=PostReportCreateInputSerializer,
+        security=[],
+        operation_id='커뮤니티 게시글 신고내역 생성',
+        operation_description='''
+            커뮤니티 게시글 신고내역을 생성합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request):
+        serializer = self.PostReportCreateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = PostReportService()
+        
+        post_id = request.POST.get('post')
+        post = Post.objects.get(id=post_id)
+
+        # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
+        post_report = service.create(
+            post=post,
+            category=request.POST.get('category'),
+            reporter=request.user
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': post_report.id},
+        }, status=status.HTTP_201_CREATED)
+
+
+class PostCommentReportCreateApi(APIView, ApiAuthMixin):
+    class PostCommentReportCreateInputSerializer(serializers.Serializer):
+        comment = serializers.IntegerField()
+        category =serializers.CharField()
+
+        class Meta:
+            examples = {
+                'comment': 1,
+                'category': '게시판 성격에 부적절함'
+            }
+
+    @swagger_auto_schema(
+        request_body=PostCommentReportCreateInputSerializer,
+        security=[],
+        operation_id='커뮤니티 댓글 신고내역 생성',
+        operation_description='''
+            커뮤니티 댓글 신고내역을 생성합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request):
+        serializer = self.PostCommentReportCreateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = PostCommentReportService()
+
+        comment_id = request.POST.get('comment')
+        post_comment = PostComment.objects.get(id=comment_id)
+
+        # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
+        post_comment_report = service.create(
+            post_comment=post_comment,
+            category=request.POST.get('category'),
+            reporter=request.user
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': post_comment_report.id},
+        }, status=status.HTTP_201_CREATED)
