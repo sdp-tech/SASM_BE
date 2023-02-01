@@ -265,9 +265,10 @@ class PostPhotoSelector:
         return PostPhoto.objects.filter(post=post) \
             .annotate(
             imageUrls=Concat(Value(settings.MEDIA_URL),
-                              F('image'),
-                              output_field=CharField())
+                             F('image'),
+                             output_field=CharField())
         ).values_list('imageUrls', flat=True)
+
 
 '''
 @dataclass
@@ -311,21 +312,21 @@ class PostCommentSelector:
         board_id = post.board_id
 
         return Board.objects.get(id=board_id).supports_post_comments
-        
+
     @ staticmethod
     def list(post: Post):
         q = Q(post=post)
 
         post_comments = PostComment.objects.filter(q).annotate(
-        #댓글이면 id값을, 대댓글이면 parent id값을 대표값(group)으로 설정
-        #group 내에서는 id값 기준으로 정렬
-        #photoList=list(PostCommentPhotoSelector.photos_of_post_comment(post_comment="id")
+            # 댓글이면 id값을, 대댓글이면 parent id값을 대표값(group)으로 설정
+            # group 내에서는 id값 기준으로 정렬
+            # photoList=list(PostCommentPhotoSelector.photos_of_post_comment(post_comment="id")
             group=Case(
-                    When( 
-                        isParent=False,
-                        then= 'parent_id'
-                    ),
-                    default='id'
+                When(
+                    isParent=False,
+                    then='parent_id'
+                ),
+                default='id'
             ),
             nickname=F('writer__nickname'),
             email=F('writer__email'),
@@ -351,6 +352,6 @@ class PostCommentPhotoSelector:
         return PostCommentPhoto.objects.filter(post_comment=post_comment) \
             .annotate(
             imageUrls=Concat(Value(settings.MEDIA_URL),
-                              F('image'),
-                              output_field=CharField())
+                             F('image'),
+                             output_field=CharField())
         ).values_list('imageUrls', flat=True)
