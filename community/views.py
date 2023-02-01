@@ -16,7 +16,7 @@ from rest_framework import serializers
 
 from rest_framework.views import APIView
 from community.mixins import ApiAuthMixin
-from community.services import PostCoordinatorService, PostCommentCoordinatorService, PostReportCoordinatorService, PostCommentReportCoordinatorService
+from community.services import PostCoordinatorService, PostCommentCoordinatorService, PostReportService, PostCommentReportService
 from community.selectors import PostCoordinatorSelector, PostHashtagSelector, PostCommentCoordinatorSelector, BoardSelector
 
 from .models import Post, PostComment, PostReport, PostCommentReport, PostHashtag
@@ -522,13 +522,12 @@ class PostCommentListApi(APIView):
 
     class PostCommentListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
+        content = serializers.CharField()
         isParent = serializers.BooleanField()
         group = serializers.CharField()
-        content = serializers.CharField()
         nickname = serializers.CharField()
         email = serializers.CharField()
         mentionEmail = serializers.CharField()
-        mentionNickname = serializers.CharField()
         created = serializers.DateTimeField()
         updated = serializers.DateTimeField()
         photoList = serializers.ListField(required=False)
@@ -536,7 +535,7 @@ class PostCommentListApi(APIView):
     @swagger_auto_schema(
         operation_id='커뮤니티 게시글 댓글 조회',
         operation_description='''
-            커뮤니티 게시글 댓글을 반환합니다.<br/>
+            해당 post의 하위 댓글을 반환합니다.<br/>
         ''',
         query_serializer=PostCommentListFilterSerializer,
         responses={
@@ -546,13 +545,13 @@ class PostCommentListApi(APIView):
                     "application/json": {
                         'id': 2,
                         'content': '저도 추천합니다.',
+                        'isParent': True,
+                        'group' "1"
                         'nickname': 'sdpygl',
                         'email': 'sdpygl@gmail.com',
-                        'mentionEmail': 'sdpygl@naver.com',
-                        'mentionNickname': '스드프',
+                        'mentionEmail': 'ygl@gmail.com',
                         "created": "2019-08-24T14:15:22Z",
-                        "updated": "2019-08-24T14:15:22Z",
-                        'photoList': ['https://abc.com/1.jpg', 'https://abc.com/2.jpg'],
+                        "updated": "2019-08-24T14:15:22Z"
                     }
                 }
             ),
@@ -591,7 +590,7 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
         isParent = serializers.BooleanField()
         parent = serializers.IntegerField(required=False)
         mentionEmail = serializers.CharField(required=False)
-        mentionNickname = serializers.CharField(required=False)
+        # mentionNickname = serializers.CharField(required=False)
         imageList = serializers.ListField(required=False)
 
         class Meta:
@@ -607,9 +606,11 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
     @swagger_auto_schema(
         request_body=PostCommentCreateInputSerializer,
         security=[],
-        operation_id='커뮤니티 게시글 댓글 생성',
+        operation_id='커뮤니티 댓글 생성',
         operation_description='''
-                전달된 필드를 기반으로 게시글 댓글을 생성합니다.<br/>
+                전달된 필드를 기반으로 댓글을 생성합니다.<br/>
+                imageList는 해당 게시판의 댓글 사진 지원 여부에 따라 선택적으로 포함될 수 있습니다.<br/>
+                참고로 request body는 json 형식이 아닌 <b>multipart/form-data 형식</b>으로 전달받으므로, 리스트 값을 전달하고자 한다면 개별 원소들마다 리스트 필드 이름을 key로 설정하여, 원소 값을 value로 추가해주면 됩니다.<br/>          
             ''',
         responses={
             "200": openapi.Response(
@@ -641,7 +642,7 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
             isParent=request.POST.get('isParent'),
             parent_id=request.POST.get('parent'), 
             mentioned_email=request.POST.get('mentionEmail'),
-            mentioned_nickname=request.POST.get('mentionNickname'),
+            # mentioned_nickname=request.POST.get('mentionNickname'),
             image_files=request.FILES.getlist(
                 'imageList') if 'imageList' in request.FILES else None,
         )
@@ -656,7 +657,7 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
     class PostCommentUpdateInputSerializer(serializers.Serializer):
         content = serializers.CharField()
         mentionEmail = serializers.CharField(required=False)
-        mentionNickname = serializers.CharField(required=False)
+        # mentionNickname = serializers.CharField(required=False)
         photoList = serializers.ListField(required=False)
         imageList = serializers.ListField(required=False)
 
@@ -664,7 +665,6 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
             examples = {
                 'content': '저도 어제 방문했는데 정말 좋았어요.',
                 'mentionEmail': 'sdpygl3@gmail.com',
-                'mentionNickname': '스드프',
                 'photoList': ['https://abc.com/2.jpg'],
                 'imageList': ['<IMAGE FILE BINARY>', '<IMAGE FILE BINARY>'],
             }
@@ -672,9 +672,16 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
     @swagger_auto_schema(
         request_body=PostCommentUpdateInputSerializer,
         security=[],
-        operation_id='커뮤니티 게시글 댓글 업데이트',
+        operation_id='커뮤니티 댓글 업데이트',
         operation_description='''
-                전달된 id에 해당하는 게시글 댓글을 업데이트합니다.<br/>
+                전달된 id에 해당하는 댓글을 업데이트합니다.<br/>
+                전송된 모든 필드 값을 그대로 댓글에 업데이트하므로, 댓글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+                즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+                <br/>
+                photoList, imageList는 해당 게시판의 속성(게시글 이미지 지원 여부)에 따라 선택적으로 포함될 수 있습니다.<br/>
+                photoList 사용 예시로, 게시글 디테일 API에서 전달받은 photoList 값이 ['https://abc.com/1.jpg', 'https://abc.com/2.jpg'] 일 때 '1.jpg'를 지우고 싶다면 ['https://abc.com/2.jpg'] 으로 값을 설정하면 됩니다.<br/>
+                만약 새로운 photo를 추가하고 싶다면, imageList에 이미지 첨부 파일을 1개 이상 담아 전송하면 됩니다.<br/>
+                <br/>
             ''',
         responses={
             "200": openapi.Response(
@@ -706,7 +713,7 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
             post_comment_id=post_comment_id,
             content=request.POST.get('content'),
             mentioned_email=request.POST.get('mentionEmail'),
-            mentioned_nickname=request.POST.get('mentionNickname'),
+            # mentioned_nickname=request.POST.get('mentionNickname'),
             photo_image_urls=request.POST.getlist(
                 'photoList') if 'photoList' in request.POST else [],
             image_files=request.FILES.getlist(
@@ -722,9 +729,9 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
 class PostCommentDeleteApi(APIView, ApiAuthMixin):
 
     @swagger_auto_schema(
-        operation_id='커뮤니티 게시글 댓글 삭제',
+        operation_id='커뮤니티 댓글 삭제',
         operation_description='''
-                전달된 id에 해당하는 게시글 댓글을 삭제합니다.<br/>
+                전달된 id에 해당하는 댓글을 삭제합니다.<br/>
             ''',
         responses={
             "200": openapi.Response(
@@ -764,9 +771,9 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
     @swagger_auto_schema(
         request_body=PostReportCreateInputSerializer,
         security=[],
-        operation_id='커뮤니티 게시글 신고 내역 생성',
+        operation_id='커뮤니티 게시글 신고내역 생성',
         operation_description='''
-            커뮤니티 게시글 신고 내역을 생성합니다.<br/>
+            커뮤니티 게시글 신고내역을 생성합니다.<br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -787,13 +794,14 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
         serializer = self.PostReportCreateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        service = PostReportCoordinatorService(
-            user=request.user
-        )
+        service = PostReportService()
+        
+        post_id = request.POST.get('post')
+        post = Post.objects.get(id=post_id)
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_report = service.create(
-            post_id=request.POST.get('post'),
+            post=post,
             category=request.POST.get('category'),
             reporter=request.user
         )
@@ -818,9 +826,9 @@ class PostCommentReportCreateApi(APIView, ApiAuthMixin):
     @swagger_auto_schema(
         request_body=PostCommentReportCreateInputSerializer,
         security=[],
-        operation_id='커뮤니티 게시글 신고 내역 생성',
+        operation_id='커뮤니티 댓글 신고내역 생성',
         operation_description='''
-            커뮤니티 게시글 신고 내역을 생성합니다.<br/>
+            커뮤니티 댓글 신고내역을 생성합니다.<br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -841,13 +849,14 @@ class PostCommentReportCreateApi(APIView, ApiAuthMixin):
         serializer = self.PostCommentReportCreateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        service = PostCommentReportCoordinatorService(
-            user=request.user
-        )
+        service = PostCommentReportService()
+
+        comment_id = request.POST.get('comment')
+        post_comment = PostComment.objects.get(id=comment_id)
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_comment_report = service.create(
-            post_comment_id=request.POST.get('comment'),
+            post_comment=post_comment,
             category=request.POST.get('category'),
             reporter=request.user
         )

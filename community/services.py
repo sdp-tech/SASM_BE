@@ -281,7 +281,7 @@ class PostCommentCoordinatorService:
         self.user = user
 
     @transaction.atomic
-    def create(self, post_id: int, isParent: bool, parent_id: int, content: str, mentioned_email: str, mentioned_nickname: str, image_files: list[InMemoryUploadedFile] = None) -> PostComment:
+    def create(self, post_id: int, isParent: bool, parent_id: int, content: str, mentioned_email: str, image_files: list[InMemoryUploadedFile] = None) -> PostComment:
         post = Post.objects.get(id=post_id)
         parent = PostComment.objects.get(id=parent_id)
         comment_selector = PostCommentSelector()
@@ -292,33 +292,33 @@ class PostCommentCoordinatorService:
             raise exceptions.ValidationError({"error": "댓글을 지원하지 않는 게시글입니다."})
 
         if mentioned_email:
-            mention = User.objects.get(email=mentioned_email)
-        elif mentioned_nickname:
-            mention = User.objects.get(nickname=mentioned_nickname)
+            mentioned_user = User.objects.get(email=mentioned_email)
+        # elif mentioned_nickname:
+        #     mention = User.objects.get(nickname=mentioned_nickname)
 
         post_comment = comment_service.create(
             post=post,
             content=content,
             isParent=isParent,
             parent=parent,
-            mentioned_email=mention,
+            mentioned_user=mentioned_user,
             writer=self.user
         )
 
         photo_selector = PostCommentPhotoSelector()
         photo_service = PostCommentPhotoService(post_comment=post_comment)
 
-        #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
-        if not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
-             raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
-
         if image_files:
+            #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
+            if not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
+                raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
+
             photo_service.create(image_files=image_files)
 
         return post_comment
 
     @transaction.atomic
-    def update(self, post_comment_id: int, content: str, mentioned_email: str, mentioned_nickname: str, photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> PostComment:
+    def update(self, post_comment_id: int, content: str, mentioned_email: str, photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> PostComment:
         post_comment_service = PostCommentService()
         post_comment_selector = PostCommentSelector()
 
@@ -327,25 +327,25 @@ class PostCommentCoordinatorService:
             raise exceptions.ValidationError({"error": "댓글 작성자가 아닙니다."})
 
         if mentioned_email:
-            mention = User.objects.get(email=mentioned_email)
-        elif mentioned_nickname:
-            mention = User.objects.get(nickname=mentioned_nickname)
+            mentioned_user = User.objects.get(email=mentioned_email)
+        # elif mentioned_nickname:
+        #     mention = User.objects.get(nickname=mentioned_nickname)
 
         post_comment = post_comment_service.update(
             post_comment_id=post_comment_id,
             content=content,
-            mentioned_email=mention,
+            mentioned_user=mentioned_user,
         )
 
         post_id = post_comment.post_id
         photo_selector = PostCommentPhotoSelector()
         photo_service = PostCommentPhotoService(post_comment=post_comment)
 
-        #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
-        if not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
-             raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
-
         if image_files:
+            #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
+            if not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
+                raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
+
             photo_service.update(
                 photo_image_urls=photo_image_urls,
                 image_files=image_files
@@ -369,13 +369,13 @@ class PostCommentService:
     def __init__(self):
         pass
 
-    def create(self, post: Post, content: str, isParent: bool, parent: PostComment, mentioned_email: User, writer: User) -> PostComment:
+    def create(self, post: Post, content: str, isParent: bool, parent: PostComment, mentioned_user: User, writer: User) -> PostComment:
         post_comment = PostComment(
             post=post,
             content=content,
             isParent=isParent,
             parent=parent,
-            mention=mentioned_email,
+            mention=mentioned_user,
             writer=writer
         )
 
@@ -384,11 +384,11 @@ class PostCommentService:
 
         return post_comment
 
-    def update(self, post_comment_id: int, content: str, mentioned_email: str) -> PostComment:
+    def update(self, post_comment_id: int, content: str, mentioned_user: User) -> PostComment:
         post_comment = PostComment.objects.get(id=post_comment_id)
 
         post_comment.update_content(content)
-        post_comment.update_mention(mentioned_email)
+        post_comment.update_mention(mentioned_user)
 
         post_comment.full_clean()
         post_comment.save()
@@ -445,23 +445,6 @@ class PostCommentPhotoService:
         return photos
 
 
-class PostReportCoordinatorService:
-    def __init__(self, user: User):
-        self.user = user
-
-    def create(self, post_id: int, category: str, reporter: User) -> PostReport:
-        post = Post.objects.get(id=post_id)
-
-        post_report_service = PostReportService()
-        post_report = post_report_service.create(
-            post=post,
-            reporter=reporter,
-            category=category
-        )
-
-        return post_report
-
-
 class PostReportService:
     def __init__(self):
         pass
@@ -470,31 +453,14 @@ class PostReportService:
 
         post_report = PostReport(
             post=post,
-            reporter=reporter,
-            category=category
+            category=category,
+            reporter=reporter
         )
 
         post_report.full_clean()
         post_report.save()
 
         return post_report
-
-
-class PostCommentReportCoordinatorService:
-    def __init__(self, user: User):
-        self.user = user
-
-    def create(self, post_comment_id: int, category: str, reporter: User) -> PostCommentReport:
-        post_comment = PostComment.objects.get(id=post_comment_id)
-
-        post_comment_report_service = PostCommentReportService()
-        post_comment_report = post_comment_report_service.create(
-            post_comment=post_comment,
-            reporter=reporter,
-            category=category
-        )
-
-        return post_comment_report
 
 
 class PostCommentReportService:
@@ -505,8 +471,8 @@ class PostCommentReportService:
 
         post_comment_report = PostCommentReport(
             comment=post_comment,
-            reporter=reporter,
-            category=category
+            category=category,
+            reporter=reporter
         )
 
         post_comment_report.full_clean()
