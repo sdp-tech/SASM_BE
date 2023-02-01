@@ -301,19 +301,18 @@ class PostCommentCoordinatorService:
             content=content,
             isParent=isParent,
             parent=parent,
-            mentioned_user=mentioned_user,
+            mentioned_user=mentioned_user if mentioned_email else None,
             writer=self.user
         )
 
         photo_selector = PostCommentPhotoSelector()
         photo_service = PostCommentPhotoService(post_comment=post_comment)
 
-        if image_files:
-            #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
-            if not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
-                raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
-
+        #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
+        if image_files and photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
             photo_service.create(image_files=image_files)
+        elif not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
+            raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
 
         return post_comment
 
@@ -334,22 +333,21 @@ class PostCommentCoordinatorService:
         post_comment = post_comment_service.update(
             post_comment_id=post_comment_id,
             content=content,
-            mentioned_user=mentioned_user,
+            mentioned_user=mentioned_user if mentioned_email else None,
         )
 
         post_id = post_comment.post_id
         photo_selector = PostCommentPhotoSelector()
         photo_service = PostCommentPhotoService(post_comment=post_comment)
 
-        if image_files:
-            #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
-            if not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
-                raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
-
+        #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
+        if image_files and photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
             photo_service.update(
                 photo_image_urls=photo_image_urls,
                 image_files=image_files
-            )
+            )  
+        elif not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
+            raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
 
         return post_comment
 
