@@ -131,7 +131,7 @@ class PostCreateApi(APIView, ApiAuthMixin):
             board_id=data.get('board'),
             title=data.get('title'),
             content=data.get('content'),
-            hashtag_names=data.get('hashtagList', 'default'),
+            hashtag_names=data.get('hashtagList', []),
             image_files=data.get('imageList', []),
         )
 
@@ -203,7 +203,7 @@ class PostUpdateApi(APIView, ApiAuthMixin):
             post_id=post_id,
             title=data.get('title'),
             content=data.get('content'),
-            hashtag_names=data.get('hashtagList', 'default'),
+            hashtag_names=data.get('hashtagList', []),
             photo_image_urls=data.get('photoList', []),
             image_files=data.get('imageList', []),
         )
@@ -369,11 +369,11 @@ class PostListApi(APIView):
             user=request.user
         )
         posts = selector.list(
-            board_id=filters.get('board'),  # 게시판 id
+            board_id=filters['board'],  # 게시판 id
             # 검색어
             query=filters.get('query', ''),
             # 검색어 종류 (해시태그 검색 여부)
-            query_type=filters.get('query_type', 'default'),
+            query_type=filters.get('query_type', ''),
             # 최신순 정렬 여부 (기본값: 최신순)
             latest=filters.get('latest', True),
         )
@@ -493,8 +493,8 @@ class PostHashtagListApi(APIView):
 
         selector = PostHashtagSelector()
         hashtags = selector.list(
-            board_id=filters.get('board'),
-            query=filters.get('query')  # 해당 검색어로 시작하는 모든 해시태그 리스트
+            board_id=filters['board'],
+            query=filters['query']  # 해당 검색어로 시작하는 모든 해시태그 리스트
         )
 
         return get_paginated_response(
@@ -568,7 +568,7 @@ class PostCommentListApi(APIView):
         )
 
         post_comments = selector.list(
-            post_id=filters.get('post')
+            post_id=filters['post']
         )
 
         return get_paginated_response(
@@ -791,13 +791,13 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
 
         service = PostReportService()
         
-        post_id = data.get('post')
+        post_id = data['post']
         post = Post.objects.get(id=post_id)
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_report = service.create(
             post=post,
-            category=data.get('category'),
+            category=data['category'],
             reporter=request.user
         )
 
@@ -848,13 +848,13 @@ class PostCommentReportCreateApi(APIView, ApiAuthMixin):
 
         service = PostCommentReportService()
 
-        comment_id = data.get('comment')
+        comment_id = data['comment']
         post_comment = PostComment.objects.get(id=comment_id)
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_comment_report = service.create(
             post_comment=post_comment,
-            category=data.get('category'),
+            category=data['category'],
             reporter=request.user
         )
 
