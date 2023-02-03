@@ -131,7 +131,7 @@ class PostCreateApi(APIView, ApiAuthMixin):
             board_id=data.get('board'),
             title=data.get('title'),
             content=data.get('content'),
-            hashtag_names=data.get('hashtagList', []),
+            hashtag_names=data.get('hashtagList', 'default'),
             image_files=data.get('imageList', []),
         )
 
@@ -203,7 +203,7 @@ class PostUpdateApi(APIView, ApiAuthMixin):
             post_id=post_id,
             title=data.get('title'),
             content=data.get('content'),
-            hashtag_names=data.get('hashtagList', []),
+            hashtag_names=data.get('hashtagList', 'default'),
             photo_image_urls=data.get('photoList', []),
             image_files=data.get('imageList', []),
         )
