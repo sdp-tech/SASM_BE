@@ -120,7 +120,6 @@ class PostCreateApi(APIView, ApiAuthMixin):
     def post(self, request):
         serializer = self.PostCreateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
 
         service = PostCoordinatorService(
             user=request.user
@@ -128,11 +127,13 @@ class PostCreateApi(APIView, ApiAuthMixin):
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post = service.create(
-            board_id=data.get('board'),
-            title=data.get('title'),
-            content=data.get('content'),
-            hashtag_names=data.get('hashtagList', []),
-            image_files=data.get('imageList', []),
+            board_id=request.POST.get('board'),
+            title=request.POST.get('title'),
+            content=request.POST.get('content'),
+            hashtag_names=request.POST.getlist(
+                'hashtagList') if 'hashtagList' in request.POST else [],
+            image_files=request.FILES.getlist(
+                'imageList') if 'imageList' in request.FILES else [],
         )
 
         return Response({
@@ -193,7 +194,6 @@ class PostUpdateApi(APIView, ApiAuthMixin):
     def put(self, request, post_id):
         serializer = self.PostUpdateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
 
         service = PostCoordinatorService(
             user=request.user
@@ -201,11 +201,14 @@ class PostUpdateApi(APIView, ApiAuthMixin):
 
         post = service.update(
             post_id=post_id,
-            title=data.get('title'),
-            content=data.get('content'),
-            hashtag_names=data.get('hashtagList', []),
-            photo_image_urls=data.get('photoList', []),
-            image_files=data.get('imageList', []),
+            title=request.POST.get('title'),
+            content=request.POST.get('content'),
+            hashtag_names=request.POST.getlist(
+                'hashtagList') if 'hashtagList' in request.POST else [],
+            photo_image_urls=request.POST.getlist(
+                'photoList') if 'photoList' in request.POST else [],
+            image_files=request.FILES.getlist(
+                'imageList') if 'imageList' in request.FILES else [],
         )
 
         return Response({
@@ -364,18 +367,18 @@ class PostListApi(APIView):
             data=request.query_params)
         filters_serializer.is_valid(raise_exception=True)
         filters = filters_serializer.validated_data
-        
+
         selector = PostCoordinatorSelector(
             user=request.user
         )
         posts = selector.list(
             board_id=filters['board'],  # 게시판 id
             # 검색어
-            query=filters.get('query', ''),
+            query=filters['query'] if 'query' in filters else '',
             # 검색어 종류 (해시태그 검색 여부)
-            query_type=filters.get('query_type', ''),
+            query_type=filters['query_type'] if 'query_type' in filters else '',
             # 최신순 정렬 여부 (기본값: 최신순)
-            latest=filters.get('latest', True),
+            latest=filters['latest'] if 'latest' in filters else True,
         )
 
         return get_paginated_response(
@@ -627,7 +630,6 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
     def post(self, request):
         serializer = self.PostCommentCreateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
 
         service = PostCommentCoordinatorService(
             user=request.user
@@ -635,7 +637,6 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_comment = service.create(
-<<<<<<< Updated upstream
             post_id=request.POST.get('post'),
             content=request.POST.get('content'),
             isParent=request.POST.get('isParent'),
@@ -645,14 +646,6 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
                 'mentionEmail') if 'mentionEmail' in request.POST else '',
             image_files=request.FILES.getlist(
                 'imageList') if 'imageList' in request.FILES else [],
-=======
-            post_id=data.get('post'),
-            content=data.get('content'),
-            isParent=data.get('isParent'),
-            parent_id=data.get('parent', None), 
-            mentioned_email=data.get('mentionEmail', ''),
-            image_files=data.get('imageList', []),
->>>>>>> Stashed changes
         )
 
         return Response({
@@ -711,7 +704,6 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
 
         serializer = self.PostCommentUpdateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
 
         service = PostCommentCoordinatorService(
             user=request.user
@@ -720,7 +712,6 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_comment = service.update(
             post_comment_id=post_comment_id,
-<<<<<<< Updated upstream
             content=request.POST.get('content'),
             mentioned_email=request.POST.get(
                 'mentionEmail') if 'mentionEmail' in request.POST else '',
@@ -729,12 +720,6 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
                 'photoList') if 'photoList' in request.POST else [],
             image_files=request.FILES.getlist(
                 'imageList') if 'imageList' in request.FILES else [],
-=======
-            content=data.get('content'),
-            mentioned_email=data.get('mentionEmail', ''),
-            photo_image_urls=data.get('photoList', []),
-            image_files=data.get('imageList', []),
->>>>>>> Stashed changes
         )
 
         return Response({
@@ -810,22 +795,16 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
     def post(self, request):
         serializer = self.PostReportCreateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
 
         service = PostReportService()
-<<<<<<< Updated upstream
 
         post_id = request.POST.get('post')
-=======
-        
-        post_id = data['post']
->>>>>>> Stashed changes
         post = Post.objects.get(id=post_id)
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_report = service.create(
             post=post,
-            category=data['category'],
+            category=request.POST.get('category'),
             reporter=request.user
         )
 
@@ -872,17 +851,16 @@ class PostCommentReportCreateApi(APIView, ApiAuthMixin):
         serializer = self.PostCommentReportCreateInputSerializer(
             data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
 
         service = PostCommentReportService()
 
-        comment_id = data['comment']
+        comment_id = request.POST.get('comment')
         post_comment = PostComment.objects.get(id=comment_id)
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_comment_report = service.create(
             post_comment=post_comment,
-            category=data['category'],
+            category=request.POST.get('category'),
             reporter=request.user
         )
 
