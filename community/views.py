@@ -635,24 +635,12 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_comment = service.create(
-<<<<<<< Updated upstream
-            post_id=request.POST.get('post'),
-            content=request.POST.get('content'),
-            isParent=request.POST.get('isParent'),
-            parent_id=request.POST.get(
-                'parent') if 'parent' in request.POST else None,
-            mentioned_email=request.POST.get(
-                'mentionEmail') if 'mentionEmail' in request.POST else '',
-            image_files=request.FILES.getlist(
-                'imageList') if 'imageList' in request.FILES else [],
-=======
             post_id=data.get('post'),
             content=data.get('content'),
             isParent=data.get('isParent'),
             parent_id=data.get('parent', None), 
             mentioned_email=data.get('mentionEmail', ''),
             image_files=data.get('imageList', []),
->>>>>>> Stashed changes
         )
 
         return Response({
@@ -720,21 +708,10 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_comment = service.update(
             post_comment_id=post_comment_id,
-<<<<<<< Updated upstream
-            content=request.POST.get('content'),
-            mentioned_email=request.POST.get(
-                'mentionEmail') if 'mentionEmail' in request.POST else '',
-            # mentioned_nickname=request.POST.get('mentionNickname'),
-            photo_image_urls=request.POST.getlist(
-                'photoList') if 'photoList' in request.POST else [],
-            image_files=request.FILES.getlist(
-                'imageList') if 'imageList' in request.FILES else [],
-=======
             content=data.get('content'),
             mentioned_email=data.get('mentionEmail', ''),
             photo_image_urls=data.get('photoList', []),
             image_files=data.get('imageList', []),
->>>>>>> Stashed changes
         )
 
         return Response({
@@ -813,13 +790,8 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
         data = serializer.validated_data
 
         service = PostReportService()
-<<<<<<< Updated upstream
-
-        post_id = request.POST.get('post')
-=======
         
         post_id = data['post']
->>>>>>> Stashed changes
         post = Post.objects.get(id=post_id)
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
