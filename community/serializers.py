@@ -1,6 +1,7 @@
 import io
 import time
 import datetime
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.images import ImageFile
 from rest_framework import serializers
@@ -17,11 +18,15 @@ class PostPhotoSerializer(serializers.ModelSerializer):
 
 
 class PostHashtagSerializer(serializers.ModelSerializer):
+    # posts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    # id = serializers.IntegerField(required=False)
 
     class Meta:
         model = PostHashtag
         fields = [
             'name',
+            # 'posts',
+            # 'id',
         ]
 
 
@@ -37,8 +42,8 @@ class BoardSerializer(serializers.ModelSerializer):
 class PostDetailSerializer(serializers.ModelSerializer):
     post_like = serializers.SerializerMethodField()
     nickname = serializers.SerializerMethodField()
-    post_photos = PostPhotoSerializer(many=True, read_only=True)
-    hashtag = PostHashtagSerializer(many=True, read_only=True)
+    photos = PostPhotoSerializer(many=True, read_only=True)
+    hashtags = PostHashtagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
@@ -50,8 +55,8 @@ class PostDetailSerializer(serializers.ModelSerializer):
             'like_cnt',
             'view_cnt',
             'comment_cnt',
-            'post_photos',
-            'hashtag',
+            'photos',
+            'hashtags',
             'post_like',
             'nickname',
             'created',
@@ -85,7 +90,6 @@ class PostDetailSerializer(serializers.ModelSerializer):
         print('create')
         post = Post(**validated_data)
         post.writer = self.context['request'].user
-        print(post.writer)
         post.save()
 
         #사진 최대 10개
@@ -103,45 +107,49 @@ class PostDetailSerializer(serializers.ModelSerializer):
             print(post_photos)
 
         #해시태그 최대 5개
-        hashtags_data = self.context['request'].POST.getlist('hashtag')[0].split(' ')
-        print(hashtags_data)
-        count_hashtag = len(hashtags_data)
+        hashtags = self.context['request'].POST.getlist('hashtags')
+        print(hashtags)
+        count_hashtag = len(hashtags)
         print(count_hashtag)
         if (count_hashtag > 5):
             raise serializers.ValidationError()
-        # for hashtag_data in 
+        for hashtag in hashtags:
+            PostHashtag.objects.create(post=post, name=hashtag)
 
         print(post)
         return post
-
+ 
     def update(self, instance, validated_data):
         print('update')
-        # instance = Post(**validated_data)
-        # instance.save()
+        instance.title = validated_data.get('title', instance.title)
+        instance.content = validated_data.get('content', instance.content)
+        instance.save()
 
-        #사진 최대 10개
-        post_photos_data = self.context['request'].FILES
-        post_photos = post_photos_data.getlist('post_photos')
-        count_photo = len(post_photos)
+        #사진 수정
+        instance.photos.all().delete()
+        repost_photos_data = self.context['request'].FILES
+        repost_photos = repost_photos_data.getlist('photos')
+        count_photo = len(repost_photos)
         if (count_photo > 10):
             raise serializers.ValidationError()
-        for post_photo_data in post_photos:
+        for repost_photo in repost_photos:
             # 파일 경로 설정
-            ext = post_photo_data.name.split(".")[-1]
+            ext = repost_photo.name.split(".")[-1]
             file_path = '{}/{}.{}'.format(instance.id, str(datetime.datetime.now()),ext)
-            image = ImageFile(io.BytesIO(post_photo_data.read()), name=file_path)
+            image = ImageFile(io.BytesIO(repost_photo.read()), name=file_path)
             PostPhoto.objects.create(post=instance, image=image)
-            print(post_photos)
 
-        #해시태그 최대 5개
-        hashtags_data = self.context['request'].POST.getlist('hashtag')[0].split(' ')
-        print(hashtags_data)
-        count_hashtag = len(hashtags_data)
-        print(count_hashtag)
+        #해시태그 수정 -> 기존 해시태그 모두 지우고 새로 생성
+        instance.hashtags.all().delete()
+        hashtags = self.context['request'].POST.getlist('hashtags')
+        count_hashtag = len(hashtags)
         if (count_hashtag > 5):
             raise serializers.ValidationError()
-
+        for hashtag in hashtags:
+            PostHashtag.objects.create(post=instance, name=hashtag)
+        
         return instance
+
 
 class PostCommentSerializer(serializers.ModelSerializer):
     nickname = serializers.SerializerMethodField()

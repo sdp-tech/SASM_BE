@@ -39,20 +39,21 @@ class PostDetailView(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     @swagger_auto_schema(operation_id='api_community_post_post')
-    def create(self, request, *args, **kwargs):
-        try:
-            super().create(request, *args, **kwargs)
-            print('super')
-        except ValidationError as e:
+    @action(detail=False, methods=['post'])
+    def create(self, request):
+        serializer = PostDetailSerializer(data=request.data, context={'request': request})
+        print(serializer)
+        
+        if serializer.is_valid():
+            serializer.save()
             return Response({
-                'status': 'fail',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+                    "status" : "success",
+                    "data" : serializer.data,
+                },status=status.HTTP_200_OK)
         return Response({
-            'status': 'success',
-            'message': 'posted',
-        }, status=status.HTTP_200_OK)
+                "status" : "fail",
+                "data" : serializer.errors,
+            })
 
     @swagger_auto_schema(operation_id='api_community_post_put')
     def update(self, request, *args, **kwargs):
