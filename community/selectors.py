@@ -8,6 +8,7 @@ from django.http import Http404
 from django.db.models import Q, F, Value, CharField, Func, Aggregate, Count
 from django.db.models.functions import Concat, Substr
 from django.db.models import Case, When
+from django.db.models import OuterRef, Subquery
 
 
 from users.models import User
@@ -294,10 +295,24 @@ class PostCommentCoordinatorSelector:
 
     def list(self, post_id: int):
         post = Post.objects.get(id=post_id)
-
-        return PostCommentSelector.list(
+        post_comment_qs = PostCommentSelector.list(
             post=post
         )
+
+        # concat된 문자열을 리스트로
+        for post_comment in post_comment_qs:
+            if post_comment['photoList']:
+                photo_url = []
+                post_comment['photoList'] = post_comment['photoList'].split(",")
+                
+                # 각각의 photo에 접근하여 url 완성
+                for photo in post_comment['photoList']:
+                    photo = settings.MEDIA_URL + photo 
+                    photo_url.append(photo)
+
+                post_comment['photoList'] = photo_url # photoList에 리스트 저장
+        
+        return post_comment_qs
 
 
 class PostCommentSelector:
@@ -320,7 +335,6 @@ class PostCommentSelector:
         post_comments = PostComment.objects.filter(q).annotate(
             # 댓글이면 id값을, 대댓글이면 parent id값을 대표값(group)으로 설정
             # group 내에서는 id값 기준으로 정렬
-            # photoList=list(PostCommentPhotoSelector.photos_of_post_comment(post_comment="id")
             group=Case(
                 When(
                     isParent=False,
@@ -331,8 +345,18 @@ class PostCommentSelector:
             nickname=F('writer__nickname'),
             email=F('writer__email'),
             mentionEmail=F('mention__email'),
-            mentionNickname=F('mention__nickname')
-        ).order_by("group", "id")
+            mentionNickname=F('mention__nickname'),
+            photoList = GroupConcat("photos__image")
+        ).values('id',
+                'content',
+                'isParent',
+                'group',
+                'nickname',
+                'email',
+                'mentionEmail',
+                'created',
+                'updated',
+                'photoList').order_by('group', 'id')
 
         return post_comments
 
