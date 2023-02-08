@@ -5,6 +5,15 @@ from django.dispatch import receiver
 from core.models import TimeStampedModel
 
 
+def validate_str_field_length(target: str):
+    # string 필드가 공백을 제외한 길이가 1 이상인지 확인
+    # 1. 길이가 0인 내용이 저장되는 것을 방지
+    # 2. 길이가 1 이상이나 공백으로만 이루어진 것을 저장하는 것을 방지
+
+    without_white_spaces = target.replace(' ', '')
+    return not without_white_spaces
+
+
 class Board(models.Model):
     name = models.CharField(max_length=200)
     supports_hashtags = models.BooleanField(
@@ -16,18 +25,13 @@ class Board(models.Model):
     supports_post_comments = models.BooleanField(
         null=False, blank=False, default=False)
 
+    def clean(self):
+        if validate_str_field_length(self.name):
+            raise ValidationError('게시판 이름은 공백 제외 최소 1글자 이상이어야 합니다.')
+
     # 게시판이 사용하는 글 양식 지정
     post_content_style = models.ForeignKey(
         'PostContentStyle', related_name='applied_boards', on_delete=models.SET_NULL, null=True, blank=True)
-
-
-def validate_str_field_length(target: str):
-    # string 필드가 공백을 제외한 길이가 1 이상인지 확인
-    # 1. 길이가 0인 내용이 저장되는 것을 방지
-    # 2. 길이가 1 이상이나 공백으로만 이루어진 것을 저장하는 것을 방지
-
-    without_white_spaces = target.replace(' ', '')
-    return not without_white_spaces
 
 
 class Post(TimeStampedModel):
@@ -68,6 +72,13 @@ class Post(TimeStampedModel):
 class PostContentStyle(TimeStampedModel):
     name = models.CharField(max_length=50)
     styled_content = models.TextField(max_length=50000)
+
+    def clean(self):
+        if validate_str_field_length(self.name):
+            raise ValidationError('게시글 내용양식 이름은 공백 제외 최소 1글자 이상이어야 합니다.')
+
+        if validate_str_field_length(self.styled_content):
+            raise ValidationError('게시글 내용양식은 공백 제외 최소 1글자 이상이어야 합니다.')
 
 
 class PostHashtag(TimeStampedModel):
@@ -136,6 +147,10 @@ class PostComment(TimeStampedModel):
     # 멘션된 사용자가 회원 탈퇴하더라도, 댓글은 유지, mention을 null 설정
     mention = models.ForeignKey(
         'users.User', related_name='mentioned_post_comments', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def clean(self):
+        if validate_str_field_length(self.content):
+            raise ValidationError('댓글의 내용은 공백 제외 최소 1글자 이상이어야 합니다.')
 
     def update_content(self, content):
         self.content = content
