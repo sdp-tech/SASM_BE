@@ -5,18 +5,14 @@ from collections import Counter
 from django.conf import settings
 from django.db import transaction
 from django.http import Http404
-from django.db.models import Q, F, Value, CharField, Func, Aggregate, Count
+from django.db.models import Q, F, Value, CharField, Func, Aggregate, Count, BooleanField, Field, Prefetch
 from django.db.models.functions import Concat, Substr
 from django.db.models import Case, When
 from django.db.models import OuterRef, Subquery
 
 
 from users.models import User
-from community.models import Board, Post, PostHashtag, PostLike, PostPhoto, PostComment, PostCommentPhoto
-
-# class PostSelector:
-#     def __init__(self):
-#         pass
+from community.models import Board, Post, PostHashtag, PostPhoto, PostComment, PostCommentPhoto
 
 
 class BoardSelector:
@@ -113,25 +109,36 @@ class PostCoordinatorSelector:
         )
 
     def detail(self, post_id: int):
+        def set_prefetches():
+            if board.supports_hashtags:
+                prefetches.append(Prefetch('hashtags', to_attr='hashtagList'))
+
+            if board.supports_post_photos:
+                prefetches.append(Prefetch('photos',
+                                           queryset=PostPhoto.objects.all().annotate(
+                                               imageUrl=Concat(Value(settings.MEDIA_URL),
+                                                               F('image'),
+                                                               output_field=CharField()
+                                                               )
+                                           ), to_attr='photoList'))
+
+        def post_process_prefetches():
+            if board.supports_hashtags:
+                dto.hashtagList = [
+                    hashtag.name for hashtag in post.hashtagList]
+
+            if board.supports_post_photos:
+                dto.photoList = [photo.imageUrl for photo in post.photoList]
+
         board = Post.objects.get(id=post_id).board
+        prefetches = []
 
-        # extra_fields = {}
+        set_prefetches()
 
-        # if board.supports_hashtags:
-        #     extra_fields['hashtags__name'] = GroupConcat(
-        #         'hashtags__name')
-        #     extra_fields['hashtagList'] = F('hashtags__name')
-
-        # if board.supports_post_photos:
-        #     extra_fields['photos__image'] = GroupConcat(
-        #         'photos__image')
-        #     extra_fields['photoList'] = F('photos__image')
-
-        post = PostSelector.detail(post_id=post_id)
-
-        likes = PostLikeSelector.likes(
-            post_id=post.id,
-            user=self.user
+        post = PostSelector.detail(
+            post_id=post_id,
+            user=self.user,
+            prefetches=prefetches
         )
 
         dto = PostDto(
@@ -144,14 +151,10 @@ class PostCoordinatorSelector:
             updated=post.updated,
             likeCount=post.likeCount,
             viewCount=post.viewCount,
-            likes=likes,
+            likes=post.likes,
         )
 
-        if board.supports_hashtags:
-            dto.hashtagList = PostHashtagSelector.hashtags_of_post(post=post)
-
-        if board.supports_post_photos:
-            dto.photoList = PostPhotoSelector.photos_of_post(post=post)
+        post_process_prefetches()
 
         return dto
 
@@ -192,17 +195,37 @@ class PostSelector:
         return posts
 
     @ staticmethod
-    def detail(post_id: int, extra_fields: dict = {}):
-        return Post.objects.annotate(
+    def detail(post_id: int, user: User, prefetches: list = []):
+        post = Post.objects.annotate(
             nickname=F('writer__nickname'),
             email=F('writer__email'),
             likeCount=F('like_cnt'),
             viewCount=F('view_cnt'),
-            **extra_fields
-        ).get(id=post_id)
+            # post.likers에 유저가 포함되어 있는 경우, 좋아요 상태를 True로 반환, 아니라면 False로 반환
+            # 다른 구현 대안으로, Exists 함수와 함께 sub query를 쓸 수도 있을 것으로 보임
+            # ref. https://stackoverflow.com/questions/40599681/annotate-queryset-with-whether-matching-related-object-exists
+            likes=Case(
+                When(
+                    likers=user,
+                    then=1
+                ),
+                default=0,
+                output_field=BooleanField(),
+            ),
+        ).prefetch_related(*prefetches).get(id=post_id)
+
+        return post
+
+    @ staticmethod
+    def likes_post(user: User, post: Post):
+        return post.likers.filter(email=user.email).exists()
+
+    @ staticmethod
+    def has_hashtag(post: Post, name: str):
+        return post.hashtags.filter(name__exact=name).exists()
 
 
-@dataclass
+@ dataclass
 class PostHashtagDto:
     name: str
     postCount: int
@@ -212,7 +235,7 @@ class PostHashtagSelector:
     def __init__(self):
         pass
 
-    @staticmethod
+    @ staticmethod
     def list(board_id: int, query: str):
         dtos = []
 
@@ -237,31 +260,20 @@ class PostHashtagSelector:
 
         return dtos
 
-    @staticmethod
+    @ staticmethod
     def hashtags_of_post(post: Post):
         return PostHashtag.objects.filter(post=post).values_list('name', flat=True)
 
-    def exists(self, post: Post, name: str):
-        return post.hashtags.filter(name__exact=name).exists()
-
-
-class PostLikeSelector:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def likes(post_id: int, user: User):
-        return PostLike.objects.filter(
-            post__id=post_id,
-            user=user
-        ).exists()
+    @ staticmethod
+    def exists(name: str):
+        return PostHashtag.objects.filter(name__exact=name).exists()
 
 
 class PostPhotoSelector:
     def __init__(self):
         pass
 
-    @staticmethod
+    @ staticmethod
     def photos_of_post(post: Post):
         return PostPhoto.objects.filter(post=post) \
             .annotate(
@@ -371,7 +383,7 @@ class PostCommentPhotoSelector:
 
         return Board.objects.get(id=board_id).supports_post_comment_photos
 
-    @staticmethod
+    @ staticmethod
     def photos_of_post_comment(post_comment: PostComment):
         return PostCommentPhoto.objects.filter(post_comment=post_comment) \
             .annotate(

@@ -4,6 +4,8 @@ from django.dispatch import receiver
 
 from core.models import TimeStampedModel
 
+from users.models import User
+
 
 class Board(models.Model):
     name = models.CharField(max_length=200)
@@ -37,9 +39,10 @@ class Post(TimeStampedModel):
         'Board', related_name='posts', on_delete=models.CASCADE, null=False, blank=False)
     writer = models.ForeignKey(
         'users.User', related_name='posts', on_delete=models.SET_NULL, null=True, blank=False)
-    like_cnt = models.PositiveIntegerField(default=0)
     view_cnt = models.PositiveIntegerField(default=0)
-    comment_cnt = models.PositiveIntegerField(default=0)
+    like_cnt = models.PositiveIntegerField(default=0)
+    likers = models.ManyToManyField(
+        "users.User", related_name='liked_posts', blank=True)
 
     # ForeignKey와 같은 relational 필드를 제외한 non-relational 필드에 대한 기본적이고 간단한 검증 로직 포함
     # 복잡한 필드 검증이나 모델 필드 외 데이터에 대한 검증, 필드 관계 검증은 Serivce/Serializer에서 수행
@@ -58,11 +61,13 @@ class Post(TimeStampedModel):
     def update_content(self, content):
         self.content = content
 
-    def like(self):
+    def like(self, user: User):
         self.like_cnt += 1
+        self.likers.add(user)
 
-    def dislike(self):
+    def dislike(self, user: User):
         self.like_cnt -= 1
+        self.likers.remove(user)
 
 
 class PostContentStyle(TimeStampedModel):
@@ -72,19 +77,18 @@ class PostContentStyle(TimeStampedModel):
 
 class PostHashtag(TimeStampedModel):
     name = models.CharField(max_length=10)
-    post = models.ForeignKey(
-        'Post', related_name='hashtags', on_delete=models.CASCADE, null=False, blank=False)
+    posts = models.ManyToManyField(
+        "Post", related_name='hashtags', blank=True)
 
     def clean(self):
         if validate_str_field_length(self.name):
             raise ValidationError('해시태그의 이름은 공백 제외 최소 1글자 이상이어야 합니다.')
 
-    # 필드 name, post 조합을 unique key로 설정하여, 한 게시글이 중복된 이름을 가지는 해시태그를 가질 수 없도록 제한
-    # service 레이어에서 1차적으로 검증하나, 일관성을 좀 더 강력히 보장하고, 도메인 지식을 model 레이어에 담기 위해 추가
+    # 필드 name을 unique key로 설정하여, 중복된 이름을 가지는 해시태그가 생성되지 않도록 제한
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'post'], name='post_can_have_hashtag_with_unique_name_constraint'),
+                fields=['name'], name='post_can_have_hashtag_with_unique_name_constraint'),
         ]
 
 
@@ -104,21 +108,6 @@ class PostPhoto(TimeStampedModel):
 # ref. https://stackoverflow.com/questions/47377172/django-storages-aws-s3-delete-file-from-model-record
 def remove_file_from_s3(sender, instance, using, **kwargs):
     instance.image.delete(save=False)
-
-
-class PostLike(TimeStampedModel):
-    post = models.ForeignKey(
-        'Post', related_name='likes', on_delete=models.CASCADE, null=False, blank=False)
-    user = models.ForeignKey(
-        'users.User', related_name='post_likes', on_delete=models.SET_NULL, null=True, blank=False)  # 좋아요를 누른 사용자가 삭제되어도 좋아요는 유지
-
-    # 필드 post, user 조합을 unique key로 설정하여, 한 유저가 한 게시글에 대해 단 한번만 좋아요를 할 수 있도록 제한
-    # service 레이어에서 1차 검증을 하나, 일관성을 좀 더 강력히 보장하고, 도메인 지식을 model 레이어에 담기 위해 추가
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['post', 'user'], name='user_can_like_post_only_once_constraint'),
-        ]
 
 
 class PostComment(TimeStampedModel):

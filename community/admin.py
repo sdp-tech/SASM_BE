@@ -27,11 +27,6 @@ class PostPhotoAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(models.PostLike)
-class PostLikeAdmin(admin.ModelAdmin):
-    pass
-
-
 @admin.register(models.PostComment)
 class PostCommentAdmin(admin.ModelAdmin):
     pass
