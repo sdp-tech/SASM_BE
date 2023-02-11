@@ -221,8 +221,8 @@ MEDIAFILES_LOCATION = 'media'
 MEDIA_URL = 'https://{}/{}/'.format(AWS_S3_CUSTOM_DOMAIN, MEDIAFILES_LOCATION)
 DEFAULT_FILE_STORAGE = 'sasmproject.custom_storages.MediaStorage'
 
-STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
+# STATIC_URL = '/static/'
+# MEDIA_URL = '/media/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]  # debug-tool-bar
@@ -243,5 +243,6 @@ SWAGGER_SETTINGS = {
             'name': 'Authorization',
             'in': 'header'
         },
-    }
+    },
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'core.inspectors.SerializerExampleSchema',
 }

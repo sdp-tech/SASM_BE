@@ -2,38 +2,17 @@ from allauth.socialaccount.providers.google import views as google_view
 from ..models import User
 from .social_login import *
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
-# random state 생성하기
-state = getattr(settings, 'STATE')
-STATE_LENGTH = 15
-string_pool = string.ascii_letters + string.digits
-for i in range(STATE_LENGTH):
-    state += random.choice(string_pool)
-
-BASE_URL = 'http://127.0.0.1:8000/'
-GOOGLE_CALLBACK_URI = BASE_URL + 'http://127.0.0.1:3000/users/google/callback/'
+BASE_URL = 'https://api.sasm.co.kr/'
+GOOGLE_CALLBACK_URI = 'https://www.sasm.co.kr/googleredirect/'
 
 @api_view(["GET", "POST"])
+@permission_classes([AllowAny])
 def google_callback(request):
-    client_id = getattr(settings, "SOCIAL_AUTH_GOOGLE_CLIENT_ID")
-    client_secret = getattr(settings, "SOCIAL_AUTH_GOOGLE_SECRET")
-    code = request.GET.get('code')
-
-    token_req = requests.post(
-        f"https://oauth2.googleapis.com/token?client_id={client_id}&client_secret={client_secret}&code={code}&grant_type=authorization_code&redirect_uri={GOOGLE_CALLBACK_URI}&state={state}"
-    )
-
-    token_req_json = token_req.json()
-    error = token_req_json.get("error")
-    if error is not None:
-        return Response({
-                        'status': 'error',
-                        'message': 'JSON_DECODE_ERROR',
-                        'code': 400
-                    }, status=status.HTTP_400_BAD_REQUEST)
-    access_token = token_req_json.get('access_token')
-
+    access_token = request.data.get('accessToken')
+    
     email_req = requests.get(
         f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}"
     )
@@ -66,7 +45,7 @@ def google_callback(request):
                         'code': 404
                     }, status=status.HTTP_404_NOT_FOUND)
             
-        data = {'access_token': access_token, 'code': code}
+        data = {'access_token': access_token}
         accept = requests.post(
             f"{BASE_URL}users/google/login/finish/", data=data
         )
@@ -92,7 +71,7 @@ def google_callback(request):
                 }, status=status.HTTP_200_OK)
         
     except User.DoesNotExist:
-        data = {'access_token': access_token, 'code': code}
+        data = {'access_token': access_token}
         accept = requests.post(
             f"{BASE_URL}users/google/login/finish/", data=data
         )

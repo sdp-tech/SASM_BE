@@ -12,6 +12,11 @@ class PostAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(models.PostContentStyle)
+class PostContentStyleAdmin(admin.ModelAdmin):
+    pass
+
+
 @admin.register(models.PostHashtag)
 class PostHashtagAdmin(admin.ModelAdmin):
     pass
@@ -40,6 +45,7 @@ class PostCommentPhotoAdmin(admin.ModelAdmin):
 @admin.register(models.PostReport)
 class PostReportAdmin(admin.ModelAdmin):
     pass
+
 
 @admin.register(models.PostCommentReport)
 class PostCommentReportAdmin(admin.ModelAdmin):

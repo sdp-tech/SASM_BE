@@ -35,3 +35,5 @@ REST_FRAMEWORK = {
     ],
     'EXCEPTION_HANDLER': 'sasmproject.exceptions.custom_exception_handler',
 }
+
+ACCOUNT_DEFAULT_HTTP_PROTOCOL='https'
