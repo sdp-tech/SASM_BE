@@ -1,17 +1,13 @@
 from django.urls import path
-from .views import StoryDetailView, StoryLikeView, StoryListView, GoToMapView, StoryCommentView
+from .views import StoryLikeApi, StoryListApi, StoryDetailApi, StoryCommentListApi, StoryCommentCreateApi, StoryCommentUpdateApi, StoryCommentDeleteApi, GoToMapApi
 
 urlpatterns = [
-     path('story_like/',
-          StoryLikeView.as_view({'post': 'post'}), name="story_like"),
-     path('story_detail/', StoryDetailView.as_view(), name='story_detail'),
-     path('story_search/',
-          StoryListView.as_view({'get': 'get'}), name='story_search'),
-     path('recommend_story/',
-          StoryListView.as_view({'get': 'recommend_story'}), name='story_recommend'),
-     path('go_to_map/', GoToMapView.as_view({'get': 'get'}), name='go_to_map'),
-     path('comments/',
-          StoryCommentView.as_view({'get': 'list', 'post': 'create'}), name='story_comments'),
-     path('comments/<int:pk>/',
-          StoryCommentView.as_view({'get': 'retrieve', 'patch': 'update', 'delete': 'destroy'}), name='story_comment'),
+     path('<int:story_id>/like/', StoryLikeApi.as_view(), name='story_like'),
+     path('list/', StoryListApi.as_view(), name='story_list'),
+     path('detail/<int:story_id>/', StoryDetailApi.as_view(), name='story_detail'),
+     path('comment_list/', StoryCommentListApi.as_view(), name='story_comment_list'),
+     path('comment/create/', StoryCommentCreateApi.as_view(), name='comment_create'),
+     path('comment/update/<int:story_comment_id>/', StoryCommentUpdateApi.as_view(), name='comment_update'),
+     path('comment/delete/<int:story_comment_id>/', StoryCommentDeleteApi.as_view(), name='comment_delete'),
+     path('go_to_map/<int:story_id>/', GoToMapApi.as_view(), name='go_to_map'),
 ]
