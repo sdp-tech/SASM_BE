@@ -160,37 +160,46 @@ def remove_file_from_s3(sender, instance, using, **kwargs):
     instance.image.delete(save=False)
 
 
-class Report(TimeStampedModel):
-    """Report Category Definition"""
-    REPORT1 = "게시판 성격에 부적절함"
-    REPORT2 = "음란물/불건전한 만남 및 대화"
-    REPORT3 = "사칭/사기성 게시글"
-    REPORT4 = "욕설/비하"
-    REPORT5 = "낚시/도배성 게시글"
-    REPORT6 = "상업적 광고 및 판매"
-    REPORT_CATEGORY_CHOICES = (
-        (REPORT1, "게시판 성격에 부적절함"),
-        (REPORT2, "음란물/불건전한 만남 및 대화"),
-        (REPORT3, "사칭/사기성 게시글"),
-        (REPORT4, "욕설/비하"),
-        (REPORT5, "낚시/도배성 게시글"),
-        (REPORT6, "상업적 광고 및 판매"),
+class PostReport(TimeStampedModel):
+    """Post Report Category Definition"""
+    POST_REPORT1 = "게시판 성격에 부적절함"
+    POST_REPORT2 = "음란물/불건전한 만남 및 대화"
+    POST_REPORT3 = "사칭/사기성 게시글"
+    POST_REPORT4 = "욕설/비하"
+    POST_REPORT5 = "낚시/도배성 게시글"
+    POST_REPORT6 = "상업적 광고 및 판매"
+    POST_REPORT_CATEGORY_CHOICES = (
+        (POST_REPORT1, "게시판 성격에 부적절함"),
+        (POST_REPORT2, "음란물/불건전한 만남 및 대화"),
+        (POST_REPORT3, "사칭/사기성 게시글"),
+        (POST_REPORT4, "욕설/비하"),
+        (POST_REPORT5, "낚시/도배성 게시글"),
+        (POST_REPORT6, "상업적 광고 및 판매"),
     )
     category = models.CharField(
-        choices=REPORT_CATEGORY_CHOICES, max_length=30, blank=False)
-
-    class Meta:
-        abstract = True
-
-
-class PostReport(Report):
+        choices=POST_REPORT_CATEGORY_CHOICES, max_length=30, blank=False)
     post = models.ForeignKey(
         'Post', related_name='reports', on_delete=models.CASCADE, null=True, blank=False)
     reporter = models.ForeignKey(
         'users.User', related_name='post_reports', on_delete=models.SET_NULL, null=True, blank=False)
 
 
-class PostCommentReport(Report):
+class PostCommentReport(TimeStampedModel):
+    """Post Comment Report Category Definition"""
+    POST_COMMENT_REPORT1 = "음란물/불건전한 만남 및 대화"
+    POST_COMMENT_REPORT2 = "사칭/사기성 댓글"
+    POST_COMMENT_REPORT3 = "욕설/비하"
+    POST_COMMENT_REPORT4 = "낚시/도배성 댓글"
+    POST_COMMENT_REPORT5 = "상업적 광고 및 판매"
+    POST_COMMENT_REPORT_CATEGORY_CHOICES = (
+        (POST_COMMENT_REPORT1, "음란물/불건전한 만남 및 대화"),
+        (POST_COMMENT_REPORT2, "사칭/사기성 댓글"),
+        (POST_COMMENT_REPORT3, "욕설/비하"),
+        (POST_COMMENT_REPORT4, "낚시/도배성 댓글"),
+        (POST_COMMENT_REPORT5, "상업적 광고 및 판매"),
+    )
+    category = models.CharField(
+        choices=POST_COMMENT_REPORT_CATEGORY_CHOICES, max_length=30, blank=False)
     comment = models.ForeignKey(
         'PostComment', related_name='reports', on_delete=models.CASCADE, null=True, blank=False)
     reporter = models.ForeignKey(
