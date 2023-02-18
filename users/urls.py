@@ -5,7 +5,7 @@ app_name = "users"
 
 urlpatterns = [
     path("signup/",base_view.SignupView.as_view()),
-    # path("me/",base_view.MeView.as_view()),
+    path("me/",base_view.MeView.as_view()),
     path("<int:pk>/",base_view.user_detail),
     # path('login/',base_view.LoginView.as_view(),name='login'),
     path('token/refresh/', TokenRefreshView.as_view(),name='token_refresh'), 
@@ -27,7 +27,7 @@ urlpatterns = [
     # path('like_place/',base_view.UserPlaceLikeView.as_view({'get': 'get'}),name='like_place'),
     # path('like_story/',base_view.UserStoryLikeView.as_view({'get': 'get'}),name='like_story'),
     # path('putme/',views.UserUpdateApi.as_view(), name="user_update"),
-    path('me/',views.UserGetApi.as_view()),
+    # path('me/',views.UserGetApi.as_view()),
     path('login/',views.UserLoginApi.as_view(),name='login'),
     path('logout/',views.UserLogoutApi.as_view(),name='logout'),
     path('findid/',views.EmailCheckApi.as_view(),name='email_check'),
