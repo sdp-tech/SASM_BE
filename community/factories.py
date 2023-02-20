@@ -23,6 +23,12 @@ class UserFactory(DjangoModelFactory):
     is_sdp =True
 
 
+class UserDictFactory(factory.DictFactory):
+    email= factory.Sequence(lambda n: "testuser%s@test.com" % n)
+    password= factory.Faker('word')
+    nickname= fake.pystr(max_chars=20)
+
+
 class PostContentStyle(DjangoModelFactory):
     class Meta:
         model = 'community.PostContentStyle'
@@ -39,9 +45,20 @@ class BoardFactory(DjangoModelFactory):
     supports_hashtags = factory.fuzzy.FuzzyChoice([True, False])
     supports_post_photos = factory.fuzzy.FuzzyChoice([True, False])
     supports_post_comment_photos = factory.fuzzy.FuzzyChoice([True, False])
-    # supports_post_comments = factory.fuzzy.FuzzyChoice([True, False])
-    supports_post_comments = True
+    supports_post_comments = factory.fuzzy.FuzzyChoice([True, False])
     post_content_style = factory.SubFactory(PostContentStyle)
+
+
+class BoardSupportingAllFunctionsFactory(DjangoModelFactory):
+    class Meta:
+        model = 'community.Board'
+
+    name = factory.Faker('word')
+    supports_hashtags = True
+    supports_post_photos = True
+    supports_post_comment_photos = True
+    supports_post_comments = True
+    post_content_style = factory.SubFactory(PostContentStyle)    
 
 
 class PostFactory(DjangoModelFactory):
@@ -52,6 +69,34 @@ class PostFactory(DjangoModelFactory):
     content = factory.Faker('sentence')
     board = factory.SubFactory(BoardFactory)
     writer = factory.SubFactory(UserFactory)
+
+
+class PostHavingOnlyRequiredFieldsDictFactory(factory.DictFactory):
+    board = 1 # TODO: use faker to set random board
+    title = factory.Faker('word')
+    content = factory.Faker('sentence')
+
+
+class PostLackingRequiredFieldsDictFactory(factory.DictFactory):
+    board = 1 # TODO: use faker to set random board
+    # title = factory.Faker('word')
+    content = factory.Faker('sentence')
+
+
+class PostHavingOptionalFieldsDictFactory(factory.DictFactory):
+    board = 1 # TODO: use faker to set random board
+    title = factory.Faker('word')  
+    content = factory.Faker('sentence')
+    hashtagList = [fake.word() for x in range(5)] # TODO: set range with faker
+    photoList = [fake.image() for x in range(5)] # TODO: set range with faker
+
+
+class PostListDictFactory(factory.DictFactory):
+    board = 1 # TODO: use faker to set random board
+    query = '' # TODO: user faker to set random words
+    query_type = 'default'
+    # factory.fuzzy.FuzzyChoice(['default', 'hashtag'])
+    latest = factory.fuzzy.FuzzyChoice([True, False])
 
 
 class PostHashtagFactory(DjangoModelFactory):
@@ -84,6 +129,18 @@ class PostCommentFactory(DjangoModelFactory):
     parent = factory.LazyAttribute(lambda x: PostCommentFactory(parent=None))
     writer = factory.SubFactory(UserFactory)
     mention = factory.SubFactory(UserFactory)
+
+
+class PostCommentHavingOnlyRequiredFieldsDictFactory(factory.DictFactory):
+    post = 1 # TODO: use faker to set random board
+    content = factory.Faker('sentence')
+    isParent = factory.fuzzy.FuzzyChoice([True, False])
+
+
+class PostCommentLackingRequiredFieldsDictFactory(factory.DictFactory):
+    post = 1 # TODO: use faker to set random board
+    # content = factory.Faker('sentence')
+    isParent = factory.fuzzy.FuzzyChoice([True, False])    
 
 
 class PostReportFactory(DjangoModelFactory):
