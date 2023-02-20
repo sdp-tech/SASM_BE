@@ -1,3 +1,4 @@
+import re
 import unittest
 from unittest.mock import patch
 
@@ -61,6 +62,14 @@ class PostApiTests(TestCase):
 
             for j in data['hashtagList']:
                 self.assertTrue(j in hashtags_in_db)
+
+        if data['imageList']:
+            images_in_db = []
+            for i in PostPhoto.objects.filter(post=created_post).values('image'):
+                images_in_db.append(re.split('[.]', i['image'])[2]) # image name 추출
+        
+            for j in data['imageList']:
+                self.assertTrue(j.name in images_in_db)
 
 
     def test_post_create_api_errors(self):

@@ -1,5 +1,6 @@
 from users.models import User
 from community.models import Board, Post, PostComment, PostContentStyle, PostHashtag, PostPhoto, PostLike, PostComment, PostCommentPhoto, PostReport, PostCommentReport
+from django.core.files.uploadedfile import TemporaryUploadedFile
 
 import factory
 import factory.fuzzy
@@ -41,7 +42,7 @@ class BoardFactory(DjangoModelFactory):
     class Meta:
         model = 'community.Board'
 
-    name = factory.Faker('word')
+    name = fake.pystr(max_chars=20)
     supports_hashtags = factory.fuzzy.FuzzyChoice([True, False])
     supports_post_photos = factory.fuzzy.FuzzyChoice([True, False])
     supports_post_comment_photos = factory.fuzzy.FuzzyChoice([True, False])
@@ -53,7 +54,7 @@ class BoardSupportingAllFunctionsFactory(DjangoModelFactory):
     class Meta:
         model = 'community.Board'
 
-    name = factory.Faker('word')
+    name = fake.pystr(max_chars=20)
     supports_hashtags = True
     supports_post_photos = True
     supports_post_comment_photos = True
@@ -65,7 +66,7 @@ class PostFactory(DjangoModelFactory):
     class Meta:
         model = Post
 
-    title = factory.Faker('word')  
+    title = fake.pystr(max_chars=200)
     content = factory.Faker('sentence')
     board = factory.SubFactory(BoardFactory)
     writer = factory.SubFactory(UserFactory)
@@ -73,22 +74,24 @@ class PostFactory(DjangoModelFactory):
 
 class PostHavingOnlyRequiredFieldsDictFactory(factory.DictFactory):
     board = 1 # TODO: use faker to set random board
-    title = factory.Faker('word')
+    title = fake.pystr(max_chars=200)
     content = factory.Faker('sentence')
 
 
 class PostLackingRequiredFieldsDictFactory(factory.DictFactory):
     board = 1 # TODO: use faker to set random board
-    # title = factory.Faker('word')
+    # title = fake.pystr(max_chars=200)
     content = factory.Faker('sentence')
 
 
 class PostHavingOptionalFieldsDictFactory(factory.DictFactory):
     board = 1 # TODO: use faker to set random board
-    title = factory.Faker('word')  
+    title = fake.pystr(max_chars=200)
     content = factory.Faker('sentence')
-    hashtagList = [fake.word() for x in range(5)] # TODO: set range with faker
-    photoList = [fake.image() for x in range(5)] # TODO: set range with faker
+    hashtagList = [fake.pystr(max_chars=10) for x in range(5)] # TODO: set range with faker
+    imageList = [TemporaryUploadedFile(fake.pystr(max_chars=10),
+                                      'image/png', 2000000, 'utf-8')
+                                      for x in range(5)]
 
 
 class PostListDictFactory(factory.DictFactory):
