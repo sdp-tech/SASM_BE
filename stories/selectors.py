@@ -15,68 +15,94 @@ from stories.models import Story, StoryPhoto, StoryComment
 
 @dataclass
 class StoryDto:
+    id: int
     title: str
     place_name: str
     story_review: str
     html_content: str
     tag: str
-    likeCount: int
-    viewCount: int
-    likes: bool
-    created: datetime
-    updated: datetime
-
+    views: int
+    story_like: str
     category: int
-    vegan_category: str
-    tumblur_category: str
-    reusable_con_category: str
-    pet_category :str
-
-    # photoList: list[str] = None   
+    semi_category: str  
 
 
 class StoryCoordinatorSelector:
     def __init__(self, user: User):
         self.user = user
 
-    def list(self, query: str, latest: bool):
+    def list(self, search: str, order_condition: bool):
         extra_fields = {}
-        story = StorySelector.list(query=query, latest=latest, extra_fields=extra_fields)
-        print('~~~~', story)
-
+        
         return StorySelector.list(
-            query=query,
-            latest=latest,
+            search=search,
+            order_condition=order_condition,
             extra_fields=extra_fields
         )
+
+    def recommend_list(self, story_id: int):
+        print('coordinate')
+        recommend_story = StorySelector.recommend_list(story_id=story_id)
+
+        return recommend_story
 
     def detail(self, story_id: int):
         story = StorySelector.detail(story_id=story_id)
 
-        likes = StoryLikeSelector.likes(
+        story_like = StoryLikeSelector.likes(
             story_id=story.id,
             user=self.user
         )
 
+        semi_cate = semi_category(story.id)
+
         dto = StoryDto(
+            id=story.id,
             title=story.title,
             place_name=story.place_name,
             story_review=story.story_review,
             html_content=story.html_content,
             tag=story.tag,
-            likeCount=story.likeCount,
-            viewCount=story.viewCount,
-            likes=likes,
-            created=story.created,
-            updated=story.updated,
+            views=story.views,
+            story_like=story_like,
             category=story.category,
-            vegan_category=story.vegan_category,
-            tumblur_category=story.tumblur_category,
-            reusable_con_category=story.reusable_con_category,
-            pet_category=story.pet_category,
+            semi_category=semi_cate,
         )
 
         return dto
+
+def semi_category(story_id: int):
+    '''
+        스토리의 세부 category를 알려 주기 위한 함수
+    '''
+    story = get_object_or_404(Story, id=story_id)
+    place = story.address
+    result = []
+    vegan = place.vegan_category
+    if vegan != '':
+        result.append(vegan)
+    tumblur = place.tumblur_category
+    if tumblur == True:
+        tumblur = '텀블러 사용 가능'
+        result.append(tumblur)
+    reusable = place.reusable_con_category
+    if reusable == True:
+        reusable = '용기내 가능'
+        result.append(reusable)
+    pet = place.pet_category
+    if pet == True:
+        pet = '반려동물 출입 가능'
+        result.append(pet)
+    cnt = len(result)
+    ret_result = ""
+    for i in range(cnt):
+        if i == cnt - 1:
+            ret_result = ret_result + result[i]
+        else:
+            ret_result = ret_result + result[i] + ', '
+    print('ret_result: ', ret_result)
+    return ret_result
+
 
 class StorySelector:
     def __init__(self):
@@ -86,45 +112,46 @@ class StorySelector:
     #     return Story.objects.get(id=story_id).writer == user
 
     @staticmethod
-    def list(query: str = '', latest: bool = True, extra_fields: dict = {}):
+    def list(search: str = '', order_condition: str = 'true', extra_fields: dict = {}):
         print('list')
-        print('query', query)
-        print('latest', latest)
+        print('search', search)
+        print('order_condition', order_condition)
         q = Q()
-        q.add(Q(title__icontains=query) | Q(address__place_name__icontains=query), q.AND)  #스토리 제목 또는 내용 검색
+        q.add(Q(title__icontains=search) | Q(address__place_name__icontains=search), q.AND)  #스토리 제목 또는 내용 검색
 
         #최신순 정렬
-        if latest:
+        if order_condition == 'true':
             order = '-created'
-        else:
+        if order_condition == 'false':
             order = 'created'
 
         story = Story.objects.filter(q).annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
-            vegan_category=F('address__vegan_category'),
-            tumblur_category=F('address__tumblur_category'),
-            reusable_con_category=F('address__reusable_con_category'),
-            pet_category=F('address__pet_category'),
-            likeCount=F('story_like_cnt'),
-            likes=F('story_likeuser_set'),
+            story_like=F('story_likeuser_set'),
             **extra_fields
         ).order_by(order)
+        print('len', len(story))
 
+        print(story)
         return story
+
+    def recommend_list(story_id: int):
+        print('recommend_list')
+        story = Story.objects.get(id=story_id)
+        q = Q(address__category=story.address.category)
+        recommend_story = Story.objects.filter(q).exclude(id=story_id)
+        print('@', recommend_story)
+
+        return recommend_story
 
     @staticmethod
     def detail(story_id: int, extra_fields: dict = {}):
         print('!!')
+
         return Story.objects.annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
-            vegan_category=F('address__vegan_category'),
-            tumblur_category=F('address__tumblur_category'),
-            reusable_con_category=F('address__reusable_con_category'),
-            pet_category=F('address__pet_category'),
-            likeCount=F('story_like_cnt'),
-            viewCount=F('views'),
             **extra_fields
         ).get(id=story_id)
 
@@ -135,16 +162,11 @@ class StoryLikeSelector:
 
     @staticmethod
     def likes(story_id: int, user: User):
-        # print('story_id', story_id)
-        # print('user', user)
         story = get_object_or_404(Story, pk=story_id)
-        # print('story',story)
-        # print('user.pk', user.pk)
-        # print('kk',story.story_likeuser_set.filter(pk=user.pk).exists())
-        return story.story_likeuser_set.filter(
-            pk=user.pk
-        ).exists()  #좋아요가 존재하는 지 안하는 지 확인
-
+        if story.story_likeuser_set.filter(pk=user.pk).exists():  #좋아요가 존재하는 지 안하는 지 확인
+            return 'ok'
+        else:
+            return 'none'
 
 # class StoryCommentCoordinatorSelector:
 #     def __init__(self, user: User):

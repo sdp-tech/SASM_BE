@@ -14,17 +14,20 @@ from .selectors import StoryLikeSelector, StoryCommentSelector
 
 class StoryCoordinatorService:
     def __init__(self, user: User):
-        self.user = user
+        if user.is_authenticated: 
+            self.user = user
+        else:
+            raise exceptions.ValidationError()
 
     def like_or_dislike(self, story_id: int) -> bool:
-        if StoryLikeSelector.likes(story_id=story_id, user=self.user):
+        if StoryLikeSelector.likes(story_id=story_id, user=self.user) == 'ok':
             # Story의 like_cnt 1 감소
             StoryService.dislike(story_id=story_id, user=self.user)
-            return False
+            return 'none'
         else: 
             # Story의 like_cnt 1 증가
             StoryService.like(story_id=story_id, user=self.user)
-            return True
+            return 'ok'
 
 
 class StoryService:
@@ -63,7 +66,6 @@ class StoryCommentCoordinatorService:
         story = Story.objects.get(id=story_id)
         print('2:', story)
         comment_service = StoryCommentService()
-        print('parent_id', parent_id)
         if parent_id:
             parent = StoryComment.objects.get(id=parent_id)
         else:
@@ -74,7 +76,7 @@ class StoryCommentCoordinatorService:
         else:
             mentioned_user = None
 
-        # print('~~~~~~~', parent, mentioned_user)
+        print('~~~~~~~', parent, mentioned_user)
         story_comment = comment_service.create(
             story=story,
             content=content,
