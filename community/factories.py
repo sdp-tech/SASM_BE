@@ -153,7 +153,31 @@ class PostCommentHavingOnlyRequiredFieldsDictFactory(factory.DictFactory):
 class PostCommentLackingRequiredFieldsDictFactory(factory.DictFactory):
     post = 1 # TODO: use faker to set random board
     # content = factory.Faker('sentence')
-    isParent = factory.fuzzy.FuzzyChoice([True, False])    
+    isParent = factory.fuzzy.FuzzyChoice([True, False])   
+
+
+# def get_obj_cnt(model):
+#     return model.objects.count()
+
+class PostCommentHavingOptionalFieldsDictFactory(factory.DictFactory):
+    post = 1 # TODO: use faker to set random board
+    content = factory.Faker('sentence')
+    isParent = factory.fuzzy.FuzzyChoice([True, False])  
+    parent = 1 # TODO: use fake.pyint to set random parent
+    mentionEmail = factory.SubFactory(UserFactory)
+    imageList = [TemporaryUploadedFile(fake.pystr(max_chars=10),
+                                      'image/png', 2000000, 'utf-8')
+                                      for x in range(5)]   
+
+
+class UpdatePostCommentHavingOptionalFieldsDictFactory(factory.DictFactory):
+    content = factory.Faker('sentence')
+    # mentionEmail = factory.Faker('email')
+    # TODO: use faker to choose an email among values in User model
+    photoList = [fake.image_url() for x in range(5)]
+    imageList = [TemporaryUploadedFile(fake.pystr(max_chars=10),
+                                      'image/png', 2000000, 'utf-8')
+                                      for x in range(5)]
 
 
 class PostReportFactory(DjangoModelFactory):

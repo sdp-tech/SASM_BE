@@ -9,8 +9,8 @@ from django.test.client import MULTIPART_CONTENT, encode_multipart, BOUNDARY
 from rest_framework import status
 
 from users.models import User
-from community.models import Board, Post, PostComment, PostHashtag, PostPhoto
-from community.factories import BoardFactory, BoardSupportingAllFunctionsFactory, PostFactory, PostCommentFactory, UserDictFactory, CreatePostHavingOnlyRequiredFieldsDictFactory, CreatePostHavingOptionalFieldsDictFactory, CreatePostLackingRequiredFieldsDictFactory, PostListDictFactory, UpdatePostHavingOptionalFieldsDictFactory, PostCommentHavingOnlyRequiredFieldsDictFactory, PostCommentLackingRequiredFieldsDictFactory
+from community.models import Board, Post, PostComment, PostHashtag, PostPhoto, PostCommentPhoto
+from community.factories import BoardFactory, BoardSupportingAllFunctionsFactory, PostFactory, PostCommentFactory, UserDictFactory, CreatePostHavingOnlyRequiredFieldsDictFactory, CreatePostHavingOptionalFieldsDictFactory, CreatePostLackingRequiredFieldsDictFactory, PostListDictFactory, UpdatePostHavingOptionalFieldsDictFactory, PostCommentHavingOnlyRequiredFieldsDictFactory, PostCommentLackingRequiredFieldsDictFactory, PostCommentHavingOptionalFieldsDictFactory, UpdatePostCommentHavingOptionalFieldsDictFactory
 
 
 class PostApiTests(TestCase):
@@ -223,7 +223,7 @@ class PostCommentApiTests(TestCase):
         obj_cnt_before = PostComment.objects.count()
 
         path = reverse('post_comment_create')
-        data = PostCommentHavingOnlyRequiredFieldsDictFactory()
+        data = PostCommentHavingOptionalFieldsDictFactory()
         self.client.force_login(user=self.test_user)
         response = self.client.post(path, data)
         obj_cnt_after = PostComment.objects.count()
@@ -240,6 +240,15 @@ class PostCommentApiTests(TestCase):
         self.assertEqual(created_post_comment.post, post)
         self.assertEqual(created_post_comment.content, data['content'])
         self.assertEqual(created_post_comment.isParent, data['isParent'])
+
+        # Optional field 저장 확인
+        if data['imageList']:
+            images_in_db = []
+            for i in PostCommentPhoto.objects.filter(post_comment=created_post_comment).values('image'):
+                images_in_db.append(re.split('[.]', i['image'])[2]) # image name 추출
+        
+            for j in data['imageList']:
+                self.assertTrue(j.name in images_in_db)
 
 
     def test_post_comment_create_api_errors(self):
@@ -259,11 +268,12 @@ class PostCommentApiTests(TestCase):
         # get a post comment created by superuser
         post_comment_id = PostComment.objects.get(writer_id=1).id
         path = reverse('post_comment_update', kwargs={'post_comment_id': post_comment_id})
-        data = PostCommentHavingOnlyRequiredFieldsDictFactory()
+        data = UpdatePostCommentHavingOptionalFieldsDictFactory()
         self.client.force_login(user=self.test_user) # isWriter
-        response = self.client.put(path, data, content_type='application/json')
+        response = self.client.put(path,
+                                    data = encode_multipart(data = data, boundary=BOUNDARY),
+                                    content_type= MULTIPART_CONTENT)
         obj_cnt_after = PostComment.objects.count()
-
 
         # 응답코드 확인
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -274,6 +284,15 @@ class PostCommentApiTests(TestCase):
         # 내용 일치
         updated_post_comment = PostComment.objects.order_by('-updated').first()
         self.assertEqual(updated_post_comment.content, data['content'])
+
+        # Optional field 저장 확인
+        if data['imageList']:
+            images_in_db = []
+            for i in PostCommentPhoto.objects.filter(post_comment=updated_post_comment).values('image'):
+                images_in_db.append(re.split('[.]', i['image'])[2]) # image name 추출
+        
+            for j in data['imageList']:
+                self.assertTrue(j.name in images_in_db)
 
 
     def test_post_comment_delete_api(self):
