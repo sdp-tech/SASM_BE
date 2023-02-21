@@ -4,12 +4,13 @@ from unittest.mock import patch
 
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.test.client import MULTIPART_CONTENT, encode_multipart, BOUNDARY
 
 from rest_framework import status
 
 from users.models import User
 from community.models import Board, Post, PostComment, PostHashtag, PostPhoto
-from community.factories import BoardFactory, BoardSupportingAllFunctionsFactory, PostFactory, PostCommentFactory, UserDictFactory, PostHavingOnlyRequiredFieldsDictFactory, PostHavingOptionalFieldsDictFactory, PostLackingRequiredFieldsDictFactory, PostListDictFactory, PostCommentHavingOnlyRequiredFieldsDictFactory, PostCommentLackingRequiredFieldsDictFactory
+from community.factories import BoardFactory, BoardSupportingAllFunctionsFactory, PostFactory, PostCommentFactory, UserDictFactory, CreatePostHavingOnlyRequiredFieldsDictFactory, CreatePostHavingOptionalFieldsDictFactory, CreatePostLackingRequiredFieldsDictFactory, PostListDictFactory, UpdatePostHavingOptionalFieldsDictFactory, PostCommentHavingOnlyRequiredFieldsDictFactory, PostCommentLackingRequiredFieldsDictFactory
 
 
 class PostApiTests(TestCase):
@@ -36,7 +37,7 @@ class PostApiTests(TestCase):
         
         path = reverse('post_create')
         self.client.force_login(user=self.test_user)
-        data = PostHavingOptionalFieldsDictFactory()
+        data = CreatePostHavingOptionalFieldsDictFactory()
         response = self.client.post(path, data)
         
         obj_cnt_after = Post.objects.count()
@@ -77,7 +78,7 @@ class PostApiTests(TestCase):
         # 필수 필드 누락
         path = reverse('post_create')
         self.client.force_login(user=self.test_user)
-        data = PostLackingRequiredFieldsDictFactory()
+        data = CreatePostLackingRequiredFieldsDictFactory()
         response = self.client.post(path, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -89,12 +90,14 @@ class PostApiTests(TestCase):
         # get a post created by superuser
         post_id = Post.objects.get(writer_id=1).id
         path = reverse('post_update', kwargs={'post_id': post_id})
-        data = PostHavingOnlyRequiredFieldsDictFactory()
+        data = UpdatePostHavingOptionalFieldsDictFactory()
         self.client.force_login(user=self.test_user) # isWriter
-        response = self.client.put(path, data, content_type='application/json')
-
+        response = self.client.put(path,
+                                    data = encode_multipart(data = data, boundary=BOUNDARY),
+                                    content_type= MULTIPART_CONTENT)
+        
         obj_cnt_after = Post.objects.count()
-
+        
         # 응답코드
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -105,6 +108,23 @@ class PostApiTests(TestCase):
         updated_post = Post.objects.order_by('-updated').first()
         self.assertEqual(updated_post.title, data['title'])
         self.assertEqual(updated_post.content, data['content'])
+
+        # Optional field 저장 확인
+        if data['hashtagList']:
+            hashtags_in_db = []
+            for i in PostHashtag.objects.filter(post=updated_post).values('name'):
+                hashtags_in_db.append(i['name'])
+
+            for j in data['hashtagList']:
+                self.assertTrue(j in hashtags_in_db)
+
+        if data['imageList']:
+            images_in_db = []
+            for i in PostPhoto.objects.filter(post=updated_post).values('image'):
+                images_in_db.append(re.split('[.]', i['image'])[2]) # image name 추출
+        
+            for j in data['imageList']:
+                self.assertTrue(j.name in images_in_db)
 
 
     def test_post_delete_api(self):

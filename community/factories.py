@@ -72,23 +72,33 @@ class PostFactory(DjangoModelFactory):
     writer = factory.SubFactory(UserFactory)
 
 
-class PostHavingOnlyRequiredFieldsDictFactory(factory.DictFactory):
+class CreatePostHavingOnlyRequiredFieldsDictFactory(factory.DictFactory):
     board = 1 # TODO: use faker to set random board
     title = fake.pystr(max_chars=200)
     content = factory.Faker('sentence')
 
 
-class PostLackingRequiredFieldsDictFactory(factory.DictFactory):
+class CreatePostLackingRequiredFieldsDictFactory(factory.DictFactory):
     board = 1 # TODO: use faker to set random board
     # title = fake.pystr(max_chars=200)
     content = factory.Faker('sentence')
 
 
-class PostHavingOptionalFieldsDictFactory(factory.DictFactory):
+class CreatePostHavingOptionalFieldsDictFactory(factory.DictFactory):
     board = 1 # TODO: use faker to set random board
     title = fake.pystr(max_chars=200)
     content = factory.Faker('sentence')
     hashtagList = [fake.pystr(max_chars=10) for x in range(5)] # TODO: set range with faker
+    imageList = [TemporaryUploadedFile(fake.pystr(max_chars=10),
+                                      'image/png', 2000000, 'utf-8')
+                                      for x in range(5)]
+
+
+class UpdatePostHavingOptionalFieldsDictFactory(factory.DictFactory):
+    title = fake.pystr(max_chars=200)
+    content = factory.Faker('sentence')
+    hashtagList = [fake.pystr(max_chars=10) for x in range(5)] # TODO: set range with faker
+    photoList = [fake.image_url() for x in range(5)]
     imageList = [TemporaryUploadedFile(fake.pystr(max_chars=10),
                                       'image/png', 2000000, 'utf-8')
                                       for x in range(5)]
