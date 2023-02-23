@@ -24,7 +24,7 @@ class Story(core_models.TimeStampedModel):
 
     title = models.CharField(max_length=200)
     story_review = models.CharField(max_length=200)
-    address = models.OneToOneField("places.Place", on_delete=models.CASCADE)
+    address = models.OneToOneField("places.Place", on_delete=models.CASCADE, related_name='story')
     story_like_cnt = models.PositiveIntegerField(default=0)
     story_likeuser_set = models.ManyToManyField(
         "users.User", related_name='StoryLikeUser', blank=True)

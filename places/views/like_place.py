@@ -5,62 +5,89 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import serializers
 
 from places.models import Place
 from places.serializers import PlaceSerializer
+from places.services import PlaceService
+from places.selectors import PlaceCoordinatorSelector
 from users.models import User
 from users.serializers import UserSerializer
 from sasmproject.swagger import PlaceLikeView_post_params
 
-class PlaceLikeView(viewsets.ModelViewSet):
-    serializer_class=PlaceSerializer
-    queryset = Place.objects.all()
-    permission_classes=[
-        IsAuthenticated,
-    ]
+from rest_framework.views import APIView
+from community.mixins import ApiAuthMixin
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
-    @swagger_auto_schema(operation_id='api_places_place_like_user_get')
-    def get(self,request,pk):
-        '''
-            장소의 좋아요한 유저 list를 반환하는 api
-        '''
-        place = get_object_or_404(Place, pk=pk)
-        like_id = place.place_likeuser_set.all()
-        users = User.objects.filter(id__in=like_id)
-        serializer = UserSerializer(users, many=True)
+
+class PlaceLikeApi(APIView, ApiAuthMixin):
+    class PlaceLikeOutputSerializer(serializers.Serializer):
+        id = serializers.CharField()
+        gender = serializers.CharField(required=False)
+        nickname = serializers.CharField(required=False)
+        birthdate = serializers.CharField(required=False)
+        email = serializers.CharField()
+        address = serializers.CharField()
+        profile_image = serializers.CharField()
+        is_sdp = serializers.BooleanField()
+
+    @swagger_auto_schema(
+        operation_id='',
+        operation_description='''
+            map marker 표시를 위해 모든 장소를 주는 API
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples = {
+                    "application/json": {
+                    "id": 1,
+                    "gender": "female",
+                    "nickname": "스드프",
+                    "birthdate": "2023-02-23",
+                    "email": "sdpygl@gmail.com",
+                    "address": "강남구 연세로1",
+                    "profile_image": "https://sasm-bucket.com/media/profile.png",
+                    "is_sdp": False
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )
+        }
+    )
+
+    def get(self, request, pk):
+        selector = PlaceCoordinatorSelector
+
+        likers = selector.likers(place_id=pk)
+        
+        serializer = self.PlaceLikeOutputSerializer(likers, many=True)
+
         return Response({
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(operation_id='api_places_place_like_post',
-                        request_body=PlaceLikeView_post_params,
-                        responses={200:'success'})
     def post(self, request):
         '''
             좋아요 및 좋아요 취소를 수행하는 api
         '''
-        id = request.data['id']
-        place = get_object_or_404(Place, pk=id)
-        if request.user.is_authenticated:
-            user = request.user
-            profile = User.objects.get(email=user)
-            check_like = place.place_likeuser_set.filter(pk=profile.pk)
+        place_id = request.data['id']
+        user = request.user
 
-            if check_like.exists():
-                place.place_likeuser_set.remove(profile)
-                place.place_like_cnt -= 1
-                place.save()
-                return Response({
-                    "status" : "success",
-                },status=status.HTTP_200_OK)
-            else:
-                place.place_likeuser_set.add(profile)
-                place.place_like_cnt += 1
-                place.save()
-                return Response({
-                    "status" : "success",
-                },status=status.HTTP_200_OK)
+        service = PlaceService
+
+        if request.user.is_authenticated:
+            service.like_or_dislike(
+                user=user,
+                place_id=place_id
+            )
+            return Response({
+                "status" : "success",
+            },status=status.HTTP_200_OK)
         else:
             return Response({
             'status': 'fail',

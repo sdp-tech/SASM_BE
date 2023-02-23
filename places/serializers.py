@@ -102,7 +102,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
     #nested serialzier -> related_names 설정 확인
     photos = PlacePhotoSerializer(many=True,read_only=True)
-    sns = SNSUrlSerializer(many=True,read_only=True)
+    place_sns_url = SNSUrlSerializer(many=True,read_only=True)
     story_id = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()
     category_statistics = serializers.SerializerMethodField()
@@ -112,12 +112,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'id',
             'place_name',
             'category',
-            #'vegan_category',
-            #'tumblur_category',
-            #'reusable_con_category',
-            #'pet_category',
             'open_hours',
-            #'etc_hours',
             'mon_hours',
             'tues_hours',
             'wed_hours',
@@ -132,7 +127,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'photos',
-            'sns',
+            'place_sns_url',
             'story_id',
             'place_like',
             'category_statistics',
@@ -165,6 +160,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
             return 'ok'
         else:
             return 'none' 
+        
     def get_category_statistics(self, obj):
         TOP_COUNTS = 3
         statistic = []
@@ -189,6 +185,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
         return count, category_count
 
     def is_in_category_count(self, category_content, category_count):
+        category_content = Place.objects.filter(id=1).category
         if category_content in category_count.keys():
             category_count[category_content] += 1
             return category_count
