@@ -3,12 +3,12 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q, F, Value, CharField, Aggregate
+from django.db.models import fields, Q, F, Value, CharField, Aggregate, OuterRef, Subquery
 
 import haversine as hs
 
 from users.models import User
-from places.models import Place, PlacePhoto, SNSUrl
+from places.models import Place, PlacePhoto, SNSUrl, VisitorReview, VisitorReviewCategory
 
 
 class GroupConcat(Aggregate):
@@ -36,6 +36,34 @@ class GroupConcat(Aggregate):
                               template='%(function)s(%(distinct)s%(expressions)s%(ordering)s)',
                               **extra)        
 
+'''
+class ConcatSubquery(Subquery):
+    # https://leonardoramirezmx.medium.com/how-to-concat-subquery-on-django-orm-cce32371a693
+    """ Concat multiple rows of a subquery with only one column in one cell.
+        Subquery must return only one column.
+    >>> store_produts = Product.objects.filter(
+                                            store=OuterRef('pk')
+                                        ).values('name')
+    >>> Store.objects.values('name').annotate(
+                                            products=ConcatSubquery(store_produts)
+                                        )
+    <StoreQuerySet [{'name': 'Dog World', 'products': ''}, {'name': 'AXÉ, Ropa Deportiva
+    ', 'products': 'Playera con abertura ojal'}, {'name': 'RH Cosmetiques', 'products':
+    'Diabecreme,Diabecreme,Diabecreme,Caída Cabello,Intensif,Smooth,Repairing'}...
+    """
+    template = 'ARRAY_TO_STRING(ARRAY(%(subquery)s), %(separator)s)'
+    output_field = fields.CharField()
+
+    def __init__(self, *args, separator=', ', **kwargs):
+        self.separator = separator
+        super().__init__(*args, separator, **kwargs)
+
+    def as_sql(self, compiler, connection, template=None, **extra_context):
+        extra_context['separator'] = '%s'
+        sql, sql_params = super().as_sql(compiler, connection, template, **extra_context)
+        sql_params = sql_params + (self.separator, )
+        return sql, sql_params
+'''    
 
 @dataclass
 class PlaceDto:
@@ -276,4 +304,145 @@ class PlaceSelector:
                             'is_sdp'
                             )
         
-        return users   
+        return users
+
+
+class PlaceReviewCoordinatorSelector:
+    def __init__(self):
+        pass
+
+    def list(place_id : int):
+        place_review_qs = PlaceReviewSelector.list(
+            place_id = place_id
+        )
+
+        # Concatenated field split
+        for review in place_review_qs:
+
+            if review['photos']:
+                photos_list = [] # list(dict)
+                review['photos'] = list(review['photos'].split(","))
+
+                for i in range(len(review['photos'])):
+                    image = {} # dict                    
+                    image_url = settings.MEDIA_URL + review['photos'][i]
+                    image["imgfile"] = image_url
+                    photos_list.append(image)
+                review['photos'] = photos_list
+
+            if review['category']:
+                category_list = [] # list(dict)
+                review['category'] = list(map(int, list(review['category'].split(","))))
+
+                for i in range(len(review['category'])):
+                    category = {} # dict
+                    category['category'] = review['category'][i]
+                    category_list.append(category)
+                review['category'] = category_list
+                
+        return place_review_qs
+
+
+    def get_created(place_id : int):
+        place_review_qs = PlaceReviewSelector.get_created(
+            place_id = place_id
+        )
+        print("~~~~3333", place_review_qs)
+
+        # Concatenated field split
+        for review in place_review_qs:
+
+            if review['photos']:
+                photos_list = [] # list(dict)
+                review['photos'] = list(review['photos'].split(","))
+
+                for i in range(len(review['photos'])):
+                    image = {} # dict                    
+                    image_url = settings.MEDIA_URL + review['photos'][i]
+                    image["imgfile"] = image_url
+                    photos_list.append(image)
+                review['photos'] = photos_list
+
+            if review['category']:
+                category_list = [] # list(dict)
+                review['category'] = list(map(int, list(review['category'].split(","))))
+
+                for i in range(len(review['category'])):
+                    category = {} # dict
+                    category['category'] = review['category'][i]
+                    category_list.append(category)
+                review['category'] = category_list
+                
+        return place_review_qs
+
+
+class PlaceReviewSelector:
+    def __init__(self):
+        pass
+
+    def list(place_id: int):
+
+        concat_category = VisitorReview.objects.filter(
+                                            id = OuterRef('id')
+                                            ).annotate(
+                                            _category = GroupConcat('category__category')
+                                            ).values('id','_category')
+
+        concate_photo = VisitorReview.objects.filter(
+                                            id = OuterRef('id')
+                                            ).annotate(
+                                            _photo = GroupConcat('photos__imgfile')
+                                            ).values('id', '_photo')
+
+        # GroupConcat 된 필드가 두개 이상일 경우 union 관계가 복잡해짐에 따라 subquery로 구현
+        # 기존 필드의 이름과 같은 필드를 annotate 하기 위해 annotation을 나누어 수행
+        place_reviews = VisitorReview.objects.annotate(
+            nickname = F('visitor_name__nickname'),
+            writer = F('visitor_name__email')).values(
+                                                    'id',
+                                                    'nickname',
+                                                    'place',
+                                                    'contents',
+                                                    'created',
+                                                    'updated',
+                                                    'writer'
+                                                    ).annotate(
+            category = Subquery(concat_category.values('_category')),
+            photos = Subquery(concate_photo.values('_photo')),       
+                                                    )
+
+        return place_reviews
+
+
+    def get_created(place_id: int):
+        
+        concat_category = VisitorReview.objects.filter(
+                                            id = OuterRef('id')
+                                            ).annotate(
+                                            _category = GroupConcat('category__category')
+                                            ).values('id','_category')
+
+        concate_photo = VisitorReview.objects.filter(
+                                            id = OuterRef('id')
+                                            ).annotate(
+                                            _photo = GroupConcat('photos__imgfile')
+                                            ).values('id', '_photo')
+
+        # GroupConcat 된 필드가 두개 이상일 경우 union 관계가 복잡해짐에 따라 subquery로 구현
+        # 기존 필드의 이름과 같은 필드를 annotate 하기 위해 annotation을 나누어 수행
+        place_reviews = VisitorReview.objects.filter(place_id=place_id).annotate(
+            nickname = F('visitor_name__nickname'),
+            writer = F('visitor_name__email')).values(
+                                                    'id',
+                                                    'nickname',
+                                                    'place',
+                                                    'contents',
+                                                    'created',
+                                                    'updated',
+                                                    'writer'
+                                                    ).annotate(
+            category = Subquery(concat_category.values('_category')),
+            photos = Subquery(concate_photo.values('_photo')),       
+                                                    )
+
+        return place_reviews
