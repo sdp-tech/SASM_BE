@@ -82,8 +82,7 @@ class StoryListApi(APIView):
 
     class StoryListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
-        order_condition = serializers.BooleanField(required=False)
-        page = serializers.IntegerField(required=False)
+        order_condition = serializers.CharField(required=False)
 
     class StoryListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -123,7 +122,7 @@ class StoryListApi(APIView):
                         'place_name': '서울숲',
                         'title': '도심 속 모두에게 열려있는 쉼터, 서울숲',
                         'category': '녹색 공간',
-                        'semi_category': '반려동물 출입 가능',
+                        'semi_category': '반려동물 출입 가능, 오보',
                         'preview': '서울숲. 가장 도시적인 단어...(최대 150자)',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'story_like': True,
@@ -235,7 +234,7 @@ class StoryDetailApi(APIView):
                         'place_name': '서울숲',
                         'title': '도심 속 모두에게 열려있는 쉼터, 서울숲',
                         'category': '녹색 공간',
-                        'semi_category': '반려동물 출입 가능',
+                        'semi_category': '반려동물 출입 가능, 텀블러 사용 가능, 비건',
                         'tag': '#생명 다양성 #자연 친화 #함께 즐기는',
                         'story_review': '"모두에게 열려있는 도심 속 가장 자연 친화적인 여가공간"',
                         'html_content': '서울숲. 가장 도시적인 단어...(최대 150자)',
@@ -291,16 +290,17 @@ class StoryCommentListApi(APIView):
 
     class StoryCommentListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
+        story = serializers.IntegerField()
         content = serializers.CharField()
         isParent = serializers.BooleanField()
         group = serializers.CharField()
         nickname = serializers.CharField()
         email = serializers.CharField()
-        mentionEmail = serializers.CharField()
-        mentionNickname = serializers.CharField()
+        mention = serializers.CharField()
+        # mentionNickname = serializers.CharField()
         profile_image = serializers.ImageField()
-        created = serializers.DateTimeField()
-        updated = serializers.DateTimeField()
+        created_at = serializers.DateTimeField()
+        updated_at = serializers.DateTimeField()
 
     @swagger_auto_schema(
         operation_id='스토리 댓글 조회',
@@ -319,11 +319,10 @@ class StoryCommentListApi(APIView):
                         'group': 1,
                         'nickname': 'sdpygl',
                         'email': 'sdpygl@gmail.com',
-                        'mentionEmail': 'sasm@gmail.com',
-                        'mentionNickname': 'sasm',
+                        'mention': 'sasm@gmail.com',
                         'profile_image': 'https://abc.com/1.jpg',
-                        'created': '2019-08-24T14:15:22Z',
-                        'updated': '2019-08-24T14:15:22Z',
+                        'created_at': '2019-08-24T14:15:22Z',
+                        'updated_at': '2019-08-24T14:15:22Z',
                     }
                 },
             ),
@@ -338,9 +337,7 @@ class StoryCommentListApi(APIView):
         filters_serializer.is_valid(raise_exception=True)
         filters = filters_serializer.validated_data
 
-        selector = StoryCommentSelector(
-            user=request.user
-        )
+        selector = StoryCommentSelector()
 
         story_comments = selector.list(
             story_id=filters.get('story')  #story id값 받아서 넣기
@@ -357,7 +354,7 @@ class StoryCommentListApi(APIView):
     
 class StoryCommentCreateApi(APIView, ApiAuthMixin):
     class StoryCommentCreateInputSerializer(serializers.Serializer):
-        story_id=serializers.IntegerField()
+        story=serializers.IntegerField()
         content = serializers.CharField()
         isParent = serializers.BooleanField()
         parent = serializers.IntegerField(required=False)
@@ -365,31 +362,16 @@ class StoryCommentCreateApi(APIView, ApiAuthMixin):
 
         class Meta:
             examples = {
-                'story_id': 1,
+                'id': 1,
+                'story': 1,
                 'content': '정보 부탁드려요.',
                 'isParent': True,
                 'parent': 1,
                 'mentionEmail': 'sdpygl@gmail.com',
             }
 
-        def validate(self, data):
-            print('data:' , data)
-            if 'parent' in data:
-                parent = StoryComment.objects.get(id=data['parent'])
-
-                # child comment를 parent로 설정 시 reject
-                if parent and not parent.isParent:
-                    raise serializers.ValidationError(
-                        'can not set the child comment as parent comment')
-                # parent가 null이 아닌데(자신이 child), isParent가 true인 경우 reject
-                if parent is not None and data['isParent']:
-                    raise serializers.ValidationError(
-                        'child comment has isParent value be false')
-                # parent가 null인데(자신이 parent), isParent가 false인 경우 reject
-                if data['parent'] is None and not data['isParent']:
-                    raise serializers.ValidationError(
-                        'parent comment has isParent value be true')
-            return data
+        def validate(self, obj):
+            return StoryCommentCoordinatorService.validate(data=obj)
 
     @swagger_auto_schema(
         request_body=StoryCommentCreateInputSerializer,
@@ -417,16 +399,13 @@ class StoryCommentCreateApi(APIView, ApiAuthMixin):
         serializer = self.StoryCommentCreateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        print('data:', data)
 
         service = StoryCommentCoordinatorService(
             user=request.user
         )
 
-
-        # try:
         story_comment = service.create(
-            story_id=data.get('story_id'),
+            story_id=data.get('story'),
             content=data.get('content'),
             isParent=data.get('isParent'),
             parent_id=data.get('parent', None),
@@ -485,7 +464,7 @@ class StoryCommentUpdateApi(APIView, ApiAuthMixin):
             ),
         },
     )
-    def put(self, request, story_comment_id):
+    def patch(self, request, story_comment_id):
         story_comment = StoryComment.objects.get(id=story_comment_id)
 
         serializers = self.StoryCommnetUpdateInputSerializer(data=request.data)

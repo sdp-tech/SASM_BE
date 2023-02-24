@@ -31,7 +31,7 @@ class StoryCoordinatorSelector:
     def __init__(self, user: User):
         self.user = user
 
-    def list(self, search: str, order_condition: bool):
+    def list(self, search: str, order_condition: str):
         extra_fields = {}
         
         return StorySelector.list(
@@ -128,7 +128,7 @@ class StorySelector:
         story = Story.objects.filter(q).annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
-            story_like=F('story_likeuser_set'),
+            # story_like=F('story_likeuser_set'),
             **extra_fields
         ).order_by(order)
         print('len', len(story))
@@ -181,14 +181,16 @@ class StoryCommentSelector:
         pass
 
     def isWriter(self, story_comment_id: int, user: User):
+        print('isWriter')
         return StoryComment.objects.get(id=story_comment_id).writer == user
 
     @staticmethod
-    def list(self, story_id: int):
+    def list(story_id: int):
         story = Story.objects.get(id=story_id)
+        print('story', story)
         q = Q(story=story)
 
-        story_comments = Story.objects.filter(q).annotate(
+        story_comments = StoryComment.objects.filter(q).annotate(
             # 댓글이면 id값을, 대댓글이면 parent id값을 대표값(group)으로 설정
             # group 내에서는 id값 기준으로 정렬
             group=Case(
@@ -200,21 +202,19 @@ class StoryCommentSelector:
             ),
             nickname=F('writer__nickname'),
             email=F('writer__email'),
-            mentionEmail=F('mention__email'),
-            mentionNickname=F('mention__nickname'),
             profile_image=F('writer__profile_image'),
         ).values(
+            'id',
             'story',
             'content',
             'isParent',
             'group',
             'nickname',
             'email',
-            'mentionEmail',
-            'mentionNickname',
+            'mention',
             'profile_image',
-            'created',
-            'updated',
+            'created_at',
+            'updated_at',
         ).order_by('group', 'id')
 
         return story_comments

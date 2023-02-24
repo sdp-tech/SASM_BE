@@ -5,6 +5,7 @@ import uuid
 from django.conf import settings
 from django.db import transaction
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 
 from users.models import User
@@ -61,6 +62,29 @@ class StoryCommentCoordinatorService:
     def __init__(self, user: User):
         self.user = user
 
+    def validate(data):
+        print('data:' , data)
+        # print('par', data['parent'])
+        if 'parent' in data:
+            parent = StoryComment.objects.get(id=data['parent'])
+            # child comment를 parent로 설정 시 reject
+            if parent and not parent.isParent:
+                print('1')
+                raise exceptions.ValidationError(
+                    'can not set the child comment as parent comment')
+            # parent가 null이 아닌데(자신이 child), isParent가 true인 경우 reject
+            if parent is not None and data['isParent']:
+                print('2')
+                raise exceptions.ValidationError(
+                    'child comment has isParent value be false')
+        # parent가 null인데(자신이 parent), isParent가 false인 경우 reject
+        elif 'parent' not in data and not data['isParent']:
+            print('3')
+            raise exceptions.ValidationError(
+                'parent comment has isParent value be true')
+        return data
+
+
     @transaction.atomic
     def create(self, story_id: int, content: str, isParent: bool, parent_id: int, mentioned_email: str) -> StoryComment:
         story = Story.objects.get(id=story_id)
@@ -100,6 +124,8 @@ class StoryCommentCoordinatorService:
 
         if mentioned_email:
             mentioned_user = User.objects.get(email=mentioned_email)
+        else:
+            mentioned_user = None
         
 
         story_comment = story_comment_service.update(
