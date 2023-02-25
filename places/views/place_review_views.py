@@ -9,7 +9,7 @@ from rest_framework.pagination import PageNumberPagination
 from drf_yasg.utils import swagger_auto_schema
 from places.models import VisitorReview
 from places.serializers import VisitorReviewSerializer
-from places.services import PlaceReviewCoordinatorService
+from places.services import PlaceReviewCoordinatorService, PlaceReviewService
 from places.selectors import PlaceReviewCoordinatorSelector
 from sasmproject.swagger import param_pk,param_id
 
@@ -112,7 +112,7 @@ class PlaceReviewCreateApi(APIView, ApiAuthMixin):
     @swagger_auto_schema(
         operation_id='',
         operation_description='''
-            장소 리뷰를 보여주는 api
+            장소 리뷰를 생성하는 api
         ''',
         responses={
             "200": openapi.Response(
@@ -149,7 +149,7 @@ class PlaceReviewCreateApi(APIView, ApiAuthMixin):
         }
     )
 
-    def list(self, request):        
+    def post(self, request):        
         serializer = self.PlaceReviewInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -167,7 +167,7 @@ class PlaceReviewCreateApi(APIView, ApiAuthMixin):
 
         selector = PlaceReviewCoordinatorSelector
         post_review_qs = selector.get_created(
-            place_id = post_review.id
+            post_review_id = post_review.id
         )
 
         serializer = self.PlaceReviewOutputSerializer(post_review_qs, many=True)
@@ -175,6 +175,94 @@ class PlaceReviewCreateApi(APIView, ApiAuthMixin):
         return Response({
             'status': 'success',
             'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+
+class PlaceReviewUpdateApi(APIView, ApiAuthMixin):
+    class PlaceReviewUpdateOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField(required=False)
+        nickname = serializers.CharField(required=False)
+        place = serializers.IntegerField()
+        contents = serializers.CharField()
+        photos = serializers.ListField(required=False)
+        category = serializers.ListField(required=False)
+        created = serializers.CharField(required=False)
+        updated = serializers.CharField(required=False)
+        writer = serializers.CharField(required=False)
+
+    @swagger_auto_schema(
+        operation_id='',
+        operation_description='''
+            장소 리뷰를 수정하는 api
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples = {
+                "id": 1,
+                "nickname": "스드프",
+                "place": 1,
+                "contents": "또 방문할 것 같아요",
+                "photos": [
+                    {
+                        "imgfile": "https://sasm-bucket/123.png"
+                    }
+                ],
+                "category": [
+                    {
+                        "category": 2
+                    },
+                    {
+                        "category": 8
+                    }
+                ],
+                "created": "2023-02-23T21:16:33.454291+09:00",
+                "updated": "2023-02-23T21:16:33.454330+09:00",
+                "writer": "sdp@sdp.com"
+            }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )
+        }
+    )
+
+    def put(self, request, pk):
+        place_review = VisitorReview.objects.get(id=pk)
+
+        serializer = self.PlaceReviewUpdateOutputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        service = PlaceReviewCoordinatorService(
+            user=request.user
+        )
+
+        place_review = service.update(
+            place_review_id=pk,
+            contents=data.get('contents')
+        )
+
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+    
+
+class PlaceReviewDeleteApi(APIView, ApiAuthMixin):
+
+    def delete(self, request, pk):
+
+        service = PlaceReviewCoordinatorService(
+            user=request.user
+        )
+
+        service.delete(
+            place_review_id=pk
+        )
+
+        return Response({
+            'status': 'success',
         }, status=status.HTTP_200_OK)
 
 

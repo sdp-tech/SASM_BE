@@ -13,7 +13,7 @@ from rest_framework import exceptions
 
 from users.models import User
 from places.models import Place, VisitorReview, VisitorReviewCategory, ReviewPhoto, CategoryContent
-
+from .selectors import PlaceReviewSelector
 
 class PlaceService:
     def __init__(self):
@@ -64,14 +64,38 @@ class PlaceReviewCoordinatorService:
             )
 
         if len(photos) != 0:
-            photo_service = ReviewPhotoService()
+            photo_service = PlaceReviewPhotoService()
             photo_service.create(
                 post_review=post_review,
                 image_files=photos
             )
 
 
-        return post_review
+    @transaction.atomic
+    def delete(self, place_review_id: int): # TODO: delete related objects in different models
+        place_review_service = PlaceReviewService()
+        place_review_selector = PlaceReviewSelector()
+
+        if not place_review_selector.isWriter(place_review_id=place_review_id, user=self.user):
+            exceptions.ValidationError({"error": "댓글 작성자가 아닙니다."})
+        
+        place_review_service.delete(place_review_id=place_review_id)
+
+
+    @transaction.atomic
+    def update(self, place_review_id: int, contents: str):
+        place_review_service = PlaceReviewService()
+        place_review_photo_service = PlaceReviewPhotoService()
+        place_review_selector = PlaceReviewSelector()
+
+        if not place_review_selector.isWriter(place_review_id=place_review_id, user=self.user):
+            exceptions.ValidationError({"error": "댓글 작성자가 아닙니다."})       
+
+        place_review_service.update(
+            place_review_id=place_review_id,
+            contents=contents)
+        
+        # TODO: add logic for photo service, category service
 
 
 class PlaceReviewService:
@@ -90,9 +114,25 @@ class PlaceReviewService:
         post_review.save()
 
         return post_review
+    
+    @transaction.atomic
+    def delete(self, place_review_id: int):
+        place_review = VisitorReview.objects.get(id=place_review_id)
 
+        place_review.delete()
 
-class ReviewPhotoService:
+    @transaction.atomic
+    def update(self, place_review_id: int, contents: str):
+        place_review = VisitorReview.objects.get(id=place_review_id)
+    
+        place_review.update_contents(contents)
+        
+        place_review.full_clean()
+        place_review.save()
+
+        return place_review
+
+class PlaceReviewPhotoService:
     def __init__(self):
         pass
 

@@ -132,6 +132,10 @@ class VisitorReview(core_models.TimeStampedModel):
 
     def __str__(self):
         return self.contents
+    
+    def update_contents(self, contents):
+        self.contents = contents
+
 
 def image_upload_path(instance, filename):
     return 'reviewphoto/{}'.format(filename)

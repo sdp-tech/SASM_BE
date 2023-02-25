@@ -343,11 +343,10 @@ class PlaceReviewCoordinatorSelector:
         return place_review_qs
 
 
-    def get_created(place_id : int):
+    def get_created(post_review_id : int):
         place_review_qs = PlaceReviewSelector.get_created(
-            place_id = place_id
+            post_review_id = post_review_id
         )
-        print("~~~~3333", place_review_qs)
 
         # Concatenated field split
         for review in place_review_qs:
@@ -379,6 +378,9 @@ class PlaceReviewCoordinatorSelector:
 class PlaceReviewSelector:
     def __init__(self):
         pass
+
+    def isWriter(self, place_review_id: int, user: User):
+        return VisitorReview.objects.get(id=place_review_id).visitor_name == user
 
     def list(place_id: int):
 
@@ -414,7 +416,7 @@ class PlaceReviewSelector:
         return place_reviews
 
 
-    def get_created(place_id: int):
+    def get_created(post_review_id: int):
         
         concat_category = VisitorReview.objects.filter(
                                             id = OuterRef('id')
@@ -430,7 +432,7 @@ class PlaceReviewSelector:
 
         # GroupConcat 된 필드가 두개 이상일 경우 union 관계가 복잡해짐에 따라 subquery로 구현
         # 기존 필드의 이름과 같은 필드를 annotate 하기 위해 annotation을 나누어 수행
-        place_reviews = VisitorReview.objects.filter(place_id=place_id).annotate(
+        place_reviews = VisitorReview.objects.filter(id=post_review_id).annotate(
             nickname = F('visitor_name__nickname'),
             writer = F('visitor_name__email')).values(
                                                     'id',
