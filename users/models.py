@@ -14,6 +14,7 @@ from .utils import (
 #             r'^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 #     return not re.match(validation, target)
 
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
         if not email:
@@ -49,7 +50,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     code = models.CharField(max_length=5, blank=True)
     gender = models.CharField(choices=GENDER_CHOICES,
-                                max_length=10, blank=True)
+                              max_length=10, blank=True)
     nickname = models.CharField(max_length=20, blank=True)
     birthdate = models.DateField(blank=True, null=True)
     email = models.EmailField(max_length=64, unique=True)
@@ -61,6 +62,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_sdp = models.BooleanField(default=False)
+
+    # 소셜 계정인 경우, 소셜 ID 프로바이더 값 저장(ex. kakao, naver, google)
+    social_provider = models.CharField(max_length=30, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -82,7 +86,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-    
+
     def clean(self):
         if not email_isvalid(self.email):
             raise ValidationError('메일 형식이 올바르지 않습니다.')
