@@ -19,9 +19,6 @@ string_pool = string.ascii_letters + string.digits
 for i in range(STATE_LENGTH):
     state += random.choice(string_pool)
 
-BASE_URL = 'http://127.0.0.1:8000/'
-NAVER_CALLBACK_URI = BASE_URL + 'http://127.0.0.1:3000/users/naver/callback/'
-
 
 @api_view(["GET", "POST"])
 @method_decorator(csrf_exempt)
@@ -93,6 +90,7 @@ def naver_callback(request):
         user.full_clean()
         user.save()
 
+    # 로그인 수행
     token = RefreshToken.for_user(user=user)
     data = {
         'email': user.email,

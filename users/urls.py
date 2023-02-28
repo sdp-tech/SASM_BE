@@ -18,8 +18,6 @@ urlpatterns = [
     path('kakao/login/finish/', login_kakao.KakaoLogin.as_view(),
          name='kakao_login_todjango'),
     path('google/callback/', login_google.google_callback, name='google_callback'),
-    path('google/login/finish/', login_google.GoogleLogin.as_view(),
-         name='google_login_todjango'),
     path('naver/callback/', login_naver.naver_callback, name='naver_callback'),
     path('activate/<str:uid>/<str:token>',
          email_auth.UserActivateView.as_view(), name='activate'),
