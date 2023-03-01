@@ -31,21 +31,6 @@ class StoryCoordinatorSelector:
     def __init__(self, user: User):
         self.user = user
 
-    def list(self, search: str, order_condition: str):
-        extra_fields = {}
-        
-        return StorySelector.list(
-            search=search,
-            order_condition=order_condition,
-            extra_fields=extra_fields
-        )
-
-    def recommend_list(self, story_id: int):
-        print('coordinate')
-        recommend_story = StorySelector.recommend_list(story_id=story_id)
-
-        return recommend_story
-
     def detail(self, story_id: int):
         story = StorySelector.detail(story_id=story_id)
 
@@ -100,7 +85,6 @@ def semi_category(story_id: int):
             ret_result = ret_result + result[i]
         else:
             ret_result = ret_result + result[i] + ', '
-    print('ret_result: ', ret_result)
     return ret_result
 
 
@@ -112,42 +96,39 @@ class StorySelector:
     #     return Story.objects.get(id=story_id).writer == user
 
     @staticmethod
-    def list(search: str = '', order_condition: str = 'true', extra_fields: dict = {}):
-        print('list')
-        print('search', search)
-        print('order_condition', order_condition)
+    def list(search: str = '', latest: bool = True):
         q = Q()
         q.add(Q(title__icontains=search) | Q(address__place_name__icontains=search), q.AND)  #스토리 제목 또는 내용 검색
 
         #최신순 정렬
-        if order_condition == 'true':
+        if latest:
             order = '-created'
-        if order_condition == 'false':
+        else:
             order = 'created'
 
         story = Story.objects.filter(q).annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
-            # story_like=F('story_likeuser_set'),
-            **extra_fields
+            story_like=Case(
+                When(
+                    story_likeuser_set=None,
+                    then=False
+                ),
+                default=True,
+            ),
         ).order_by(order)
-        print('len', len(story))
 
-        print(story)
         return story
 
     def recommend_list(story_id: int):
-        print('recommend_list')
         story = Story.objects.get(id=story_id)
         q = Q(address__category=story.address.category)
         recommend_story = Story.objects.filter(q).exclude(id=story_id)
-        print('@', recommend_story)
 
         return recommend_story
 
     @staticmethod
     def detail(story_id: int, extra_fields: dict = {}):
-        print('!!')
 
         return Story.objects.annotate(
             place_name=F('address__place_name'),
@@ -164,16 +145,9 @@ class StoryLikeSelector:
     def likes(story_id: int, user: User):
         story = get_object_or_404(Story, pk=story_id)
         if story.story_likeuser_set.filter(pk=user.pk).exists():  #좋아요가 존재하는 지 안하는 지 확인
-            return 'ok'
+            return True
         else:
-            return 'none'
-
-# class StoryCommentCoordinatorSelector:
-#     def __init__(self, user: User):
-#         self.user = user
-
-#     def list(self, story_id: int):
-#         story = Story.objects.get(id=story_id)
+            return False
 
 
 class StoryCommentSelector:
@@ -181,13 +155,11 @@ class StoryCommentSelector:
         pass
 
     def isWriter(self, story_comment_id: int, user: User):
-        print('isWriter')
         return StoryComment.objects.get(id=story_comment_id).writer == user
 
     @staticmethod
     def list(story_id: int):
         story = Story.objects.get(id=story_id)
-        print('story', story)
         q = Q(story=story)
 
         story_comments = StoryComment.objects.filter(q).annotate(

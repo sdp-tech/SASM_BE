@@ -5,7 +5,7 @@ from rest_framework import serializers, status
 from rest_framework.serializers import ValidationError
 from places.serializers import MapMarkerSerializer
 from stories.mixins import ApiAuthMixin
-from stories.selectors import StoryCoordinatorSelector, StoryCommentSelector, MapMarkerSelector, semi_category, StoryLikeSelector
+from stories.selectors import StoryCoordinatorSelector, StorySelector, StoryCommentSelector, MapMarkerSelector, semi_category, StoryLikeSelector
 from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService
 from core.views import get_paginated_response
 
@@ -40,16 +40,12 @@ class StoryLikeApi(APIView, ApiAuthMixin):
     
     def post(self, request):
         try:
-            print('11')
             service = StoryCoordinatorService(
                 user = request.user
             )
-            print('22', service)
             story_like = service.like_or_dislike(
                 story_id=request.data['id'],
             )
-            print('33', story_like)
-
             return Response({
                 'status': 'success',
                 'data': {'story_like': story_like},
@@ -59,21 +55,6 @@ class StoryLikeApi(APIView, ApiAuthMixin):
                 'status': 'fail',
             }, status=status.HTTP_401_UNAUTHORIZED)
 
-# def get_paginated_response(*, pagination_class, serializer_class, queryset, request, view):
-#     paginator = pagination_class()
-
-#     page = paginator.paginate_queryset(queryset, request, view=view)
-
-#     if page is not None:
-#         serializer = serializer_class(page, many=True)
-#     else:
-#         serializer = serializer_class(queryset, many=True)
-
-#     return Response({
-#         'status': 'success',
-#         'data': paginator.get_paginated_response(serializer.data).data,
-#     }, status=status.HTTP_200_OK)
-
 
 class StoryListApi(APIView):
     class Pagination(PageNumberPagination):
@@ -82,7 +63,7 @@ class StoryListApi(APIView):
 
     class StoryListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
-        order_condition = serializers.CharField(required=False)
+        latest = serializers.CharField(required=False)
 
     class StoryListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -90,14 +71,11 @@ class StoryListApi(APIView):
         preview = serializers.CharField()
         rep_pic = serializers.ImageField()
         views = serializers.IntegerField()
-        story_like = serializers.CharField()
+        story_like = serializers.BooleanField()
         
         place_name = serializers.CharField()
         category = serializers.CharField()
         semi_category = serializers.SerializerMethodField()
-
-        # def get_story_like(self, obj):
-        #     return 'ok'
 
         def get_semi_category(self, obj):
             result = semi_category(obj.id)
@@ -110,7 +88,7 @@ class StoryListApi(APIView):
             전달된 쿼리 파라미터에 부합하는 게시글 리스트를 반환합니다.<br/>
             <br/>
             search : 제목 혹은 장소 검색어<br/>
-            order_condition : 최신순 정렬 여부 (ex: true)</br>
+            latest : 최신순 정렬 여부 (ex: true)</br>
         ''',
         query_serializer=StoryListFilterSerializer,
         responses={
@@ -137,19 +115,13 @@ class StoryListApi(APIView):
     def get(self, request):
         filters_serializer = self.StoryListFilterSerializer(
             data=request.query_params)
-        print('123', filters_serializer)
         filters_serializer.is_valid(raise_exception=True)
         filters = filters_serializer.validated_data
-        print('filters', filters)
 
-        selector = StoryCoordinatorSelector(
-            user = request.user
-        )
-        story = selector.list(
+        story = StorySelector.list(
             search=filters.get('search', ''),
-            order_condition=filters.get('order', 'true'),
+            latest=filters.get('latest', True),
         )
-        print('story', story)
 
         return get_paginated_response(
             pagination_class=self.Pagination,
@@ -185,11 +157,7 @@ class StoryRecommendApi(APIView):
         },
     )
     def get(self, request):
-        selector = StoryCoordinatorSelector(
-            user = request.user
-        )
-
-        recommend_story = selector.recommend_list(
+        recommend_story = StorySelector.recommend_list(
             story_id = request.data['id']
         )
 
@@ -209,16 +177,12 @@ class StoryDetailApi(APIView):
         story_review = serializers.CharField()
         tag = serializers.CharField()
         html_content = serializers.CharField()
-        story_like = serializers.CharField()  #결과가 'ok'또는 'none'으로 나오기 위함
+        story_like = serializers.BooleanField()
         views = serializers.IntegerField()
         
         place_name = serializers.CharField()
         category = serializers.CharField()
         semi_category = serializers.CharField()
-
-    # def get_semi_category(self, obj):
-    #     result = semi_category(obj.id)
-    #     return result
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
@@ -240,7 +204,7 @@ class StoryDetailApi(APIView):
                         'html_content': '서울숲. 가장 도시적인 단어...(최대 150자)',
 
                         'views': 45,
-                        'story_like': 'ok',
+                        'story_like': True,
                     },
                 }
             ),
@@ -255,29 +219,12 @@ class StoryDetailApi(APIView):
         )
         story = selector.detail(
             story_id=request.data['id'])
-        print('detail: ', story)
         serializer = self.StoryDetailOutputSerializer(story)
 
         return Response({
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-
-
-# class StoryPhotoApi(APIView):
-#     class StoryPhotoOutputSerializer(serializers.Serializer):
-#         caption = serializers.CharField()
-#         image = serializers.ImageField(use_url=True)
-
-#     @swagger_auto_schema(
-#         operation_id='스토리 사진 조회',
-#         operation_description='''
-#             전달된 id에 해당하는 스토리 사진을 조회합니다.<br/>
-#         ''',
-#         responses={
-#             "200": openapi.Response
-#         }
-#     )
 
 
 class StoryCommentListApi(APIView):
@@ -297,7 +244,6 @@ class StoryCommentListApi(APIView):
         nickname = serializers.CharField()
         email = serializers.CharField()
         mention = serializers.CharField()
-        # mentionNickname = serializers.CharField()
         profile_image = serializers.ImageField()
         created_at = serializers.DateTimeField()
         updated_at = serializers.DateTimeField()
@@ -370,8 +316,24 @@ class StoryCommentCreateApi(APIView, ApiAuthMixin):
                 'mentionEmail': 'sdpygl@gmail.com',
             }
 
-        def validate(self, obj):
-            return StoryCommentCoordinatorService.validate(data=obj)
+        def validate(self, data):
+            print('data:' , data)
+            # print('par', data['parent'])
+            if 'parent' in data:
+                parent = StoryComment.objects.get(id=data['parent'])
+                # child comment를 parent로 설정 시 reject
+                if parent and not parent.isParent:
+                    raise ValidationError(
+                        'can not set the child comment as parent comment')
+                # parent가 null이 아닌데(자신이 child), isParent가 true인 경우 reject
+                if parent is not None and data['isParent']:
+                    raise ValidationError(
+                        'child comment has isParent value be false')
+            # parent가 null인데(자신이 parent), isParent가 false인 경우 reject
+            elif 'parent' not in data and not data['isParent']:
+                raise ValidationError(
+                    'parent comment has isParent value be true')
+            return data
 
     @swagger_auto_schema(
         request_body=StoryCommentCreateInputSerializer,

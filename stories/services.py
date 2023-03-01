@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 
 from users.models import User
-from stories.models import Story, StoryPhoto, StoryComment
+from stories.models import Story, StoryComment
 from places.models import Place
 from .selectors import StoryLikeSelector, StoryCommentSelector
 
@@ -21,14 +21,14 @@ class StoryCoordinatorService:
             raise exceptions.ValidationError()
 
     def like_or_dislike(self, story_id: int) -> bool:
-        if StoryLikeSelector.likes(story_id=story_id, user=self.user) == 'ok':
+        if StoryLikeSelector.likes(story_id=story_id, user=self.user) == True:
             # Story의 like_cnt 1 감소
             StoryService.dislike(story_id=story_id, user=self.user)
-            return 'none'
+            return False
         else: 
             # Story의 like_cnt 1 증가
             StoryService.like(story_id=story_id, user=self.user)
-            return 'ok'
+            return True
 
 
 class StoryService:
@@ -41,7 +41,6 @@ class StoryService:
 
         story.story_likeuser_set.add(user)
         story.story_like_cnt += 1
-        print('좋아요 수', story.story_like_cnt)
 
         story.full_clean()
         story.save()
@@ -52,7 +51,6 @@ class StoryService:
 
         story.story_likeuser_set.remove(user)
         story.story_like_cnt -= 1
-        print('좋아요수(dislike)', story.story_like_cnt)
 
         story.full_clean()
         story.save()
@@ -62,33 +60,9 @@ class StoryCommentCoordinatorService:
     def __init__(self, user: User):
         self.user = user
 
-    def validate(data):
-        print('data:' , data)
-        # print('par', data['parent'])
-        if 'parent' in data:
-            parent = StoryComment.objects.get(id=data['parent'])
-            # child comment를 parent로 설정 시 reject
-            if parent and not parent.isParent:
-                print('1')
-                raise exceptions.ValidationError(
-                    'can not set the child comment as parent comment')
-            # parent가 null이 아닌데(자신이 child), isParent가 true인 경우 reject
-            if parent is not None and data['isParent']:
-                print('2')
-                raise exceptions.ValidationError(
-                    'child comment has isParent value be false')
-        # parent가 null인데(자신이 parent), isParent가 false인 경우 reject
-        elif 'parent' not in data and not data['isParent']:
-            print('3')
-            raise exceptions.ValidationError(
-                'parent comment has isParent value be true')
-        return data
-
-
     @transaction.atomic
     def create(self, story_id: int, content: str, isParent: bool, parent_id: int, mentioned_email: str) -> StoryComment:
         story = Story.objects.get(id=story_id)
-        print('2:', story)
         comment_service = StoryCommentService()
         if parent_id:
             parent = StoryComment.objects.get(id=parent_id)
@@ -100,7 +74,6 @@ class StoryCommentCoordinatorService:
         else:
             mentioned_user = None
 
-        print('~~~~~~~', parent, mentioned_user)
         story_comment = comment_service.create(
             story=story,
             content=content,
@@ -109,7 +82,6 @@ class StoryCommentCoordinatorService:
             mentioned_user=mentioned_user,
             writer=self.user
         )
-        print('4:',story_comment)
 
         return story_comment
 
@@ -153,7 +125,6 @@ class StoryCommentService:
         pass
 
     def create(self, story: Story, content: str, isParent: bool, parent: StoryComment, mentioned_user: User, writer: User) -> StoryComment:
-        print('#', story, content)
         story_comment = StoryComment(
             story=story,
             content=content,
@@ -162,7 +133,6 @@ class StoryCommentService:
             mention=mentioned_user,
             writer=writer,
         )
-        print('3:', story_comment)
 
         story_comment.full_clean()
         story_comment.save()
