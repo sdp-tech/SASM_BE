@@ -50,13 +50,13 @@ class StoryComment(core_models.TimeStampedModel):
     isParent = models.BooleanField(null=False, blank=False, default=True)
     # parent 댓글이 삭제되어도, child 댓글은 유지, parent를 null 설정
     parent = models.ForeignKey(
-        'StoryComment', related_name='childs', on_delete=models.SET_NULL, null=True, blank=False)
+        'StoryComment', related_name='childs', on_delete=models.SET_NULL, null=True, blank=True)
     # 댓글 writer가 회원 탈퇴해도, 댓글은 유지, writer를 null 설정
     writer = models.ForeignKey(
-        'users.User', related_name='comments', on_delete=models.SET_NULL, null=True, blank=False)  # TODO: related_name을 storyComments로 변경 필요(커뮤니티 comment와 충돌 가능성 존재)
+        'users.User', related_name='story_comments', on_delete=models.SET_NULL, null=True, blank=False)  # TODO: related_name을 storyComments로 변경 필요(커뮤니티 comment와 충돌 가능성 존재)
     # 멘션된 사용자가 회원 탈퇴하더라도, 댓글은 유지, mention을 null 설정
     mention = models.ForeignKey(
-        'users.User', related_name='mentionedComments', on_delete=models.SET_NULL, null=True, blank=False)  # TODO: related_name을 storyMentionedComments로 변경 필요(커뮤니티 comment와 충돌 가능성 존재)
+        'users.User', related_name='mentioned_story_comments', on_delete=models.SET_NULL, null=True, blank=True)  # TODO: related_name을 storyMentionedComments로 변경 필요(커뮤니티 comment와 충돌 가능성 존재)
 
     # TODO: TimestampedModel 필드와 중복, 삭제 필요
     created_at = models.DateTimeField(auto_now_add=True)
