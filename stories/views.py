@@ -76,15 +76,17 @@ class StoryCommentListApi(APIView):
             story_comments = selector.list(
                 story_id=filters.get('story')  #story id값 받아서 넣기
             )
-            return get_paginated_response(
+
+        except:
+            return Response({
+                'status': 'fail',
+                'message' : 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return get_paginated_response(
                 pagination_class=self.Pagination,
                 serializer_class=self.StoryCommentListOutputSerializer,
                 queryset=story_comments,
                 request=request,
                 view=self,
             )
-        except:
-            return Response({
-                'status': 'fail',
-                'message' : 'error',
-            })
