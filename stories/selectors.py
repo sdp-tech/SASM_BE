@@ -81,15 +81,13 @@ def semi_category(story_id: int):
             ret_result = ret_result + result[i]
         else:
             ret_result = ret_result + result[i] + ', '
-    print('ret_result: ', ret_result)
+
     return ret_result
 
 
 class StorySelector:
     def __init__(self):
         pass
-    # def isWriter(self, story_id: int, user: User):
-    #     return Story.objects.get(id=story_id).writer == user
 
     @staticmethod
     def detail(story_id: int, extra_fields: dict = {}):

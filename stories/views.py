@@ -62,15 +62,15 @@ class StoryDetailApi(APIView):
             )
             story = selector.detail(
                 story_id=request.data['id'])
-            print('detail: ', story)
-            serializer = self.StoryDetailOutputSerializer(story)
 
-            return Response({
-                'status': 'success',
-                'data': serializer.data,
-            }, status=status.HTTP_200_OK)
+            serializer = self.StoryDetailOutputSerializer(story)
         except:
             return Response({
                 'status': 'fail',
-                'message': '해당 스토리가 존재하지 않습니다.',
-            })
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
