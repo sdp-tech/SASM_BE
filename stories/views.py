@@ -17,10 +17,12 @@ class StoryRecommendApi(APIView):
     class Pagination(PageNumberPagination):
         page_size = 4
         page_size_query_param = 'page_size'
+
     class StoryRecommendListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
         created = serializers.DateTimeField()
+        
     @swagger_auto_schema(
         operation_id='story의 category와 같은 스토리 추천 리스트',
         operation_description='''
@@ -40,17 +42,16 @@ class StoryRecommendApi(APIView):
             recommend_story = StorySelector.recommend_list(
                 story_id = request.data['id']
             )
-
-            return get_paginated_response(
+        except:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return get_paginated_response(
                 pagination_class=self.Pagination,
                 serializer_class=self.StoryRecommendListOutputSerializer,
                 queryset=recommend_story,
                 request=request,
                 view=self
             )
-        
-        except:
-            return Response({
-                'status': 'fail',
-                'message': '해당 스토리가 존재하지 않습니다.'
-            })
