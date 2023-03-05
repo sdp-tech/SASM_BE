@@ -1,17 +1,75 @@
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.serializers import ValidationError
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.views import APIView
+
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 from places.models import VisitorReview
+from places.mixins import ApiAuthMixin
 from places.serializers import VisitorReviewSerializer
+from places.services import PlaceReviewCoordinatorService, PlaceReviewService
 from sasmproject.swagger import param_pk,param_id
+
 class BasicPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
+
+class PlaceReviewCreateApi(APIView, ApiAuthMixin):
+    class PlaceReviewSerializer(serializers.Serializer):
+        place = serializers.CharField()
+        contents = serializers.CharField()
+        category = serializers.CharField(required=False) 
+        photos = serializers.ImageField(required=False)
+
+    @swagger_auto_schema(
+        operation_id='',
+        operation_description='''
+            장소 리뷰를 생성하는 api
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )
+        }
+    )
+
+    def post(self, request):        
+        serializer = self.PlaceReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        service = PlaceReviewCoordinatorService(
+            user = request.user
+        )
+
+        place_review = service.create(
+            place_id = data.get('place'),
+            contents = data.get('contents'),
+            photos = data.get('photos', None),
+            category = data.get('category', None)
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': place_review.id},
+        }, status=status.HTTP_200_OK)
+
 
 class PlaceReviewView(viewsets.ModelViewSet):
     queryset = VisitorReview.objects.select_related('visitor_name').order_by('-created')
@@ -44,6 +102,12 @@ class PlaceReviewView(viewsets.ModelViewSet):
                         "status" : "success",
                         "data" : serializer.data,
                     },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    "status" : "fail",
+                    "data" : serializer.errors
+                })
+            
         except:
             return Response({
                 "status" : "fail",
