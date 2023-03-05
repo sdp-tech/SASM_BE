@@ -15,7 +15,6 @@ from places.models import VisitorReview
 from places.mixins import ApiAuthMixin
 from places.serializers import VisitorReviewSerializer
 from places.services import PlaceReviewCoordinatorService, PlaceReviewService
-from places.selectors import PlaceReviewCoordinatorSelector
 from sasmproject.swagger import param_pk,param_id
 
 class BasicPagination(PageNumberPagination):
@@ -23,22 +22,11 @@ class BasicPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
 
 class PlaceReviewCreateApi(APIView, ApiAuthMixin):
-    class PlaceReviewInputSerializer(serializers.Serializer):
+    class PlaceReviewSerializer(serializers.Serializer):
         place = serializers.CharField()
         contents = serializers.CharField()
         category = serializers.CharField(required=False) 
         photos = serializers.ImageField(required=False)
-
-    class PlaceReviewOutputSerializer(serializers.Serializer):
-        id = serializers.IntegerField()
-        nickname = serializers.CharField()
-        place = serializers.IntegerField()
-        contents = serializers.CharField()
-        photos = serializers.ListField(required=False)
-        category = serializers.ListField(required=False)
-        created = serializers.CharField()
-        updated = serializers.CharField()
-        writer = serializers.CharField()
 
     @swagger_auto_schema(
         operation_id='',
@@ -48,28 +36,12 @@ class PlaceReviewCreateApi(APIView, ApiAuthMixin):
         responses={
             "200": openapi.Response(
                 description="OK",
-                examples = {
-                "id": 1,
-                "nickname": "스드프",
-                "place": 1,
-                "contents": "기다린 보람이 있네요",
-                "photos": [
-                    {
-                        "imgfile": "https://sasm-bucket/456.png"
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
                     }
-                ],
-                "category": [
-                    {
-                        "category": 1
-                    },
-                    {
-                        "category": 7
-                    }
-                ],
-                "created": "2023-02-23T21:16:33.454291+09:00",
-                "updated": "2023-02-23T21:16:33.454330+09:00",
-                "writer": "sdp@sdp.com"
-            }
+                }
             ),
             "400": openapi.Response(
                 description="Bad Request",
@@ -78,7 +50,7 @@ class PlaceReviewCreateApi(APIView, ApiAuthMixin):
     )
 
     def post(self, request):        
-        serializer = self.PlaceReviewInputSerializer(data=request.data)
+        serializer = self.PlaceReviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
@@ -87,22 +59,15 @@ class PlaceReviewCreateApi(APIView, ApiAuthMixin):
         )
 
         place_review = service.create(
-            place = data.get('place'),
+            place_id = data.get('place'),
             contents = data.get('contents'),
             photos = data.get('photos', None),
             category = data.get('category', None)
         )
 
-        selector = PlaceReviewCoordinatorSelector
-        place_review_qs = selector.get_instance(
-            place_review_id = place_review.id
-        )
-
-        serializer = self.PlaceReviewOutputSerializer(place_review_qs, many=True)
-
         return Response({
             'status': 'success',
-            'data': serializer.data,
+            'data': {'id': place_review.id},
         }, status=status.HTTP_200_OK)
 
 

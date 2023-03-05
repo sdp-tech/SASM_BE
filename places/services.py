@@ -13,7 +13,6 @@ from rest_framework import exceptions
 
 from users.models import User
 from places.models import Place, VisitorReview, VisitorReviewCategory, ReviewPhoto, CategoryContent
-# from .selectors import PlaceReviewSelector
 
 
 class PlaceReviewCoordinatorService:
@@ -21,10 +20,10 @@ class PlaceReviewCoordinatorService:
         self.user = user
 
     @transaction.atomic
-    def create(self, place: str, contents: str, photos: InMemoryUploadedFile = None, category: str = None):
+    def create(self, place_id: str, contents: str, photos: InMemoryUploadedFile = None, category: str = None):
         place_review_service = PlaceReviewService()
         place_review = place_review_service.create(
-            place_id=place,
+            place_id=place_id,
             contents=contents,
             user=self.user
         )
@@ -32,11 +31,11 @@ class PlaceReviewCoordinatorService:
         # 카테고리 개수만큼 create, FE에서 최대 3개 선택 제한
         if category != None:
             category_list = list(category.split(','))
-            for category in range(len(category_list)):
+            for idx in range(len(category_list)):
 
                 category_service = PlaceReviewCategoryService()
                 category_service.create(
-                    category_id=category_list[category],
+                    category_id=category_list[idx],
                     category_choice=place_review
                 )
 
@@ -74,14 +73,11 @@ class PlaceReviewPhotoService:
 
     def create(self, place_review: VisitorReview, image_files: InMemoryUploadedFile):
 
-        place = VisitorReview.objects.select_related(
-                    'place').filter(
-                    id=place_review.id).values(
-                    'place__place_name')
-        place_name = place[0]['place__place_name']
+        place_name = VisitorReview.objects.get(id=place_review.id).place.place_name
 
         ext = image_files.name.split(".")[-1]
-        file_path = '{}/{}/{}.{}'.format(place_name,place_review.id,str(datetime.datetime.now()),ext)
+        file_path = '{}/{}-{}.{}'.format(place_name, place_review.id,
+                                        str(time.time())+str(uuid.uuid4().hex), ext)
         image = ImageFile(io.BytesIO(image_files.read()), name=file_path)
 
         place_review_photo = ReviewPhoto(
