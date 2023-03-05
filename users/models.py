@@ -1,10 +1,18 @@
+import re
 from email.policy import default
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import UserManager, PermissionsMixin
-
+from .utils import (
+    email_isvalid,
+)
 # username으로 email을 사용하기 위해 UserManager의 함수를 overrinding 한다.
+
+# def validate_email_form(target: str):
+#     validation = re.compile(
+#             r'^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+#     return not re.match(validation, target)
 
 
 class UserManager(BaseUserManager):
@@ -55,6 +63,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False)
     is_sdp = models.BooleanField(default=False)
 
+    # 소셜 계정인 경우, 소셜 ID 프로바이더 값 저장(ex. kakao, naver, google)
+    social_provider = models.CharField(max_length=30, blank=True)
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     objects = UserManager()
@@ -75,3 +86,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    def clean(self):
+        if not email_isvalid(self.email):
+            raise ValidationError('메일 형식이 올바르지 않습니다.')
