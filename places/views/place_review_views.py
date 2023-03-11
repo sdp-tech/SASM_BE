@@ -26,7 +26,7 @@ class PlaceReviewCreateApi(APIView, ApiAuthMixin):
         place = serializers.CharField()
         contents = serializers.CharField()
         category = serializers.CharField(required=False) 
-        photos = serializers.ImageField(required=False)
+        photos = serializers.ListField(required=False)
 
     @swagger_auto_schema(
         operation_id='',
