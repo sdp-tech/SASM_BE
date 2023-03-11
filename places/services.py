@@ -71,22 +71,24 @@ class PlaceReviewPhotoService:
     def __init__(self):
         pass
 
-    def create(self, place_review: VisitorReview, image_files: InMemoryUploadedFile):
+    def create(self, place_review: VisitorReview, image_files: list[InMemoryUploadedFile]):
 
         place_name = VisitorReview.objects.get(id=place_review.id).place.place_name
 
-        ext = image_files.name.split(".")[-1]
-        file_path = '{}/{}-{}.{}'.format(place_name, place_review.id,
-                                        str(time.time())+str(uuid.uuid4().hex), ext)
-        image = ImageFile(io.BytesIO(image_files.read()), name=file_path)
+        for image_file in image_files:
 
-        place_review_photo = ReviewPhoto(
-            imgfile = image,
-            review = place_review
-        )
+            ext = image_file.name.split(".")[-1]
+            file_path = '{}/{}-{}.{}'.format(place_name, place_review.id,
+                                            str(time.time())+str(uuid.uuid4().hex), ext)
+            image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
 
-        place_review_photo.full_clean()
-        place_review_photo.save()
+            place_review_photo = ReviewPhoto(
+                imgfile = image,
+                review = place_review
+            )
+
+            place_review_photo.full_clean()
+            place_review_photo.save()
 
         return place_review_photo
 
