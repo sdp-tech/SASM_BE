@@ -71,7 +71,7 @@ class PlaceReviewPhotoService:
     def __init__(self):
         pass
 
-    def create(self, place_review: VisitorReview, image_files: list):
+    def create(self, place_review: VisitorReview, image_files: list[InMemoryUploadedFile]):
 
         place_name = VisitorReview.objects.get(id=place_review.id).place.place_name
 
