@@ -41,7 +41,7 @@ class UserLoginApi(APIView, ApiAllowAnyMixin):
         email = serializers.CharField()
         refresh = serializers.CharField()
         access = serializers.CharField()
-        nickname = serializers.CharField()
+        nickname = serializers.CharField(required=False, allow_blank=True)
 
     def post(self, request):
         input_serializer = self.UserLoginInputSerializer(data=request.data)
