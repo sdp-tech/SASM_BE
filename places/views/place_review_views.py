@@ -100,7 +100,7 @@ class PlaceVisitorReviewUpdateApi(APIView, ApiAuthMixin):
     )
 
     def put(self, request, place_review_id):
-        serializer  = self.PlaceReviewSerializer(data=request.data)
+        serializer  = self.PlaceVisitorReviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
