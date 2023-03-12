@@ -50,7 +50,7 @@ class PlaceVisitorReviewCreateApi(APIView, ApiAuthMixin):
     )
 
     def post(self, request):        
-        serializer = self.PlaceReviewSerializer(data=request.data)
+        serializer = self.PlaceVisitorReviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 

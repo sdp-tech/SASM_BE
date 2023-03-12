@@ -167,6 +167,7 @@ class PlaceVisitorReviewCategoryService:
 
             place_review_category.full_clean()
             place_review_category.save()
+            place_review_category.category_choice.add(category_choice)
 
         categories = PlaceVisitorReviewCategory.objects.filter(category_choice=category_choice)
 
