@@ -8,9 +8,8 @@ from django.db.models import fields, Q, F, Value, CharField, Aggregate, OuterRef
 import haversine as hs
 
 from users.models import User
-from places.models import Place
+from places.models import Place, PlaceVisitorReview
 
-    
 class PlaceSelector:
     def __init__(self):
         pass
@@ -24,3 +23,10 @@ class PlaceSelector:
         )
 
         return place_lat_lon
+
+class PlaceReviewSelector:
+    def __init__(self):
+        pass
+
+    def isWriter(self, place_review_id: int, user: User):
+        return PlaceVisitorReview.objects.get(id=place_review_id).visitor_name == user
