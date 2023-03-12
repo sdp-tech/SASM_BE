@@ -1,5 +1,6 @@
 from django.db import models
 from core import models as core_models
+from django.dispatch import receiver
 
 # Create your models here.
 class SNSUrl(models.Model):
@@ -117,15 +118,15 @@ class CategoryContent(models.Model):
     def __str__(self):
         return self.category_content
 
-class VisitorReviewCategory(core_models.TimeStampedModel):
+class PlaceVisitorReviewCategory(core_models.TimeStampedModel):
     # place_category = models.CharField(max_length=80)
     category = models.ForeignKey("CategoryContent", on_delete=models.CASCADE)
-    category_choice = models.ManyToManyField("VisitorReview", related_name='category')
+    category_choice = models.ManyToManyField("PlaceVisitorReview", related_name='category')
 
     # def __str__(self):
     #     return self.category
 
-class VisitorReview(core_models.TimeStampedModel):
+class PlaceVisitorReview(core_models.TimeStampedModel):
     place = models.ForeignKey("Place", on_delete=models.CASCADE) #방문자리뷰 모델은 Place 모델을 속성으로 가져야 함
     visitor_name = models.ForeignKey("users.User", on_delete=models.CASCADE)  #리뷰다는 사람 이름
     contents = models.TextField(help_text="리뷰를 작성해주세요.", blank=False, null=False) #내용 작성
@@ -133,8 +134,18 @@ class VisitorReview(core_models.TimeStampedModel):
     def __str__(self):
         return self.contents
 
+    def update_contents(self, contents):
+        self.contents = contents
+
 def image_upload_path(instance, filename):
     return 'reviewphoto/{}'.format(filename)
-class ReviewPhoto(core_models.TimeStampedModel):
+
+class PlaceVisitorReviewPhoto(core_models.TimeStampedModel):
     imgfile = models.ImageField(null=True, upload_to=image_upload_path, blank=True)
-    review = models.ForeignKey("VisitorReview", related_name='photos', on_delete=models.CASCADE)
+    review = models.ForeignKey("PlaceVisitorReview", related_name='photos', on_delete=models.CASCADE)
+
+@receiver(models.signals.post_delete, sender=PlaceVisitorReviewPhoto)
+# PlaceReviewPhoto가 삭제된 후(place_review_delete), S3 media에서 이미지 파일을 삭제하여 orphan 이미지 파일이 남지 않도록 처리
+# ref. https://stackoverflow.com/questions/47377172/django-storages-aws-s3-delete-file-from-model-record
+def remove_file_from_s3(sender, instance, using, **kwargs):
+    instance.imgfile.delete(save=False)

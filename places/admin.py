@@ -25,14 +25,14 @@ class PlaceAdmin(admin.ModelAdmin):
 class CategoryContentAdmin(admin.ModelAdmin):
     pass
 
-@admin.register(models.VisitorReviewCategory)
-class VisitorReviewCategoryAdmin(admin.ModelAdmin):
+@admin.register(models.PlaceVisitorReviewCategory)
+class PlaceVisitorReviewCategoryAdmin(admin.ModelAdmin):
     pass
 
-@admin.register(models.VisitorReview)
-class VisitorReviewAdmin(admin.ModelAdmin):
+@admin.register(models.PlaceVisitorReview)
+class PlaceVisitorReviewAdmin(admin.ModelAdmin):
     pass
 
-@admin.register(models.ReviewPhoto)
-class ReviewPhotoAdmin(admin.ModelAdmin):
+@admin.register(models.PlaceVisitorReviewPhoto)
+class PlaceVisitorReviewPhotoAdmin(admin.ModelAdmin):
     pass
