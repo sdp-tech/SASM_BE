@@ -75,13 +75,31 @@ class PlaceVisitorReviewUpdateApi(APIView, ApiAuthMixin):
     class PlaceVisitorReviewSerializer(serializers.Serializer):
         place = serializers.CharField()
         contents = serializers.CharField()
-        category = serializers.CharField(required=False) 
+        category = serializers.CharField(required=False)
+        photoList = serializers.ListField(required=False) 
         photos = serializers.ListField(required=False)
 
+        class Meta:
+            examples = {
+                'place': '안녕 상점 추천합니다.',
+                'contents': '개인적으로 좋았습니다.',
+                'category': '1,2,5',
+                'photoList': ['https://abc.com/2.jpg'],
+                'photos': ['<IMAGE FILE BINARY>', '<IMAGE FILE BINARY>'],
+            }
+
     @swagger_auto_schema(
-        operation_id='',
+        request_body=PlaceVisitorReviewSerializer,
+        security=[],
+        operation_id='장소 리뷰 업데이트',
         operation_description='''
-            장소 리뷰를 수정하는 api
+            전송된 모든 필드 값을 그대로 댓글에 업데이트하므로, 댓글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+            즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+            <br/>
+            photoList 사용 예시로, 게시글 디테일 API에서 전달받은 photoList 값이 ['https://abc.com/1.jpg', 'https://abc.com/2.jpg']일 때 '1.jpg'를 지우고 싶다면 ['https://abc.com/2.jpg']으로 값을 설정하면 됩니다.<br/>
+            만약 새로운 photo를 추가하고 싶다면, photos에 이미지 첨부 파일을 1개 이상 담아 전송하면 됩니다.<br/>
+            <br/>
+            참고로 request body는 json 형식이 아닌 <b>multipart/form-data 형식</b>으로 전달받으므로, 리스트 값을 전달하고자 한다면 개별 원소들마다 리스트 필드 이름을 key로 설정하여, 원소 값을 value로 추가해주면 됩니다.
         ''',
         responses={
             "200": openapi.Response(
