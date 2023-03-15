@@ -20,7 +20,7 @@ class PlaceVisitorReviewCoordinatorService:
         self.user = user
 
     @transaction.atomic
-    def create(self, place_id: str, contents: str, photos: list[InMemoryUploadedFile], category: str) -> PlaceVisitorReview:
+    def create(self, place_id: str, contents: str, images: list[InMemoryUploadedFile], category: str) -> PlaceVisitorReview:
         place_review_service = PlaceVisitorReviewService()
         place_review = place_review_service.create(
             place_id=place_id,
@@ -36,12 +36,12 @@ class PlaceVisitorReviewCoordinatorService:
                 category_list=category_list,
                 category_choice=place_review
             )
-            
-        if len(photos) > 0:
+
+        if len(images) > 0:
             photo_service = PlaceVisitorReviewPhotoService(place_review=place_review)
             photo_service.create(
                 place_review=place_review,
-                image_files=photos
+                image_files=images
             )
         
         return place_review
