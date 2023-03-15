@@ -25,6 +25,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 
 from .models import Story, StoryComment
+from .selectors import StoryLikeSelector
 from users.models import User
 from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer, StoryCommentCreateSerializer, StoryCommentUpdateSerializer
 from places.serializers import MapMarkerSerializer
@@ -47,7 +48,7 @@ class StoryListApi(APIView):
         preview = serializers.CharField()
         rep_pic = serializers.ImageField()
         views = serializers.IntegerField()
-        story_like = serializers.BooleanField()
+        story_like = serializers.SerializerMethodField()
         place_name = serializers.CharField()
         category = serializers.CharField()
         semi_category = serializers.SerializerMethodField()
@@ -56,6 +57,12 @@ class StoryListApi(APIView):
             result = semi_category(obj.id)
             return result
         
+        def get_story_like(self, obj):
+            like_id = obj.story_likeuser_set.all()
+            users = User.objects.filter(id__in=like_id)
+            likes = StoryLikeSelector.likes(obj.id, user=users)
+            return likes
+
     @swagger_auto_schema(
         operation_id='스토리 리스트',
         operation_description='''

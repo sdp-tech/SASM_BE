@@ -39,7 +39,6 @@ def semi_category(story_id: int):
             ret_result = ret_result + result[i]
         else:
             ret_result = ret_result + result[i] + ', '
-    print('ret_result: ', ret_result)
     return ret_result
 
 
@@ -61,13 +60,6 @@ class StorySelector:
         story = Story.objects.filter(q).annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
-            story_like=Case(
-                When(
-                    story_likeuser_set=None,
-                    then=False
-                ),
-                default=True,
-            ),
         ).order_by(order)
 
         return story
@@ -79,8 +71,8 @@ class StoryLikeSelector:
 
     @staticmethod
     def likes(story_id: int, user: User):
-        story = get_object_or_404(Story, pk=story_id)
-        if story.story_likeuser_set.filter(pk=user.pk).exists():  #좋아요가 존재하는 지 안하는 지 확인
+        story = get_object_or_404(Story, id=story_id)
+        if story.story_likeuser_set.filter(id__in=user).exists():  #좋아요가 존재하는 지 안하는 지 확인
             return True
         else:
             return False
