@@ -20,7 +20,7 @@ class PlaceVisitorReviewCoordinatorService:
         self.user = user
 
     @transaction.atomic
-    def create(self, place_id: str, contents: str, photos: list[InMemoryUploadedFile], category: str) -> PlaceVisitorReview:
+    def create(self, place_id: str, contents: str, images: list[InMemoryUploadedFile], category: str) -> PlaceVisitorReview:
         place_review_service = PlaceVisitorReviewService()
         place_review = place_review_service.create(
             place_id=place_id,
@@ -36,12 +36,12 @@ class PlaceVisitorReviewCoordinatorService:
                 category_list=category_list,
                 category_choice=place_review
             )
-            
-        if len(photos) > 0:
+
+        if len(images) > 0:
             photo_service = PlaceVisitorReviewPhotoService(place_review=place_review)
             photo_service.create(
                 place_review=place_review,
-                image_files=photos
+                image_files=images
             )
         
         return place_review
@@ -60,13 +60,12 @@ class PlaceVisitorReviewCoordinatorService:
             contents=contents,
         )
 
-        if len(image_files) > 0:
-            photo_service = PlaceVisitorReviewPhotoService(place_review=place_review)
-            photo_service.update(
-                place_review=place_review,
-                photo_image_urls=photo_image_urls,
-                image_files=image_files,
-            )
+        photo_service = PlaceVisitorReviewPhotoService(place_review=place_review)
+        photo_service.update(
+            place_review=place_review,
+            photo_image_urls=photo_image_urls,
+            image_files=image_files,
+        )
         
         if category != '':
             category_list = list(category.split(','))
@@ -114,6 +113,7 @@ class PlaceVisitorReviewPhotoService:
     @transaction.atomic
     def create(self, place_review: PlaceVisitorReview, image_files: list[InMemoryUploadedFile]):
         place_name = PlaceVisitorReview.objects.get(id=place_review.id).place.place_name
+        photos = []
 
         for image_file in image_files:
 
@@ -130,7 +130,9 @@ class PlaceVisitorReviewPhotoService:
             place_review_photo.full_clean()
             place_review_photo.save()
 
-        return place_review_photo
+            photos.append(place_review_photo)
+
+        return photos
 
     @transaction.atomic
     def update(self, place_review: PlaceVisitorReview, photo_image_urls: list[str], image_files: list[InMemoryUploadedFile]):

@@ -61,7 +61,7 @@ class PlaceVisitorReviewCreateApi(APIView, ApiAuthMixin):
         place_review = service.create(
             place_id = data.get('place'),
             contents = data.get('contents'),
-            photos = data.get('photos', []),
+            images = data.get('photos', []),
             category = data.get('category', '')
         )
 
