@@ -71,8 +71,8 @@ class StoryLikeSelector:
 
     @staticmethod
     def likes(story_id: int, user: User):
-        story = get_object_or_404(Story, id=story_id)
-        if story.story_likeuser_set.filter(id__in=user).exists():  #좋아요가 존재하는 지 안하는 지 확인
+        story = get_object_or_404(Story, pk=story_id)
+        if story.story_likeuser_set.filter(pk=user.pk).exists():  #좋아요가 존재하는 지 안하는 지 확인
             return True
         else:
             return False

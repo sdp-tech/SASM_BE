@@ -58,9 +58,8 @@ class StoryListApi(APIView):
             return result
         
         def get_story_like(self, obj):
-            like_id = obj.story_likeuser_set.all()
-            users = User.objects.filter(id__in=like_id)
-            likes = StoryLikeSelector.likes(obj.id, user=users)
+            re_user =  self.context['request'].user
+            likes = StoryLikeSelector.likes(obj.id, user=re_user)
             return likes
 
     @swagger_auto_schema(
