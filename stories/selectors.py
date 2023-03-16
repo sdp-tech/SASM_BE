@@ -33,7 +33,7 @@ class StoryCoordinatorSelector:
 
         story_like = StoryLikeSelector.likes(
             story_id=story.id,
-            user=self.user
+            user=self.user,
         )
         semi_cate = semi_category(story.id)
         
@@ -96,6 +96,13 @@ class StorySelector:
             category=F('address__category'),
             **extra_fields
         ).get(id=story_id)
+    
+    def recommend_list(story_id: int):
+        story = Story.objects.get(id=story_id)
+        q = Q(address__category=story.address.category)
+        recommend_story = Story.objects.filter(q).exclude(id=story_id)
+
+        return recommend_story
 
 
 class StoryLikeSelector:
@@ -109,3 +116,46 @@ class StoryLikeSelector:
             return True
         else:
             return False
+        
+
+class MapMarkerSelector:
+    def __init__(self, user: User):
+        self.user = user
+
+    @staticmethod
+    def map(story_id: int):
+        story = Story.objects.get(id=story_id)
+        place = story.address
+
+        return place
+    
+
+class StoryCommentSelector:
+    def __init__(self):
+        pass
+
+    def isWriter(self, story_comment_id: int, user: User):
+        return StoryComment.objects.get(id=story_comment_id).writer == user
+
+    @staticmethod
+    def list(story_id: int):
+        story = Story.objects.get(id=story_id)
+        q = Q(story=story)
+
+        story_comments = StoryComment.objects.filter(q).annotate(
+            nickname=F('writer__nickname'),
+            email=F('writer__email'),
+            profile_image=F('writer__profile_image'),
+        ).values(
+            'id',
+            'story',
+            'content',
+            'nickname',
+            'email',
+            'mention',
+            'profile_image',
+            'created_at',
+            'updated_at',
+        ).order_by('id')
+
+        return story_comments
