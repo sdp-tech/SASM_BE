@@ -4,29 +4,61 @@ from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from drf_yasg.utils import swagger_auto_schema
+from rest_framework.views import APIView
+from rest_framework.serializers import ValidationError
+from rest_framework import serializers
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
+from places.mixins import ApiAuthMixin
 from places.models import Place
-from places.serializers import PlaceSerializer,PlaceDetailSerializer, MapMarkerSerializer
+from places.serializers import PlaceSerializer,PlaceDetailSerializer
+from places.selectors import PlaceSelector
 from sasmproject.swagger import param_search,param_filter,param_id
 
-class MapMarkerView(viewsets.ModelViewSet):
-    '''
-        map marker 표시를 위해 모든 장소를 주는 API
-    '''
-    queryset = Place.objects.all().values('place_name', 'latitude', 'longitude', 'id')
-    serializer_class = MapMarkerSerializer
-    permission_classes=[
-        AllowAny,
-    ]
-    @swagger_auto_schema(operation_id='api_places_map_info_get',security=[])
+
+class MapMarkerApi(APIView, ApiAuthMixin):
+    class MapMarkerOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField(required=False)
+        place_name = serializers.CharField()
+        longitude = serializers.FloatField(required=False)
+        latitude = serializers.FloatField(required=False)
+
+    @swagger_auto_schema(
+        operation_id='',
+        operation_description='''
+            map marker 표시를 위해 모든 장소를 주는 API
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples = {
+                    "application/json": {
+                        'id': 1,
+                        'place_name': '비건마마',
+                        'longitude': '45.2',
+                        'latitue': '15.0',
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )
+        }
+    )
+
     def get(self, request):
-        serializer = MapMarkerSerializer(self.queryset, many=True)
+        selector = PlaceSelector
+        lat_lon = selector.lat_lon()
+        serializer = self.MapMarkerOutputSerializer(lat_lon, many=True)
+
         return Response({
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-    
+
+
 class BasicPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'

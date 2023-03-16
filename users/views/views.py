@@ -41,7 +41,7 @@ class UserLoginApi(APIView, ApiAllowAnyMixin):
         email = serializers.CharField()
         refresh = serializers.CharField()
         access = serializers.CharField()
-        nickname = serializers.CharField()
+        nickname = serializers.CharField(allow_blank=True)
 
     def post(self, request):
         input_serializer = self.UserLoginInputSerializer(data=request.data)
@@ -108,12 +108,12 @@ class RepCheckApi(APIView):
     permission_classes = (AllowAny,)
 
     class RepCheckSerializer(serializers.Serializer):
-        type = serializers.CharField()
-        value = serializers.CharField()
-    
+        type = serializers.CharField(required=False)
+        value = serializers.CharField(required=False)
+
     def post(self, request):
         serializer = self.RepCheckSerializer(data=request.data)
-        serializer.is_valid()
+        serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         service = UserService()

@@ -1,20 +1,147 @@
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.serializers import ValidationError
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.views import APIView
+
 from drf_yasg.utils import swagger_auto_schema
-from places.models import VisitorReview
+from drf_yasg import openapi
+
+from places.models import PlaceVisitorReview
+from places.mixins import ApiAuthMixin
 from places.serializers import VisitorReviewSerializer
+from places.services import PlaceVisitorReviewCoordinatorService, PlaceVisitorReviewService
 from sasmproject.swagger import param_pk,param_id
+
 class BasicPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
 
+class PlaceVisitorReviewCreateApi(APIView, ApiAuthMixin):
+    class PlaceVisitorReviewSerializer(serializers.Serializer):
+        place = serializers.CharField()
+        contents = serializers.CharField()
+        category = serializers.CharField(required=False) 
+        photos = serializers.ListField(required=False)
+
+    @swagger_auto_schema(
+        operation_id='',
+        operation_description='''
+            장소 리뷰를 생성하는 api
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )
+        }
+    )
+
+    def post(self, request):        
+        serializer = self.PlaceVisitorReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        service = PlaceVisitorReviewCoordinatorService(
+            user = request.user
+        )
+
+        place_review = service.create(
+            place_id = data.get('place'),
+            contents = data.get('contents'),
+            images = data.get('photos', []),
+            category = data.get('category', '')
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': place_review.id},
+        }, status=status.HTTP_200_OK)
+
+
+class PlaceVisitorReviewUpdateApi(APIView, ApiAuthMixin):
+    class PlaceVisitorReviewSerializer(serializers.Serializer):
+        place = serializers.CharField()
+        contents = serializers.CharField()
+        category = serializers.CharField(required=False)
+        photoList = serializers.ListField(required=False) 
+        photos = serializers.ListField(required=False)
+
+        class Meta:
+            examples = {
+                'place': '안녕 상점 추천합니다.',
+                'contents': '개인적으로 좋았습니다.',
+                'category': '1,2,5',
+                'photoList': ['https://abc.com/2.jpg'],
+                'photos': ['<IMAGE FILE BINARY>', '<IMAGE FILE BINARY>'],
+            }
+
+    @swagger_auto_schema(
+        request_body=PlaceVisitorReviewSerializer,
+        security=[],
+        operation_id='장소 리뷰 업데이트',
+        operation_description='''
+            전송된 모든 필드 값을 그대로 댓글에 업데이트하므로, 댓글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+            즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+            <br/>
+            photoList 사용 예시로, 게시글 디테일 API에서 전달받은 photoList 값이 ['https://abc.com/1.jpg', 'https://abc.com/2.jpg']일 때 '1.jpg'를 지우고 싶다면 ['https://abc.com/2.jpg']으로 값을 설정하면 됩니다.<br/>
+            만약 새로운 photo를 추가하고 싶다면, photos에 이미지 첨부 파일을 1개 이상 담아 전송하면 됩니다.<br/>
+            <br/>
+            참고로 request body는 json 형식이 아닌 <b>multipart/form-data 형식</b>으로 전달받으므로, 리스트 값을 전달하고자 한다면 개별 원소들마다 리스트 필드 이름을 key로 설정하여, 원소 값을 value로 추가해주면 됩니다.
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )
+        }
+    )
+
+    def put(self, request, place_review_id):
+        serializer  = self.PlaceVisitorReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        service = PlaceVisitorReviewCoordinatorService(
+            user=request.user
+        )
+
+        service.update(
+            place_review_id=place_review_id,
+            contents=data.get('contents'),
+            category=data.get('category', ''),
+            photo_image_urls=data.get('photoList', []),
+            image_files=data.get('photos', []),
+        )
+        
+        return Response({
+            'status': 'success',
+            'data': {'id': place_review_id},
+        }, status=status.HTTP_200_OK)
+
+
 class PlaceReviewView(viewsets.ModelViewSet):
-    queryset = VisitorReview.objects.select_related('visitor_name').order_by('-created')
+    queryset = PlaceVisitorReview.objects.select_related('visitor_name').order_by('-created')
     serializer_class = VisitorReviewSerializer
     pagination_class=BasicPagination
 
@@ -44,6 +171,12 @@ class PlaceReviewView(viewsets.ModelViewSet):
                         "status" : "success",
                         "data" : serializer.data,
                     },status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    "status" : "fail",
+                    "data" : serializer.errors
+                })
+            
         except:
             return Response({
                 "status" : "fail",
@@ -68,7 +201,7 @@ class PlaceReviewView(viewsets.ModelViewSet):
         장소에 대한 review list를 반환하는 api
         '''
         pk = request.GET.get('id','')
-        queryset = VisitorReview.objects.filter(place_id=pk)
+        queryset = PlaceVisitorReview.objects.filter(place_id=pk)
         serializer = self.get_serializer(queryset, many=True, context={'request': request})
         page = self.paginate_queryset(serializer.data)
         if page is not None:
