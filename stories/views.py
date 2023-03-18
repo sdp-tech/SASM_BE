@@ -1,3 +1,17 @@
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import serializers, status
+from rest_framework.serializers import ValidationError
+from places.serializers import MapMarkerSerializer
+from stories.mixins import ApiAuthMixin
+from stories.selectors import StorySelector, semi_category
+from stories.services import StoryCoordinatorService
+from core.views import get_paginated_response
+from .models import Story, StoryComment
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+
 import datetime
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -11,56 +25,136 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 
 from .models import Story, StoryComment
+from .selectors import StoryLikeSelector
 from users.models import User
 from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer, StoryCommentCreateSerializer, StoryCommentUpdateSerializer
 from places.serializers import MapMarkerSerializer
 from core.permissions import CommentWriterOrReadOnly
 from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
-from drf_yasg.utils import swagger_auto_schema
 
 
-class StoryLikeView(viewsets.ModelViewSet):
-    '''
-    스토리에 대한 좋아요 정보를 가져오는 API
-    '''
-    queryset = Story.objects.all()
-    serializer_class = StoryDetailSerializer
-    permission_classes = [
-        IsAuthenticated
-    ]
+class StoryListApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 4
+        page_size_query_param = 'page_size'
 
+    class StoryListFilterSerializer(serializers.Serializer):
+        search = serializers.CharField(required=False)
+        latest = serializers.BooleanField(required=False)
+
+    class StoryListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        preview = serializers.CharField()
+        rep_pic = serializers.ImageField()
+        views = serializers.IntegerField()
+        story_like = serializers.SerializerMethodField()
+        place_name = serializers.CharField()
+        category = serializers.CharField()
+        semi_category = serializers.SerializerMethodField()
+
+        def get_semi_category(self, obj):
+            result = semi_category(obj.id)
+            return result
+        
+        def get_story_like(self, obj):
+            re_user =  self.context['request'].user
+            likes = StoryLikeSelector.likes(obj.id, user=re_user)
+            return likes
+
+    @swagger_auto_schema(
+        operation_id='스토리 리스트',
+        operation_description='''
+            전달된 쿼리 파라미터에 부합하는 게시글 리스트를 반환합니다.<br/>
+            <br/>
+            search : 제목 혹은 장소 검색어<br/>
+            latest : 최신순 정렬 여부 (ex: true)</br>
+            ''',
+        query_serializer=StoryListFilterSerializer,
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'place_name': '서울숲',
+                        'title': '도심 속 모두에게 열려있는 쉼터, 서울숲',
+                        'category': '녹색 공간',
+                        'semi_category': '반려동물 출입 가능, 오보',
+                        'preview': '서울숲. 가장 도시적인 단어...(최대 150자)',
+                        'rep_pic': 'https://abc.com/1.jpg',
+                        'story_like': True,
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request):
+        filters_serializer = self.StoryListFilterSerializer(
+            data=request.query_params)
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+        story = StorySelector.list(
+            search=filters.get('search', ''),
+            latest=filters.get('latest', True),
+        )
+
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.StoryListOutputSerializer,
+            queryset=story,
+            request=request,
+            view=self
+        )
+    
+    
+class StoryLikeApi(APIView, ApiAuthMixin):
+    @swagger_auto_schema(
+        operation_id='스토리 좋아요 또는 좋아요 취소',
+        operation_description='''
+            전달된 id를 가지는 스토리글에 대한 사용자의 좋아요/좋아요 취소를 수행합니다.<br/>
+            결과로 좋아요 상태(TRUE:좋아요, FALSE:좋아요X)가 반환됩니다.
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"story_like": True}
+                    }
+                }
+            ),
+            "401": openapi.Response(
+                description="Bad Request",    
+            ),
+        },
+    )
     def post(self, request):
-        id = request.data['id']
-        story = get_object_or_404(Story, pk=id)
-        if request.user.is_authenticated:
-            user = request.user
-            profile = User.objects.get(email=user)
-            check_like = story.story_likeuser_set.filter(pk=profile.pk)
-
-            if check_like.exists():
-                story.story_likeuser_set.remove(profile)
-                story.story_like_cnt -= 1
-                story.save()
-                return Response({
-                    'status': 'success',
-                }, status=status.HTTP_201_CREATED)
-            else:
-                story.story_likeuser_set.add(profile)
-                story.story_like_cnt += 1
-                story.save()
-                return Response({
-                    'status': 'success',
-                }, status=status.HTTP_201_CREATED)
-        else:
+        try:
+            service = StoryCoordinatorService(
+                user = request.user
+            )
+            story_like = service.like_or_dislike(
+                story_id=request.data['id'],
+            )
+        except:
             return Response({
-                'status': 'success',
+                'status': 'fail',
+                'message': '권한이 없거나 story가 존재하지 않습니다.',
             }, status=status.HTTP_401_UNAUTHORIZED)
-
+        return Response({
+            'status': 'success',
+                'data': {'story_like': story_like},
+            }, status=status.HTTP_201_CREATED)
+    
 
 class BasicPagination(PageNumberPagination):
     page_size = 4
     page_size_query_param = 'page_size'
-
 
 class StoryListView(viewsets.ModelViewSet):
     '''
@@ -72,37 +166,6 @@ class StoryListView(viewsets.ModelViewSet):
         AllowAny,
     ]
     pagination_class = BasicPagination
-
-    def get(self, request):
-        qs = self.get_queryset()
-        search = request.GET.get('search', '')
-        order_condition = request.GET.get('order', 'true')
-        search_list = qs.filter(Q(title__icontains=search) | Q(
-            address__place_name__icontains=search))
-        # if len(array) > 0:
-        #     for a in array:
-        #         if query is None:
-        #             query = Q(address__category=a)
-        #         else:
-        #             query = query | Q(address__category=a)
-        #     story = search_list.filter(query)
-        #     page = self.paginate_queryset(story)
-        # else:
-        #     page = self.paginate_queryset(search_list)
-        if order_condition == 'true': #최신순
-            queryset = search_list.order_by('-created')
-        if order_condition == 'false' : #오래된 순
-            queryset = search_list.order_by('created')
-        queryset = self.paginate_queryset(queryset)
-        if queryset is not None:
-            serializer = self.get_paginated_response(
-                self.get_serializer(queryset, many=True).data)
-        else:
-            serializer = self.get_serializer(queryset, many=True)
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)       
 
     @swagger_auto_schema(operation_id='api_stories_recommend_story_get', manual_parameters=[param_id])
     def recommend_story(self, request):
