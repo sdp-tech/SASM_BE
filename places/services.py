@@ -112,13 +112,12 @@ class PlaceVisitorReviewPhotoService:
 
     @transaction.atomic
     def create(self, place_review: PlaceVisitorReview, image_files: list[InMemoryUploadedFile]):
-        place_name = PlaceVisitorReview.objects.get(id=place_review.id).place.place_name
         photos = []
 
         for image_file in image_files:
 
             ext = image_file.name.split(".")[-1]
-            file_path = '{}/{}-{}.{}'.format(place_name, place_review.id,
+            file_path = '{}/{}-{}.{}'.format(place_review.id, place_review.id,
                                             str(time.time())+str(uuid.uuid4().hex), ext)
             image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
 
