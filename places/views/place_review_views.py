@@ -11,10 +11,11 @@ from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from places.models import PlaceVisitorReview
+from places.models import PlaceVisitorReview, Place
 from places.mixins import ApiAuthMixin
 from places.serializers import VisitorReviewSerializer
 from places.services import PlaceVisitorReviewCoordinatorService, PlaceVisitorReviewService
+from places.selectors import PlaceVisitorReviewCoordinatorSelector, PlaceReviewSelector
 from sasmproject.swagger import param_pk,param_id
 
 class BasicPagination(PageNumberPagination):
@@ -138,6 +139,111 @@ class PlaceVisitorReviewUpdateApi(APIView, ApiAuthMixin):
             'status': 'success',
             'data': {'id': place_review_id},
         }, status=status.HTTP_200_OK)
+
+
+def get_paginated_response(*, pagination_class, serializer_class, queryset, request, view):
+    paginator = pagination_class()
+
+    page = paginator.paginate_queryset(queryset, request, view=view)
+
+    if page is not None:
+        serializer = serializer_class(page, many=True)
+    else:
+        serializer = serializer_class(queryset, many=True)
+
+    # get category statistics
+    selector = PlaceReviewSelector()
+    category_statistics = selector.get_category_statistics(place_id=request.GET['place_id'])
+
+    data = paginator.get_paginated_response(serializer.data).data
+    data['statistics'] = category_statistics
+    data.move_to_end('statistics', last=False) # data.results 앞에 위치하도록 OrderedDict 내 순서 조정
+
+    return Response({
+        'status': 'success',
+        'data' : data,
+    }, status=status.HTTP_200_OK)
+
+
+class PlaceVisitorReviewListApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 5
+        page_size_query_param = 'page_size'
+
+    class PlaceVisitorReviewListInputSerializer(serializers.Serializer):
+        place_id = serializers.IntegerField()
+
+    class PlaceVisitorReviewListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        # place = serializers.IntegerField()
+        contents = serializers.CharField()
+        created = serializers.CharField()
+        updated = serializers.CharField()
+
+        nickname = serializers.CharField()
+        photoList = serializers.ListField(required=False)
+        categoryList = serializers.ListField(required=False)
+
+        class Meta:
+            model = PlaceVisitorReview
+            fields = [
+                'id',
+                'contents',
+                'created',
+                'updated',
+            ]
+
+    @swagger_auto_schema(
+        query_serializer=PlaceVisitorReviewListInputSerializer,
+        security=[],
+        operation_id='장소 리뷰 리스트 조회',
+        operation_description='''
+            장소 리뷰 리스트를 반환합니다.
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "id": 91,
+                        "contents": "좋다, 멋지다",
+                        "created": "2023-03-20 06:31:51.241182+00:00",
+                        "updated": "2023-03-20 10:41:57.988675+00:00",
+                        "nickname": "닉넴",
+                        "photoList": [
+                            {
+                                "imgfile": "https://sasm-bucket.s3.amazonaws.com/media/ABC.jpeg"
+                            },
+                            {
+                                "imgfile": "https://sasm-bucket.s3.amazonaws.com/media/123.png"
+                            }
+                        ],
+                        "categoryList": [ "1", "11" ]        
+                    }
+                }
+            )
+        }
+    )
+    def get(self, request):
+        input_serializer = self.PlaceVisitorReviewListInputSerializer(
+            data=request.query_params)
+        input_serializer.is_valid(raise_exception=True)
+        place_filter = input_serializer.validated_data
+
+        selector = PlaceVisitorReviewCoordinatorSelector()
+        reviews = selector.list(
+            place_id=place_filter.get('place_id')
+        )
+
+        paginated_response = get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.PlaceVisitorReviewListOutputSerializer,
+            queryset=reviews,
+            request=request,
+            view=self
+        )
+
+        return paginated_response
 
 
 class PlaceReviewView(viewsets.ModelViewSet):
