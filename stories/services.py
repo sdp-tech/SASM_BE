@@ -27,7 +27,6 @@ class StoryCoordinatorService:
 
     def like_or_dislike(self, story_id: int) -> bool:
         check_user(self.user)
-
         if StoryLikeSelector.likes(story_id=story_id, user=self.user):
             # Story의 like_cnt 1 감소
             StoryService.dislike(story_id=story_id, user=self.user)

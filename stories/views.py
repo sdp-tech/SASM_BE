@@ -1,35 +1,106 @@
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import serializers, status
-from rest_framework.serializers import ValidationError
-from places.serializers import MapMarkerSerializer
-from stories.mixins import ApiAuthMixin
-from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector
-from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService
-from core.views import get_paginated_response
-
-from .models import Story, StoryComment
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
-
-from users.models import User
-from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer, StoryCommentCreateSerializer, StoryCommentUpdateSerializer
-from places.serializers import MapMarkerSerializer
-from core.permissions import CommentWriterOrReadOnly
-from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
-
-import datetime
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
 from rest_framework import generics
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
+from stories.mixins import ApiAuthMixin
+from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector
+from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService
+from core.views import get_paginated_response
+
+from .models import Story, StoryComment
+from .selectors import StoryLikeSelector
+from users.models import User
+from places.serializers import MapMarkerSerializer
+from core.permissions import CommentWriterOrReadOnly
+from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+
+
+class StoryListApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 4
+        page_size_query_param = 'page_size'
+
+    class StoryListFilterSerializer(serializers.Serializer):
+        search = serializers.CharField(required=False)
+        latest = serializers.BooleanField(required=False)
+
+    class StoryListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        preview = serializers.CharField()
+        rep_pic = serializers.ImageField()
+        views = serializers.IntegerField()
+        story_like = serializers.SerializerMethodField()
+        place_name = serializers.CharField()
+        category = serializers.CharField()
+        semi_category = serializers.SerializerMethodField()
+
+        def get_semi_category(self, obj):
+            result = semi_category(obj.id)
+            return result
+        
+        def get_story_like(self, obj):
+            re_user =  self.context['request'].user
+            likes = StoryLikeSelector.likes(obj.id, user=re_user)
+            return likes
+
+    @swagger_auto_schema(
+        operation_id='스토리 리스트',
+        operation_description='''
+            전달된 쿼리 파라미터에 부합하는 게시글 리스트를 반환합니다.<br/>
+            <br/>
+            search : 제목 혹은 장소 검색어<br/>
+            latest : 최신순 정렬 여부 (ex: true)</br>
+            ''',
+        query_serializer=StoryListFilterSerializer,
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'place_name': '서울숲',
+                        'title': '도심 속 모두에게 열려있는 쉼터, 서울숲',
+                        'category': '녹색 공간',
+                        'semi_category': '반려동물 출입 가능, 오보',
+                        'preview': '서울숲. 가장 도시적인 단어...(최대 150자)',
+                        'rep_pic': 'https://abc.com/1.jpg',
+                        'story_like': True,
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request):
+        filters_serializer = self.StoryListFilterSerializer(
+            data=request.query_params)
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+        story = StorySelector.list(
+            search=filters.get('search', ''),
+            latest=filters.get('latest', True),
+        )
+
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.StoryListOutputSerializer,
+            queryset=story,
+            request=request,
+            view=self
+        )
+
 
 class StoryDetailApi(APIView):
     class StoryDetailOutputSerializer(serializers.Serializer):
@@ -72,13 +143,14 @@ class StoryDetailApi(APIView):
             ),
         },
     )
-    def get(self, request):
+    def get(self, request, story_id):
         try:
             selector = StoryCoordinatorSelector(
                 user=request.user
             )
-            story = selector.detail(
-                story_id=request.query_params.get('id'))
+            story = selector.detail(story_id=story_id)
+            # story = selector.detail(
+            #     story_id=request.query_params.get('id'))
 
             serializer = self.StoryDetailOutputSerializer(story)
         except:
@@ -182,71 +254,8 @@ class BasicPagination(PageNumberPagination):
     page_size = 4
     page_size_query_param = 'page_size'
 
-
-class StoryListView(viewsets.ModelViewSet):
-    '''
-        Story의 list 정보를 주는 API
-    '''
-    queryset = Story.objects.all()
-    serializer_class = StoryListSerializer
-    permission_classes = [
-        AllowAny,
-    ]
-    pagination_class = BasicPagination
-
-    def get(self, request):
-        qs = self.get_queryset()
-        search = request.GET.get('search', '')
-        order_condition = request.GET.get('order', 'true')
-        search_list = qs.filter(Q(title__icontains=search) | Q(
-            address__place_name__icontains=search))
-        # if len(array) > 0:
-        #     for a in array:
-        #         if query is None:
-        #             query = Q(address__category=a)
-        #         else:
-        #             query = query | Q(address__category=a)
-        #     story = search_list.filter(query)
-        #     page = self.paginate_queryset(story)
-        # else:
-        #     page = self.paginate_queryset(search_list)
-        if order_condition == 'true': #최신순
-            queryset = search_list.order_by('-created')
-        if order_condition == 'false' : #오래된 순
-            queryset = search_list.order_by('created')
-        queryset = self.paginate_queryset(queryset)
-        if queryset is not None:
-            serializer = self.get_paginated_response(
-                self.get_serializer(queryset, many=True).data)
-        else:
-            serializer = self.get_serializer(queryset, many=True)
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)       
-
-    # @swagger_auto_schema(operation_id='api_stories_recommend_story_get', manual_parameters=[param_id])
-    # def recommend_story(self, request):
-    #     id = request.GET.get('id', '')
-    #     qs = self.get_queryset()
-    #     story = Story.objects.get(id=id)
-    #     # story의 category와 같은 스토리 return
-    #     qs = qs.filter(address__category=story.address.category).exclude(id=id)
-    #     page = self.paginate_queryset(qs)
-    #     if page is not None:
-    #         serializer = self.get_paginated_response(
-    #             self.get_serializer(page, many=True).data
-    #         )
-    #     else:
-    #         serializer = self.get_serializer(page, many=True)
-    #     return Response({
-    #         'status': 'success',
-    #         'data': serializer.data,
-    #     }, status=status.HTTP_200_OK)
     
-
 class GoToMapApi(APIView):
-
     @swagger_auto_schema(
         operation_id='스토리의 해당 장소로 Map 연결',
         operation_description='''
@@ -453,7 +462,7 @@ class StoryCommentUpdateApi(APIView, ApiAuthMixin):
             ),
         },
     )
-    def patch(self, request, story_comment_id):
+    def put(self, request, story_comment_id):
         try:
             story_comment = StoryComment.objects.get(id=story_comment_id)
             serializers = self.StoryCommnetUpdateInputSerializer(data=request.data)

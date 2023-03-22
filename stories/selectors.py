@@ -81,7 +81,6 @@ def semi_category(story_id: int):
             ret_result = ret_result + result[i]
         else:
             ret_result = ret_result + result[i] + ', '
-
     return ret_result
 
 
@@ -89,7 +88,6 @@ class StorySelector:
     def __init__(self):
         pass
 
-    @staticmethod
     def detail(story_id: int, extra_fields: dict = {}):
         return Story.objects.annotate(
             place_name=F('address__place_name'),
@@ -104,6 +102,24 @@ class StorySelector:
 
         return recommend_story
 
+    @staticmethod
+    def list(search: str = '', latest: bool = True):
+        q = Q()
+        q.add(Q(title__icontains=search) | Q(address__place_name__icontains=search), q.AND)  #스토리 제목 또는 내용 검색
+
+        #최신순 정렬
+        if latest:
+            order = '-created'
+        else:
+            order = 'created'
+
+        story = Story.objects.filter(q).annotate(
+            place_name=F('address__place_name'),
+            category=F('address__category'),
+        ).order_by(order)
+
+        return story
+    
 
 class StoryLikeSelector:
     def __init__(self):
