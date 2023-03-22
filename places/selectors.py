@@ -1,5 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass
+from collections import Counter
 
 from django.conf import settings
 from django.db import transaction
@@ -10,6 +11,7 @@ import haversine as hs
 
 from users.models import User
 from places.models import Place, PlaceVisitorReview
+
 
 class GroupConcat(Aggregate):
     # Postgres ArrayAgg similar(not exactly equivalent) for sqlite & mysql
@@ -35,7 +37,7 @@ class GroupConcat(Aggregate):
                               connection,
                               template='%(function)s(%(distinct)s%(expressions)s%(ordering)s)',
                               **extra)
-    
+
 
 class PlaceVisitorReviewCoordinatorSelector:
     def __init__(self):
@@ -51,7 +53,7 @@ class PlaceVisitorReviewCoordinatorSelector:
         # category_statistics = selector.get_category_statistics(place_id=place_id)
 
         for review in reviews_qs:
-            if review.categoryList: 
+            if review.categoryList:
                 review.categoryList = list(review.categoryList.split(","))
 
             if review.photoList:
@@ -98,9 +100,11 @@ class PlaceReviewSelector:
 
         # total count, category별 count
         place = Place.objects.get(id=place_id)
-        place_review_category_total, category_count = self.count_place_review_category(place=place)
+        place_review_category_total, category_count = self.count_place_review_category(
+            place=place)
         # count순 정렬 후 TOP3 반환
-        category_count = sorted(category_count.items(), key=lambda x: x[1], reverse=True)[:TOP_COUNTS]
+        category_count = sorted(category_count.items(),
+                                key=lambda x: x[1], reverse=True)[:TOP_COUNTS]
 
         for i in category_count:
             l = [i[0], round(i[1]/place_review_category_total*100)]
@@ -108,48 +112,41 @@ class PlaceReviewSelector:
         return statistic
 
     def count_place_review_category(self, place):
-        count = 0
-        category_count = {}
-        l = PlaceVisitorReview.objects.filter(place=place).prefetch_related('category')
+        l = PlaceVisitorReview.objects.filter(
+            place=place).prefetch_related('category')
 
+        category_content_list = []
         for visitor_review_obj in l:
             # 리뷰 객체로부터 카테고리 객체 역참조
             p = visitor_review_obj.category.all()
+
             for visitor_review_category_obj in p:
-                count+=1
-                category_content = visitor_review_category_obj.category.category_content # 카테고리명
-                category_count = self.is_in_category_count(category_content, category_count) # 카테고리별 선택된 횟수
+                category_content_list.append(
+                    visitor_review_category_obj.category.category_content)
 
-        return count, category_count
+        category_count = Counter(category_content_list)
+        total_count = len(category_content_list)
 
-    def is_in_category_count(self, category_content, category_count):
-        # 기존에 인식된 카테고리면 count 증가
-        if category_content in category_count.keys():
-            category_count[category_content] += 1
-            return category_count
-        
-        # 새로 인식된 카테고리면 count=1
-        category_count[category_content] = 1
-        return category_count
+        return total_count, category_count
 
     def list(place: Place):
         # GroupConcat 된 필드가 두개 이상일 경우 union 관계가 복잡해짐에 따라 subquery로 구현
         concat_category = PlaceVisitorReview.objects.filter(
-                                            id = OuterRef('id')
-                                            ).annotate(
-                                            _category = GroupConcat('category__category')
-                                            ).values('id','_category')
+            id=OuterRef('id')
+        ).annotate(
+            _category=GroupConcat('category__category')
+        ).values('id', '_category')
 
         concat_photo = PlaceVisitorReview.objects.filter(
-                                            id = OuterRef('id')
-                                            ).annotate(
-                                            _photo = GroupConcat('photos__imgfile')
-                                            ).values('id', '_photo')
+            id=OuterRef('id')
+        ).annotate(
+            _photo=GroupConcat('photos__imgfile')
+        ).values('id', '_photo')
 
         reviews = PlaceVisitorReview.objects.filter(place=place).annotate(
-            nickname = F("visitor_name__nickname"),
-            categoryList = Subquery(concat_category.values('_category')),
-            photoList = Subquery(concat_photo.values('_photo'))
+            nickname=F("visitor_name__nickname"),
+            categoryList=Subquery(concat_category.values('_category')),
+            photoList=Subquery(concat_photo.values('_photo'))
         ).order_by('id')
 
         return reviews
