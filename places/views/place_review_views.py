@@ -183,6 +183,8 @@ class PlaceVisitorReviewListApi(APIView):
         updated = serializers.CharField()
 
         nickname = serializers.CharField()
+        writer = serializers.CharField()
+
         photoList = serializers.ListField(required=False)
         categoryList = serializers.ListField(required=False)
 
@@ -224,6 +226,7 @@ class PlaceVisitorReviewListApi(APIView):
                                     "created": "2023-03-20 06:31:51.241182+00:00",
                                     "updated": "2023-03-20 10:41:57.988675+00:00",
                                     "nickname": "닉넴",
+                                    "writer": "sdptech@gmail.com",
                                     "photoList": [
                                                 {
                                                     "imgfile": "https://sasm-bucket.s3.amazonaws.com/media/ABC.jpeg"

@@ -45,12 +45,9 @@ class PlaceVisitorReviewCoordinatorSelector:
 
     def list(self, place_id: int):
         place = Place.objects.get(id=place_id)
-        selector = PlaceReviewSelector()
         reviews_qs = PlaceReviewSelector.list(
             place=place
         )
-
-        # category_statistics = selector.get_category_statistics(place_id=place_id)
 
         for review in reviews_qs:
             if review.categoryList:
@@ -66,8 +63,6 @@ class PlaceVisitorReviewCoordinatorSelector:
                     photoList.append(dict)
 
                 review.photoList = photoList
-
-            # review.category_statistics = category_statistics
 
         return reviews_qs
 
@@ -145,6 +140,7 @@ class PlaceReviewSelector:
 
         reviews = PlaceVisitorReview.objects.filter(place=place).annotate(
             nickname=F("visitor_name__nickname"),
+            writer=F("visitor_name__email"),
             categoryList=Subquery(concat_category.values('_category')),
             photoList=Subquery(concat_photo.values('_photo'))
         ).order_by('id')

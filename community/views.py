@@ -364,7 +364,7 @@ class PostListApi(APIView):
             data=request.query_params)
         filters_serializer.is_valid(raise_exception=True)
         filters = filters_serializer.validated_data
-        
+
         selector = PostCoordinatorSelector(
             user=request.user
         )
@@ -399,6 +399,7 @@ class PostListApi(APIView):
 
 class PostDetailApi(APIView):
     class PostDetailOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
         board = serializers.IntegerField()
         title = serializers.CharField()
         content = serializers.CharField()
@@ -425,6 +426,7 @@ class PostDetailApi(APIView):
                 description="OK",
                 examples={
                     "application/json": {
+                        'id': 12,
                         'board': 1,
                         'title': '안녕 상점 추천합니다.',
                         'content': '개인적으로 좋았습니다.',
@@ -638,7 +640,7 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
             post_id=data.get('post'),
             content=data.get('content'),
             isParent=data.get('isParent'),
-            parent_id=data.get('parent', None), 
+            parent_id=data.get('parent', None),
             mentioned_email=data.get('mentionEmail', ''),
             image_files=data.get('imageList', []),
         )
@@ -790,7 +792,7 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
         data = serializer.validated_data
 
         service = PostReportService()
-        
+
         post_id = data.get('post')
         post = Post.objects.get(id=post_id)
 
