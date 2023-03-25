@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.images import ImageFile
 from rest_framework import serializers
 import haversine as hs
-from places.models import Place, PlacePhoto, SNSUrl, VisitorReview, ReviewPhoto, VisitorReviewCategory, CategoryContent
+from places.models import Place, PlacePhoto, SNSUrl, PlaceVisitorReview, PlaceVisitorReviewPhoto, PlaceVisitorReviewCategory, CategoryContent
 from users.models import User
 
 class PlacePhotoSerializer(serializers.ModelSerializer):
@@ -178,7 +178,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
     def count_place_review_category(self, place):
         count = 0
         category_count = {}
-        l = VisitorReview.objects.filter(place=place).prefetch_related('category')
+        l = PlaceVisitorReview.objects.filter(place=place).prefetch_related('category')
         for visitor_review_obj in l:
             #역참조
             p = visitor_review_obj.category.all()
@@ -197,7 +197,7 @@ class PlaceDetailSerializer(serializers.ModelSerializer):
 
 class VisitorReviewCategorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = VisitorReviewCategory
+        model = PlaceVisitorReviewCategory
         fields = [
             'category',
             #'category_choice',
@@ -205,7 +205,7 @@ class VisitorReviewCategorySerializer(serializers.ModelSerializer):
 
 class ReviewPhotoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ReviewPhoto
+        model = PlaceVisitorReviewPhoto
         fields = [
             'imgfile',
         ]
@@ -218,7 +218,7 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
     # category_statistics = serializers.SerializerMethodField()
     writer = serializers.SerializerMethodField()
     class Meta:
-        model = VisitorReview
+        model = PlaceVisitorReview
         fields = [
             'id',
             'nickname',
@@ -241,7 +241,7 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         photos_data = self.context['request'].FILES
         user = self.context['request'].user
-        review = VisitorReview.objects.create(**validated_data, visitor_name=user)
+        review = PlaceVisitorReview.objects.create(**validated_data, visitor_name=user)
         photos = photos_data.getlist('photos')
         count = len(photos)
         if (count > 3):
@@ -251,10 +251,10 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
             ext = photo_data.name.split(".")[-1]
             file_path = '{}/{}/{}.{}'.format(validated_data['place'],review.id,str(datetime.datetime.now()),ext)
             image = ImageFile(io.BytesIO(photo_data.read()), name=file_path)
-            ReviewPhoto.objects.create(review=review, imgfile=image)
+            PlaceVisitorReviewPhoto.objects.create(review=review, imgfile=image)
         for category_data in self.context['request'].POST.getlist('category')[0].split(','):
             try:
-                instance = VisitorReviewCategory.objects.create(category_id=category_data)
+                instance = PlaceVisitorReviewCategory.objects.create(category_id=category_data)
                 instance.category_choice.add(review)
             except Exception as e:
                 print(e)
@@ -266,7 +266,7 @@ class VisitorReviewSerializer(serializers.ModelSerializer):
         count = 0
         for visitor_review_category_obj in p:
             if visitor_review_category_obj.category.id != category[count]:
-                visitor_review = VisitorReviewCategory.objects.create(category_id=category[count])
+                visitor_review = PlaceVisitorReviewCategory.objects.create(category_id=category[count])
                 visitor_review.category_choice.add(instance)
                 visitor_review_category_obj.delete()
             count += 1

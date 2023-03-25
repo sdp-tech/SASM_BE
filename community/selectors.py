@@ -76,6 +76,7 @@ class GroupConcat(Aggregate):
 
 @dataclass
 class PostDto:
+    id: int
     board: int
     title: str
     content: str
@@ -114,19 +115,6 @@ class PostCoordinatorSelector:
 
     def detail(self, post_id: int):
         board = Post.objects.get(id=post_id).board
-
-        # extra_fields = {}
-
-        # if board.supports_hashtags:
-        #     extra_fields['hashtags__name'] = GroupConcat(
-        #         'hashtags__name')
-        #     extra_fields['hashtagList'] = F('hashtags__name')
-
-        # if board.supports_post_photos:
-        #     extra_fields['photos__image'] = GroupConcat(
-        #         'photos__image')
-        #     extra_fields['photoList'] = F('photos__image')
-
         post = PostSelector.detail(post_id=post_id)
 
         likes = PostLikeSelector.likes(
@@ -135,6 +123,7 @@ class PostCoordinatorSelector:
         )
 
         dto = PostDto(
+            id=post.id,
             board=post.board.id,
             title=post.title,
             content=post.content,
@@ -303,15 +292,16 @@ class PostCommentCoordinatorSelector:
         for post_comment in post_comment_qs:
             if post_comment['photoList']:
                 photo_url = []
-                post_comment['photoList'] = post_comment['photoList'].split(",")
-                
+                post_comment['photoList'] = post_comment['photoList'].split(
+                    ",")
+
                 # 각각의 photo에 접근하여 url 완성
                 for photo in post_comment['photoList']:
-                    photo = settings.MEDIA_URL + photo 
+                    photo = settings.MEDIA_URL + photo
                     photo_url.append(photo)
 
-                post_comment['photoList'] = photo_url # photoList에 리스트 저장
-        
+                post_comment['photoList'] = photo_url  # photoList에 리스트 저장
+
         return post_comment_qs
 
 
@@ -346,17 +336,17 @@ class PostCommentSelector:
             email=F('writer__email'),
             mentionEmail=F('mention__email'),
             mentionNickname=F('mention__nickname'),
-            photoList = GroupConcat("photos__image")
+            photoList=GroupConcat("photos__image")
         ).values('id',
-                'content',
-                'isParent',
-                'group',
-                'nickname',
-                'email',
-                'mentionEmail',
-                'created',
-                'updated',
-                'photoList').order_by('group', 'id')
+                 'content',
+                 'isParent',
+                 'group',
+                 'nickname',
+                 'email',
+                 'mentionEmail',
+                 'created',
+                 'updated',
+                 'photoList').order_by('group', 'id')
 
         return post_comments
 

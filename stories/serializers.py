@@ -46,9 +46,9 @@ class StoryDetailSerializer(serializers.ModelSerializer):
         like_id = obj.story_likeuser_set.all()
         users = User.objects.filter(id__in=like_id)
         if users.filter(id=re_user).exists():
-            return 'ok'
+            return True
         else:
-            return 'none'
+            return False
 
     def get_category(self, obj):
         '''

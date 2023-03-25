@@ -249,7 +249,6 @@ class StoryLikeApi(APIView, ApiAuthMixin):
                 'data': {'story_like': story_like},
             }, status=status.HTTP_201_CREATED)
 
-
 class BasicPagination(PageNumberPagination):
     page_size = 4
     page_size_query_param = 'page_size'

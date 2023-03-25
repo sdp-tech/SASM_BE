@@ -8,9 +8,9 @@ def get_paginated_response(*, pagination_class, serializer_class, queryset, requ
     page = paginator.paginate_queryset(queryset, request, view=view)
 
     if page is not None:
-        serializer = serializer_class(page, many=True)
+        serializer = serializer_class(page, many=True, context={'request': request})
     else:
-        serializer = serializer_class(queryset, many=True)
+        serializer = serializer_class(queryset, many=True, context={'request': request})
 
     return Response({
         'status': 'success',
