@@ -10,6 +10,48 @@ from django.db.models.functions import Concat, Substr
 from users.models import User
 from stories.models import Story, StoryPhoto, StoryComment
 
+@dataclass
+class StoryDto:
+    id: int
+    title: str
+    place_name: str
+    story_review: str
+    html_content: str
+    tag: str
+    views: int
+    story_like: str
+    category: int
+    semi_category: str  
+
+
+class StoryCoordinatorSelector:
+    def __init__(self, user: User):
+        self.user = user
+
+    def detail(self, story_id: int):
+        story = StorySelector.detail(story_id=story_id)
+
+        story_like = StoryLikeSelector.likes(
+            story_id=story.id,
+            user=self.user,
+        )
+        semi_cate = semi_category(story.id)
+        
+        dto = StoryDto(
+            id=story.id,
+            title=story.title,
+            place_name=story.place_name,
+            story_review=story.story_review,
+            html_content=story.html_content,
+            tag=story.tag,
+            views=story.views,
+            story_like=story_like,
+            category=story.category,
+            semi_category=semi_cate,
+        )
+        return dto
+    
+
 def semi_category(story_id: int):
     '''
         스토리의 세부 category를 알려 주기 위한 함수
@@ -46,6 +88,20 @@ class StorySelector:
     def __init__(self):
         pass
 
+    def detail(story_id: int, extra_fields: dict = {}):
+        return Story.objects.annotate(
+            place_name=F('address__place_name'),
+            category=F('address__category'),
+            **extra_fields
+        ).get(id=story_id)
+    
+    def recommend_list(story_id: int):
+        story = Story.objects.get(id=story_id)
+        q = Q(address__category=story.address.category)
+        recommend_story = Story.objects.filter(q).exclude(id=story_id)
+
+        return recommend_story
+
     @staticmethod
     def list(search: str = '', latest: bool = True):
         q = Q()
@@ -76,3 +132,46 @@ class StoryLikeSelector:
             return True
         else:
             return False
+        
+
+class MapMarkerSelector:
+    def __init__(self, user: User):
+        self.user = user
+
+    @staticmethod
+    def map(story_id: int):
+        story = Story.objects.get(id=story_id)
+        place = story.address
+
+        return place
+    
+
+class StoryCommentSelector:
+    def __init__(self):
+        pass
+
+    def isWriter(self, story_comment_id: int, user: User):
+        return StoryComment.objects.get(id=story_comment_id).writer == user
+
+    @staticmethod
+    def list(story_id: int):
+        story = Story.objects.get(id=story_id)
+        q = Q(story=story)
+
+        story_comments = StoryComment.objects.filter(q).annotate(
+            nickname=F('writer__nickname'),
+            email=F('writer__email'),
+            profile_image=F('writer__profile_image'),
+        ).values(
+            'id',
+            'story',
+            'content',
+            'nickname',
+            'email',
+            'mention',
+            'profile_image',
+            'created_at',
+            'updated_at',
+        ).order_by('id')
+
+        return story_comments

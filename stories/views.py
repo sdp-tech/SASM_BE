@@ -1,36 +1,27 @@
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import serializers, status
-from rest_framework.serializers import ValidationError
-from places.serializers import MapMarkerSerializer
-from stories.mixins import ApiAuthMixin
-from stories.selectors import StorySelector, semi_category
-from stories.services import StoryCoordinatorService
-from core.views import get_paginated_response
-from .models import Story, StoryComment
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
-
-import datetime
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
 from rest_framework import generics
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
+from stories.mixins import ApiAuthMixin
+from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector
+from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService
+from core.views import get_paginated_response
 
 from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
 from users.models import User
-from .serializers import StoryListSerializer, StoryDetailSerializer, StoryCommentSerializer, StoryCommentCreateSerializer, StoryCommentUpdateSerializer
 from places.serializers import MapMarkerSerializer
 from core.permissions import CommentWriterOrReadOnly
 from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 
 class StoryListApi(APIView):
@@ -109,8 +100,115 @@ class StoryListApi(APIView):
             request=request,
             view=self
         )
+
+
+class StoryDetailApi(APIView):
+    class StoryDetailOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        story_review = serializers.CharField()
+        tag = serializers.CharField()
+        html_content = serializers.CharField()
+        story_like = serializers.BooleanField()
+        views = serializers.IntegerField()
+        place_name = serializers.CharField()
+        category = serializers.CharField()
+        semi_category = serializers.CharField()
+
+    @swagger_auto_schema(
+        operation_id='스토리 글 조회',
+        operation_description='''
+            전달된 id에 해당하는 스토리 디테일을 조회합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'place_name': '서울숲',
+                        'title': '도심 속 모두에게 열려있는 쉼터, 서울숲',
+                        'category': '녹색 공간',
+                        'semi_category': '반려동물 출입 가능, 텀블러 사용 가능, 비건',
+                        'tag': '#생명 다양성 #자연 친화 #함께 즐기는',
+                        'story_review': '"모두에게 열려있는 도심 속 가장 자연 친화적인 여가공간"',
+                        'html_content': '서울숲. 가장 도시적인 단어...(최대 150자)',
+                        'views': 45,
+                        'story_like': True,
+                    },
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request, story_id):
+        try:
+            selector = StoryCoordinatorSelector(
+                user=request.user
+            )
+            story = selector.detail(story_id=story_id)
+            # story = selector.detail(
+            #     story_id=request.query_params.get('id'))
+
+            serializer = self.StoryDetailOutputSerializer(story)
+        except:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
     
-    
+
+class StoryRecommendApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 4
+        page_size_query_param = 'page_size'
+
+    class StoryRecommendListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        created = serializers.DateTimeField()
+
+    @swagger_auto_schema(
+        operation_id='story의 category와 같은 스토리 추천 리스트',
+        operation_description='''
+            해당 스토리의 category와 같은 스토리 리스트를 반환합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request):
+        try:
+            recommend_story = StorySelector.recommend_list(
+                story_id = request.query_params.get('id')
+            )
+        except:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        return get_paginated_response(
+                pagination_class=self.Pagination,
+                serializer_class=self.StoryRecommendListOutputSerializer,
+                queryset=recommend_story,
+                request=request,
+                view=self
+            )
+
+
 class StoryLikeApi(APIView, ApiAuthMixin):
     @swagger_auto_schema(
         operation_id='스토리 좋아요 또는 좋아요 취소',
@@ -150,191 +248,239 @@ class StoryLikeApi(APIView, ApiAuthMixin):
             'status': 'success',
                 'data': {'story_like': story_like},
             }, status=status.HTTP_201_CREATED)
-    
 
 class BasicPagination(PageNumberPagination):
     page_size = 4
     page_size_query_param = 'page_size'
 
-class StoryListView(viewsets.ModelViewSet):
-    '''
-        Story의 list 정보를 주는 API
-    '''
-    queryset = Story.objects.all()
-    serializer_class = StoryListSerializer
-    permission_classes = [
-        AllowAny,
-    ]
-    pagination_class = BasicPagination
-
-    @swagger_auto_schema(operation_id='api_stories_recommend_story_get', manual_parameters=[param_id])
-    def recommend_story(self, request):
-        id = request.GET.get('id', '')
-        qs = self.get_queryset()
-        story = Story.objects.get(id=id)
-        # story의 category와 같은 스토리 return
-        qs = qs.filter(address__category=story.address.category).exclude(id=id)
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            serializer = self.get_paginated_response(
-                self.get_serializer(page, many=True).data
-            )
-        else:
-            serializer = self.get_serializer(page, many=True)
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-
-
-class StoryDetailView(generics.RetrieveAPIView):
-    '''
-    조회수 중복 방지 - 쿠키 사용
-    '''
-    queryset = Story.objects.all()
-    serializer_class = StoryDetailSerializer
-    permission_classes = [AllowAny]
-    # get
-
-    def retrieve(self, request):
-        id = request.GET['id']
-        detail_story = get_object_or_404(self.get_queryset(), pk=id)
-        story = self.get_queryset().filter(pk=id)
-        # 쿠키 초기화할 시간. 당일 자정
-        change_date = datetime.datetime.replace(
-            timezone.datetime.now(), hour=23, minute=59, second=0)
-        # %a: locale 요일(단축 표기), %b: locale 월 (단축 표기), %d: 10진수 날짜, %Y: 10진수 4자리 년도
-        # strftime: 서식 지정 날짜 형식 변경.
-        expires = datetime.datetime.strftime(
-            change_date, "%a, %d-%b-%Y %H:%M:%S GMT")
-
-        # response를 미리 받기
-        serializer = self.get_serializer(
-            story, many=True, context={'request': request})
-        response = Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-
-        # 쿠키 읽기, 생성하기
-        if request.COOKIES.get('hit') is not None:
-            cookies = request.COOKIES.get('hit')
-            cookies_list = cookies.split('|')
-            if str(id) not in cookies_list:
-                response.set_cookie('hit', cookies+f'|{id}', expires=expires)
-                detail_story.views += 1
-                detail_story.save()
-                return response
-        else:
-            response.set_cookie(key='hit', value=id, expires=expires)
-            detail_story.views += 1
-            detail_story.save()
-            return response
-
-        serializer = self.get_serializer(
-            story, many=True, context={'request': request})
-        response = Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-        return response
-
-
-class GoToMapView(viewsets.ModelViewSet):
-    '''
-        Map으로 연결하는 API
-    '''
-    queryset = Story.objects.all()
-    serializer_class = MapMarkerSerializer
-    permission_classes = [
-        AllowAny,
-    ]
-
+    
+class GoToMapApi(APIView):
+    @swagger_auto_schema(
+        operation_id='스토리의 해당 장소로 Map 연결',
+        operation_description='''
+            전달받은 id에 해당하는 스토리의 장소로 Map을 연결해준다<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
     def get(self, request):
-        story_id = request.GET['id']
-        story = self.queryset.get(id=story_id)
-        place = story.address
-        serializer = self.get_serializer(place)
+        try:
+            selector = MapMarkerSelector(user=request.user)
+            place = selector.map(story_id=request.data['id'])
+            serializer = MapMarkerSerializer(place)
+        except:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
         return Response({
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
 
 
-class StoryCommentPagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = 'page_size'
+class StoryCommentListApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 20
+        page_size_query_param = 'page_size'
 
+    class StoryCommentListFilterSerializer(serializers.Serializer):
+        story = serializers.IntegerField(required=True)
 
-class StoryCommentView(viewsets.ModelViewSet):
-    '''
-        Story 하위 comment 관련 작업 API
-    '''
-    queryset = StoryComment.objects.all().order_by('id')
-    serializer_class = StoryCommentSerializer
-    permission_classes = [
-        CommentWriterOrReadOnly,
-    ]
-    pagination_class = StoryCommentPagination
+    class StoryCommentListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        story = serializers.IntegerField()
+        content = serializers.CharField()
+        nickname = serializers.CharField()
+        email = serializers.CharField()
+        mention = serializers.CharField()
+        profile_image = serializers.ImageField()
+        created_at = serializers.DateTimeField()
+        updated_at = serializers.DateTimeField()
 
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return StoryCommentCreateSerializer
-        elif self.action == 'update':
-            return StoryCommentUpdateSerializer
-        return StoryCommentSerializer  # read op, destroy op
+    @swagger_auto_schema(
+        operation_id='스토리 댓글 조회',
+        operation_description='''
+            해당 story의 하위 댓글을 조회합니다.<br/>
+        ''',
+        query_serializer=StoryCommentListFilterSerializer,
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'content': '멋져요',
+                        'nickname': 'sdpygl',
+                        'email': 'sdpygl@gmail.com',
+                        'mention': 'sasm@gmail.com',
+                        'profile_image': 'https://abc.com/1.jpg',
+                        'created_at': '2019-08-24T14:15:22Z',
+                        'updated_at': '2019-08-24T14:15:22Z',
+                    }
+                },
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request):
+        try:
+            filters_serializer = self.StoryCommentListFilterSerializer(
+                data=request.query_params)
+            filters_serializer.is_valid(raise_exception=True)
+            filters = filters_serializer.validated_data
+            selector = StoryCommentSelector()
+            story_comments = selector.list(
+                story_id=filters.get('story')  #story id값 받아서 넣기
+            )
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context.update({"request": self.request})
-        return context
+        except:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return get_paginated_response(
+                pagination_class=self.Pagination,
+                serializer_class=self.StoryCommentListOutputSerializer,
+                queryset=story_comments,
+                request=request,
+                view=self,
+            )
+    
 
-    @swagger_auto_schema(operation_id='api_stories_comments_get')
-    def retrieve(self, request, *args, **kwargs):
-        response = super().retrieve(request, *args, **kwargs)
-        return Response({
-            'status': 'success',
-            'data': response.data,
-        }, status=status.HTTP_200_OK)
+class StoryCommentCreateApi(APIView, ApiAuthMixin):
+    class StoryCommentCreateInputSerializer(serializers.Serializer):
+        story=serializers.IntegerField()
+        content = serializers.CharField()
+        mention = serializers.CharField(required=False)
 
-    @swagger_auto_schema(operation_id='api_stories_comments_list', manual_parameters=[StoryCommentViewSet_list_params])
-    def list(self, request, *args, **kwargs):
-        '''특정 스토리 하위 댓글 조회'''
-
-        story_id = request.GET.get('story')
-
-        serializer = self.get_serializer(
-            StoryComment.objects.filter(story=story_id),
-            many=True,
-            context={
-                "story": Story.objects.get(id=story_id),
+        class Meta:
+            examples = {
+                'id': 1,
+                'story': 1,
+                'content': '정보 부탁드려요.',
+                'mentionEmail': 'sdpygl@gmail.com',
             }
-        )
-        # 댓글, 대댓글별 pagination 따로 사용하는 대신, 댓글 group(parent+childs)별로 정렬
-        # 댓글의 경우 id값을, 대댓글의 경우 parent(상위 댓글의 id)값을 대표값으로 설정해 정렬(tuple의 1번째 값)
-        # 댓글 group 내에서는 id 값을 기준으로 정렬(tuple의 2번째 값)
-        serializer_data = sorted(
-            serializer.data, key=lambda k: (k['parent'], k['id']) if k['parent'] else (k['id'], k['id']))
-        page = self.paginate_queryset(serializer_data)
 
-        if page is not None:
-            serializer = self.get_paginated_response(page)
-        else:
-            serializer = self.get_serializer(page, many=True)
-
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-
-    @swagger_auto_schema(operation_id='api_stories_comments_post')
-    def create(self, request, *args, **kwargs):
+    @swagger_auto_schema(
+        request_body=StoryCommentCreateInputSerializer,
+        security=[],
+        operation_id='스토리 댓글 생성',
+        operation_description='''
+            전달된 필드를 기반으로 해당 스토리의 댓글을 생성합니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),        
+        },    
+    )
+    def post(self, request):
         try:
-            super().create(request, *args, **kwargs)
+            serializer = self.StoryCommentCreateInputSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            data = serializer.validated_data
+
+            service = StoryCommentCoordinatorService(
+                user=request.user
+            )
+            story_comment = service.create(
+                story_id=data.get('story'),
+                content=data.get('content'),
+                mentioned_email=data.get('mention', '')
+            )
+
         except ValidationError as e:
             return Response({
                 'status': 'fail',
                 'message': str(e),
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                'status': 'fail',
+                'message': 'unknown',
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'status': 'success',
+            'data': {'id': story_comment.id},
+        }, status=status.HTTP_200_OK)
+    
+
+class StoryCommentUpdateApi(APIView, ApiAuthMixin):
+    class StoryCommnetUpdateInputSerializer(serializers.Serializer):
+        content = serializers.CharField()
+        mentionEmail = serializers.CharField(required=False)
+
+        class Meta:
+            examples = {
+                'content': '저도요!!',
+                'mentionEmail': 'sdppp@gamil.com',
+            }
+    
+    @swagger_auto_schema(
+        request_body=StoryCommnetUpdateInputSerializer,
+        security=[],
+        operation_id='스토리 댓글 수정',
+        operation_description='''
+            전달된 id에 해당하는 댓글을 업데이트합니다.<br/>
+            전송된 모든 필드 값을 그대로 댓글에 업데이트하므로, 댓글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+            즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                },
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def put(self, request, story_comment_id):
+        try:
+            story_comment = StoryComment.objects.get(id=story_comment_id)
+            serializers = self.StoryCommnetUpdateInputSerializer(data=request.data)
+            serializers.is_valid(raise_exception=True)
+            data = serializers.validated_data
+
+            service = StoryCommentCoordinatorService(
+                user=request.user
+            )
+
+            story_comment = service.update(
+                story_comment_id=story_comment_id,
+                content=data.get('content'),
+                mentioned_email=data.get('mentionEmail', ''),
+            )
+        except ValidationError as e:
+            return Response({
+                'status': 'fail',
+                'data': str(e),
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({
@@ -344,32 +490,39 @@ class StoryCommentView(viewsets.ModelViewSet):
 
         return Response({
             'status': 'success',
+            'data': {'id': story_comment.id},
         }, status=status.HTTP_200_OK)
+    
 
-    @swagger_auto_schema(operation_id='api_stories_comments_patch')
-    def update(self, request, *args, **kwargs):
+class StoryCommentDeleteApi(APIView, ApiAuthMixin):
+    @swagger_auto_schema(
+        operation_id='스토리 댓글 삭제',
+        operation_description='''
+            전달받은 id에 해당하는 댓글을 삭제합니다<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",     
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )        
+        },
+    )
+    def delete(self, request, story_comment_id):
         try:
-            # partial update
-            kwargs['partial'] = True
-            super().update(request, *args, **kwargs)
-        except ValidationError as e:
-            return Response({
-                'status': 'fail',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
+            service = StoryCommentCoordinatorService(
+                user=request.user
+            )
+            service.delete(
+                story_comment_id=story_comment_id
+            )
+        except:
             return Response({
                 'status': 'fail',
                 'message': 'unknown',
             }, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({
-            'status': 'success',
-        }, status=status.HTTP_200_OK)
-
-    @swagger_auto_schema(operation_id='api_stories_comments_delete')
-    def destroy(self, request, *args, **kwargs):
-        super().destroy(request, *args, **kwargs)
+        
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)
