@@ -10,6 +10,7 @@ from django.db.models.functions import Concat, Substr
 from users.models import User
 from stories.models import Story, StoryPhoto, StoryComment
 
+
 @dataclass
 class StoryDto:
     id: int
@@ -21,7 +22,9 @@ class StoryDto:
     views: int
     story_like: str
     category: int
-    semi_category: str  
+    semi_category: str
+    writer: str
+    writer_is_authorized: bool
 
 
 class StoryCoordinatorSelector:
@@ -36,7 +39,7 @@ class StoryCoordinatorSelector:
             user=self.user,
         )
         semi_cate = semi_category(story.id)
-        
+
         dto = StoryDto(
             id=story.id,
             title=story.title,
@@ -48,9 +51,11 @@ class StoryCoordinatorSelector:
             story_like=story_like,
             category=story.category,
             semi_category=semi_cate,
+            writer=story.writer,
+            writer_is_authorized=story.writer.is_authorized
         )
         return dto
-    
+
 
 def semi_category(story_id: int):
     '''
@@ -94,20 +99,23 @@ class StorySelector:
             category=F('address__category'),
             **extra_fields
         ).get(id=story_id)
-    
+
     def recommend_list(story_id: int):
         story = Story.objects.get(id=story_id)
         q = Q(address__category=story.address.category)
-        recommend_story = Story.objects.filter(q).exclude(id=story_id)
+        recommend_story = Story.objects.filter(q).exclude(id=story_id).annotate(
+            writer_is_authorized=F('writer__is_authorized')
+        )
 
         return recommend_story
 
     @staticmethod
     def list(search: str = '', latest: bool = True):
         q = Q()
-        q.add(Q(title__icontains=search) | Q(address__place_name__icontains=search), q.AND)  #스토리 제목 또는 내용 검색
+        q.add(Q(title__icontains=search) | Q(
+            address__place_name__icontains=search), q.AND)  # 스토리 제목 또는 내용 검색
 
-        #최신순 정렬
+        # 최신순 정렬
         if latest:
             order = '-created'
         else:
@@ -116,10 +124,11 @@ class StorySelector:
         story = Story.objects.filter(q).annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
+            writer_is_authorized=F('writer__is_authorized')
         ).order_by(order)
 
         return story
-    
+
 
 class StoryLikeSelector:
     def __init__(self):
@@ -128,11 +137,12 @@ class StoryLikeSelector:
     @staticmethod
     def likes(story_id: int, user: User):
         story = get_object_or_404(Story, pk=story_id)
-        if story.story_likeuser_set.filter(pk=user.pk).exists():  #좋아요가 존재하는 지 안하는 지 확인
+        # 좋아요가 존재하는 지 안하는 지 확인
+        if story.story_likeuser_set.filter(pk=user.pk).exists():
             return True
         else:
             return False
-        
+
 
 class MapMarkerSelector:
     def __init__(self, user: User):
@@ -144,7 +154,7 @@ class MapMarkerSelector:
         place = story.address
 
         return place
-    
+
 
 class StoryCommentSelector:
     def __init__(self):

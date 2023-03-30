@@ -43,13 +43,15 @@ class StoryListApi(APIView):
         place_name = serializers.CharField()
         category = serializers.CharField()
         semi_category = serializers.SerializerMethodField()
+        writer = serializers.CharField()
+        writer_is_authorized = serializers.BooleanField()
 
         def get_semi_category(self, obj):
             result = semi_category(obj.id)
             return result
-        
+
         def get_story_like(self, obj):
-            re_user =  self.context['request'].user
+            re_user = self.context['request'].user
             likes = StoryLikeSelector.likes(obj.id, user=re_user)
             return likes
 
@@ -75,6 +77,8 @@ class StoryListApi(APIView):
                         'preview': '서울숲. 가장 도시적인 단어...(최대 150자)',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'story_like': True,
+                        'writer': 'sdptech@gmail.com',
+                        'writer_is_authorized': True
                     }
                 }
             ),
@@ -114,6 +118,8 @@ class StoryDetailApi(APIView):
         place_name = serializers.CharField()
         category = serializers.CharField()
         semi_category = serializers.CharField()
+        writer = serializers.CharField()
+        writer_is_authorized = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
@@ -135,6 +141,8 @@ class StoryDetailApi(APIView):
                         'html_content': '서울숲. 가장 도시적인 단어...(최대 150자)',
                         'views': 45,
                         'story_like': True,
+                        'writer': 'sdptech@gmail.com',
+                        'writer_is_authorized': True
                     },
                 }
             ),
@@ -158,12 +166,12 @@ class StoryDetailApi(APIView):
                 'status': 'fail',
                 'message': 'unknown',
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         return Response({
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-    
+
 
 class StoryRecommendApi(APIView):
     class Pagination(PageNumberPagination):
@@ -174,6 +182,8 @@ class StoryRecommendApi(APIView):
         id = serializers.IntegerField()
         title = serializers.CharField()
         created = serializers.DateTimeField()
+        writer = serializers.CharField()
+        writer_is_authorized = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='story의 category와 같은 스토리 추천 리스트',
@@ -192,7 +202,7 @@ class StoryRecommendApi(APIView):
     def get(self, request):
         try:
             recommend_story = StorySelector.recommend_list(
-                story_id = request.query_params.get('id')
+                story_id=request.query_params.get('id')
             )
         except:
             return Response({
@@ -201,12 +211,12 @@ class StoryRecommendApi(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         return get_paginated_response(
-                pagination_class=self.Pagination,
-                serializer_class=self.StoryRecommendListOutputSerializer,
-                queryset=recommend_story,
-                request=request,
-                view=self
-            )
+            pagination_class=self.Pagination,
+            serializer_class=self.StoryRecommendListOutputSerializer,
+            queryset=recommend_story,
+            request=request,
+            view=self
+        )
 
 
 class StoryLikeApi(APIView, ApiAuthMixin):
@@ -227,14 +237,14 @@ class StoryLikeApi(APIView, ApiAuthMixin):
                 }
             ),
             "401": openapi.Response(
-                description="Bad Request",    
+                description="Bad Request",
             ),
         },
     )
     def post(self, request):
         try:
             service = StoryCoordinatorService(
-                user = request.user
+                user=request.user
             )
             story_like = service.like_or_dislike(
                 story_id=request.data['id'],
@@ -246,14 +256,15 @@ class StoryLikeApi(APIView, ApiAuthMixin):
             }, status=status.HTTP_401_UNAUTHORIZED)
         return Response({
             'status': 'success',
-                'data': {'story_like': story_like},
-            }, status=status.HTTP_201_CREATED)
+            'data': {'story_like': story_like},
+        }, status=status.HTTP_201_CREATED)
+
 
 class BasicPagination(PageNumberPagination):
     page_size = 4
     page_size_query_param = 'page_size'
 
-    
+
 class GoToMapApi(APIView):
     @swagger_auto_schema(
         operation_id='스토리의 해당 장소로 Map 연결',
@@ -339,7 +350,7 @@ class StoryCommentListApi(APIView):
             filters = filters_serializer.validated_data
             selector = StoryCommentSelector()
             story_comments = selector.list(
-                story_id=filters.get('story')  #story id값 받아서 넣기
+                story_id=filters.get('story')  # story id값 받아서 넣기
             )
 
         except:
@@ -347,19 +358,19 @@ class StoryCommentListApi(APIView):
                 'status': 'fail',
                 'message': 'unknown',
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         return get_paginated_response(
-                pagination_class=self.Pagination,
-                serializer_class=self.StoryCommentListOutputSerializer,
-                queryset=story_comments,
-                request=request,
-                view=self,
-            )
-    
+            pagination_class=self.Pagination,
+            serializer_class=self.StoryCommentListOutputSerializer,
+            queryset=story_comments,
+            request=request,
+            view=self,
+        )
+
 
 class StoryCommentCreateApi(APIView, ApiAuthMixin):
     class StoryCommentCreateInputSerializer(serializers.Serializer):
-        story=serializers.IntegerField()
+        story = serializers.IntegerField()
         content = serializers.CharField()
         mention = serializers.CharField(required=False)
 
@@ -390,12 +401,13 @@ class StoryCommentCreateApi(APIView, ApiAuthMixin):
             ),
             "400": openapi.Response(
                 description="Bad Request",
-            ),        
-        },    
+            ),
+        },
     )
     def post(self, request):
         try:
-            serializer = self.StoryCommentCreateInputSerializer(data=request.data)
+            serializer = self.StoryCommentCreateInputSerializer(
+                data=request.data)
             serializer.is_valid(raise_exception=True)
             data = serializer.validated_data
 
@@ -419,12 +431,12 @@ class StoryCommentCreateApi(APIView, ApiAuthMixin):
                 'status': 'fail',
                 'message': 'unknown',
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         return Response({
             'status': 'success',
             'data': {'id': story_comment.id},
         }, status=status.HTTP_200_OK)
-    
+
 
 class StoryCommentUpdateApi(APIView, ApiAuthMixin):
     class StoryCommnetUpdateInputSerializer(serializers.Serializer):
@@ -436,7 +448,7 @@ class StoryCommentUpdateApi(APIView, ApiAuthMixin):
                 'content': '저도요!!',
                 'mentionEmail': 'sdppp@gamil.com',
             }
-    
+
     @swagger_auto_schema(
         request_body=StoryCommnetUpdateInputSerializer,
         security=[],
@@ -464,7 +476,8 @@ class StoryCommentUpdateApi(APIView, ApiAuthMixin):
     def put(self, request, story_comment_id):
         try:
             story_comment = StoryComment.objects.get(id=story_comment_id)
-            serializers = self.StoryCommnetUpdateInputSerializer(data=request.data)
+            serializers = self.StoryCommnetUpdateInputSerializer(
+                data=request.data)
             serializers.is_valid(raise_exception=True)
             data = serializers.validated_data
 
@@ -492,7 +505,7 @@ class StoryCommentUpdateApi(APIView, ApiAuthMixin):
             'status': 'success',
             'data': {'id': story_comment.id},
         }, status=status.HTTP_200_OK)
-    
+
 
 class StoryCommentDeleteApi(APIView, ApiAuthMixin):
     @swagger_auto_schema(
@@ -502,11 +515,11 @@ class StoryCommentDeleteApi(APIView, ApiAuthMixin):
         ''',
         responses={
             "200": openapi.Response(
-                description="OK",     
+                description="OK",
             ),
             "400": openapi.Response(
                 description="Bad Request",
-            )        
+            )
         },
     )
     def delete(self, request, story_comment_id):
@@ -522,7 +535,7 @@ class StoryCommentDeleteApi(APIView, ApiAuthMixin):
                 'status': 'fail',
                 'message': 'unknown',
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)

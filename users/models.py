@@ -58,10 +58,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     profile_image = models.ImageField(
         upload_to='profile/%Y%m%d/', default='user_profile_image.png')
     is_staff = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(
+        default=False)
     is_active = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
     is_sdp = models.BooleanField(default=False)
+    is_authorized = models.BooleanField(default=False)
 
     # 소셜 계정인 경우, 소셜 ID 프로바이더 값 저장(ex. kakao, naver, google)
     social_provider = models.CharField(max_length=30, blank=True)
