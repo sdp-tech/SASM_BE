@@ -31,7 +31,8 @@ class StoryListApi(APIView):
 
     class StoryListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
-        latest = serializers.BooleanField(required=False)
+        order = serializers.CharField(required=False)
+        array = serializers.CharField(required=False)
 
     class StoryListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -88,9 +89,11 @@ class StoryListApi(APIView):
             data=request.query_params)
         filters_serializer.is_valid(raise_exception=True)
         filters = filters_serializer.validated_data
+
         story = StorySelector.list(
             search=filters.get('search', ''),
-            latest=filters.get('latest', True),
+            order=filters.get('order', 'latest'),
+            array=request.query_params.getlist('category', None),
         )
 
         return get_paginated_response(
