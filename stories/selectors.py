@@ -103,18 +103,32 @@ class StorySelector:
         return recommend_story
 
     @staticmethod
-    def list(search: str = '', latest: bool = True):
+    def list(search: str = '', order: str = '', array: list = []):
         q = Q()
-        q.add(Q(title__icontains=search) | Q(address__place_name__icontains=search), q.AND)  #스토리 제목 또는 내용 검색
+        q.add(Q(title__icontains=search)|
+              Q(address__place_name__icontains=search)|  #스토리 제목 또는 내용 검색
+              Q(address__category__icontains=search)|
+              Q(tag__icontains=search), q.AND)
 
-        #최신순 정렬
-        if latest:
-            order = '-created'
-        else:
-            order = 'created'
+        if len(array) > 0:
+            query = None
+            for a in array: 
+                if query is None:
+                    query = Q(address__category=a) 
+                else: 
+                    query = query | Q(address__category=a)
+            q.add(query, q.AND)
+
+        order_by_time = {'latest' : 'created', 'oldest' : '-created'}
+        order_by_likes = {'hot' : '-story_like_cnt'}
+
+        if order in order_by_time:
+            order = order_by_time[order]
+        if order in order_by_likes:
+            order = order_by_likes[order]
 
         story = Story.objects.filter(q).annotate(
-            place_name=F('address__place_name'),
+            place_name=F('address__place_name'),   
             category=F('address__category'),
         ).order_by(order)
 
