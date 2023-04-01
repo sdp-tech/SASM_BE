@@ -30,17 +30,13 @@ class VocViewSet(viewsets.ModelViewSet):
     def create(self, request):
         customer = request.user
         serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save(customer=customer)
-            return Response({
-                'status': 'Success',
-                'data': serializer.data,
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({
-                'status': 'fail',
-                'data': serializer.errors,
-            }, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save(customer=customer)
+        return Response({
+            'status': 'Success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
 
     # @permission_classes((IsSdpStaff,))
     @swagger_auto_schema(operation_id='api_sdp_admin_voc_get')

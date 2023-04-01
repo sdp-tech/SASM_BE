@@ -1,29 +1,66 @@
-#exception handling
+# exception handling
+from django.core.exceptions import ValidationError as DjangoValidationError, PermissionDenied
+from django.http import Http404
 from rest_framework.views import exception_handler
+from rest_framework import exceptions
+from rest_framework.serializers import as_serializer_error
 from rest_framework.response import Response
-STATUS_RSP_INTERNAL_ERROR = {
-    "status":"error",
-    "code": "internal-error",
-    "lang_message": {
-        "ko": "알 수 없는 오류.",
-        "en": "unknown error occurred.",
-    }
-}
-def custom_exception_handler(exc,context):
-    response = exception_handler(exc,context)
-    if response is not None:
-        response.data['status'] = 'error'
-        try:
-            if (response.data['detail']) :
-                response.data['message'] = response.data['detail']
-                del response.data['detail']
-                response.data['code'] = response.status_code
-                return response 
-        except:
-            return response
-    else:
-        STATUS_RSP_INTERNAL_ERROR['message'] = str(exc)
-        STATUS_RSP_INTERNAL_ERROR['code'] = 500
-        STATUS_RSP_INTERNAL_ERROR.pop('lang_message', None)
-        return Response(STATUS_RSP_INTERNAL_ERROR, status=200)
 
+from core.exceptions import ApplicationError
+
+
+def custom_exception_handler(exc, ctx):
+    """
+    {
+        "status": "fail",
+        "message": "Error message",
+        "extra": {
+            ~~~
+        }
+    }
+    """
+    if isinstance(exc, DjangoValidationError):
+        exc = exceptions.ValidationError(as_serializer_error(exc))
+
+    if isinstance(exc, Http404):
+        exc = exceptions.NotFound()
+
+    if isinstance(exc, PermissionDenied):
+        exc = exceptions.PermissionDenied()
+
+    response = exception_handler(exc, ctx)
+
+    # If unexpected error occurs (server error, etc.)
+    if response is None:
+        if isinstance(exc, ApplicationError):
+            data = {
+                "status": "fail",
+                "message": exc.message,
+                "extra": exc.extra
+            }
+            return Response(data, status=400)
+
+        return response
+
+    if isinstance(exc.detail, (list, dict)):
+        response.data = {
+            "status": "fail",
+            "message": response.data
+        }
+
+    if isinstance(exc, exceptions.ValidationError):
+        response.data = {
+            "status": "fail",
+            "message": "Validation error",
+            "extra": {
+                "fields": response.data["detail"]
+            }
+        }
+    else:
+        response.data = {
+            "status": "fail",
+            "message": response.data["detail"],
+            "extra": {}
+        }
+
+    return response
