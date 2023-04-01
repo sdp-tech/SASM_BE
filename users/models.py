@@ -37,6 +37,15 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
+def user_type_is_valid(self):
+
+    sdp_admin_user = self.is_sdp_admin and not self.is_verified
+    verified_user = not self.is_sdp_admin and self.is_verified
+    general_user = not self.is_sdp_admin and not self.is_verified
+
+    return sdp_admin_user | verified_user | general_user
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     """custom user model"""
     username = None
@@ -61,8 +70,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(
         default=False)
     is_active = models.BooleanField(default=False)
-    is_sdp = models.BooleanField(default=False)
-    is_authorized = models.BooleanField(default=False)
+    is_sdp_admin = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
 
     # 소셜 계정인 경우, 소셜 ID 프로바이더 값 저장(ex. kakao, naver, google)
     social_provider = models.CharField(max_length=30, blank=True)
@@ -91,3 +100,5 @@ class User(AbstractBaseUser, PermissionsMixin):
     def clean(self):
         if not email_isvalid(self.email):
             raise ValidationError('메일 형식이 올바르지 않습니다.')
+        if not user_type_is_valid(self):
+            raise ValidationError('유저 타입이 잘못되었습니다.')

@@ -11,6 +11,7 @@ from users.selectors import UserSelector
 
 from core.views import get_paginated_response
 
+
 class UserGetApi(APIView, ApiAuthMixin):
     class UserGetOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -20,8 +21,8 @@ class UserGetApi(APIView, ApiAuthMixin):
         email = serializers.EmailField()
         address = serializers.CharField()
         profile_image = serializers.ImageField()
-        is_sdp = serializers.BooleanField()
-        
+        is_sdp_admin = serializers.BooleanField()
+
     def get(self, request):
         serializer = self.UserGetOutputSerializer(request.user)
 
@@ -29,6 +30,7 @@ class UserGetApi(APIView, ApiAuthMixin):
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
+
 
 class UserLoginApi(APIView, ApiAllowAnyMixin):
     permission_classes = (AllowAny,)
@@ -47,7 +49,7 @@ class UserLoginApi(APIView, ApiAllowAnyMixin):
         input_serializer = self.UserLoginInputSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
         data = input_serializer.validated_data
-        
+
         service = UserService()
 
         login_data = service.login(
@@ -63,10 +65,11 @@ class UserLoginApi(APIView, ApiAllowAnyMixin):
             'data': output_serializer.data,
         }, status=status.HTTP_200_OK)
 
+
 class UserLogoutApi(APIView, ApiAuthMixin):
     class UserLogoutSerializer(serializers.Serializer):
         refresh = serializers.CharField()
-        
+
     def post(self, request):
         serializer = self.UserLogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -82,8 +85,9 @@ class UserLogoutApi(APIView, ApiAuthMixin):
             'status': 'success',
         }, status=status.HTTP_200_OK)
 
+
 class EmailCheckApi(APIView):
-    permission_classes=(AllowAny,)
+    permission_classes = (AllowAny,)
 
     class EmailCheckSerializer(serializers.Serializer):
         email = serializers.EmailField()
@@ -103,7 +107,8 @@ class EmailCheckApi(APIView):
             'status': 'success',
             'data': check_email_message,
         }, status=status.HTTP_200_OK)
-        
+
+
 class RepCheckApi(APIView):
     permission_classes = (AllowAny,)
 
@@ -128,11 +133,12 @@ class RepCheckApi(APIView):
             'data': check_rep_message,
         }, status=status.HTTP_200_OK)
 
+
 class UserPlaceLikeApi(APIView):
     class Pagination(PageNumberPagination):
         page_size = 6
         page_size_query_param = 'page_size'
-        
+
     class PlaceListFilterSerializer(serializers.Serializer):
         filter = serializers.ListField()
 
@@ -143,12 +149,11 @@ class UserPlaceLikeApi(APIView):
         rep_pic = serializers.ImageField()
         place_like = serializers.SerializerMethodField()
 
-        def get_place_like(self,obj):
+        def get_place_like(self, obj):
             return 'ok'
-            
 
     def get(self, request):
-        filter = request.query_params.getlist('filter[]', None);
+        filter = request.query_params.getlist('filter[]', None)
         # filter_serializer = self.PlaceListFilterSerializer(data=request.query_params)
         # filter_serializer.is_valid()
         # filter = filter_serializer.validated_data
@@ -164,15 +169,16 @@ class UserPlaceLikeApi(APIView):
             request=request,
             view=self
         )
-    
+
+
 class UserStoryLikeApi(APIView):
     class Pagination(PageNumberPagination):
         page_size = 6
         page_size_query_param = 'page_size'
-    
+
     class StoryListFilterSerializer(serializers.Serializer):
         category = serializers.ListField()
-    
+
     class UserStoryLikeOuputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
@@ -184,18 +190,17 @@ class UserStoryLikeApi(APIView):
         views = serializers.IntegerField()
         story_like = serializers.SerializerMethodField()
 
-        def get_place_name(self,obj):
+        def get_place_name(self, obj):
             return obj.address.place_name
-        
+
         def get_story_like(self, obj):
             return 'ok'
-        
+
         def get_category(self, obj):
             return obj.address.category
 
-
     def get(self, request):
-        filter = request.query_params.getlist('filter[]', None);
+        filter = request.query_params.getlist('filter[]', None)
         # filter_serializer = self.StoryListFilterSerializer(data=request.query_params)
         # filter_serializer.is_valid()
         # filter = filter_serializer.validated_data
@@ -212,11 +217,13 @@ class UserStoryLikeApi(APIView):
             view=self
         )
 
+
 class PasswordResetSendEmailApi(APIView):
     permission_classes = (AllowAny,)
+
     class PwEmailSerializer(serializers.Serializer):
         email = serializers.EmailField()
-    
+
     def post(self, request):
         serializer = self.PwEmailSerializer(data=request.data)
         serializer.is_valid()
@@ -228,9 +235,11 @@ class PasswordResetSendEmailApi(APIView):
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)
-    
+
+
 class PasswordChangeApi(APIView):
     permission_classes = (AllowAny,)
+
     class PwChangeSerializer(serializers.Serializer):
         code = serializers.CharField(max_length=5)
         password = serializers.CharField()
@@ -266,11 +275,11 @@ class PasswordChangeApi(APIView):
 #         serializer = self.UserUpdateInputSerializer(data=request.data, partial=True)
 #         serializer.is_valid(raise_exception=True)
 #         data = serializer.validated_data
-        
+
 #         service = UserService(
 #             user=request.user
 #         )
-        
+
 #         user = service.update(
 #             profile_image=data.get('profile_image'),
 #             password=data.get('password'),
@@ -284,4 +293,3 @@ class PasswordChangeApi(APIView):
 #             'status': 'success',
 #             'data': {'id': user.id},
 #         }, status=status.HTTP_200_OK)
-
