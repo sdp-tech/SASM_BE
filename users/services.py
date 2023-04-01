@@ -87,7 +87,7 @@ class UserService:
             return '사용 가능한 닉네임입니다'
 
 
-class PasswordResetService:
+class UserPasswordService:
     def __init__(self):
         pass
 
@@ -106,7 +106,7 @@ class PasswordResetService:
 
         payload = JWT_PAYLOAD_HANDLER(user)
         jwt_token = JWT_ENCODE_HANDLER(payload)
-        code = PasswordResetService.email_auth_string()
+        code = UserPasswordService.email_auth_string()
 
         html_content = render_to_string('users/password_reset.html', {
             'user': user,
@@ -134,16 +134,20 @@ class PasswordResetService:
 
         msg.send()
 
-    def password_change(self, code: str, password: str):
+    def password_change_with_code(self, code: str, password: str):
         user_selector = UserSelector
         user = user_selector.get_user_from_code(code)
 
         user_selector.check_password_exists(user.email, password)
 
         user.set_password(password)
-        self.user_code_reset(user)
+        user.code = UserPasswordService.email_auth_string()
 
-    def user_code_reset(self, user: User):
-        user.code = PasswordResetService.email_auth_string()
-        print(user.code)
+        user.full_clean()
+        user.save()
+
+    def password_change(self, user: User, password: str):
+        user.set_password(password)
+
+        user.full_clean()
         user.save()

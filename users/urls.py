@@ -36,5 +36,6 @@ urlpatterns = [
     path('like_story/', views.UserStoryLikeApi.as_view(), name='like_story'),
     path('find_pw/', views.PasswordResetSendEmailApi.as_view(),
          name='pw_change_email'),
-    path('pwchange/', views.PasswordChangeApi.as_view(), name='pw_change'),
+    path('pw_reset/', views.PasswordResetApi.as_view(), name='pw_reset'),
+    path('pw_change/', views.PasswordChangeApi.as_view(), name='pw_change'),
 ]

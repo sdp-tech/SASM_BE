@@ -152,20 +152,12 @@ class StoryDetailApi(APIView):
         },
     )
     def get(self, request, story_id):
-        try:
-            selector = StoryCoordinatorSelector(
-                user=request.user
-            )
-            story = selector.detail(story_id=story_id)
-            # story = selector.detail(
-            #     story_id=request.query_params.get('id'))
+        selector = StoryCoordinatorSelector(
+            user=request.user
+        )
+        story = selector.detail(story_id=story_id)
 
-            serializer = self.StoryDetailOutputSerializer(story)
-        except:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.StoryDetailOutputSerializer(story)
 
         return Response({
             'status': 'success',
@@ -200,15 +192,9 @@ class StoryRecommendApi(APIView):
         },
     )
     def get(self, request):
-        try:
-            recommend_story = StorySelector.recommend_list(
-                story_id=request.query_params.get('id')
-            )
-        except:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        recommend_story = StorySelector.recommend_list(
+            story_id=request.query_params.get('id')
+        )
 
         return get_paginated_response(
             pagination_class=self.Pagination,
@@ -249,7 +235,7 @@ class StoryLikeApi(APIView, ApiAuthMixin):
             story_like = service.like_or_dislike(
                 story_id=request.data['id'],
             )
-        except:
+        except:  # TODO: 에러 발생 상황 명시하고 ApplicationError raise하기
             return Response({
                 'status': 'fail',
                 'message': '권한이 없거나 story가 존재하지 않습니다.',
@@ -281,15 +267,10 @@ class GoToMapApi(APIView):
         },
     )
     def get(self, request):
-        try:
-            selector = MapMarkerSelector(user=request.user)
-            place = selector.map(story_id=request.data['id'])
-            serializer = MapMarkerSerializer(place)
-        except:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        selector = MapMarkerSelector(user=request.user)
+        place = selector.map(story_id=request.data['id'])
+        serializer = MapMarkerSerializer(place)
+
         return Response({
             'status': 'success',
             'data': serializer.data,
@@ -343,21 +324,14 @@ class StoryCommentListApi(APIView):
         },
     )
     def get(self, request):
-        try:
-            filters_serializer = self.StoryCommentListFilterSerializer(
-                data=request.query_params)
-            filters_serializer.is_valid(raise_exception=True)
-            filters = filters_serializer.validated_data
-            selector = StoryCommentSelector()
-            story_comments = selector.list(
-                story_id=filters.get('story')  # story id값 받아서 넣기
-            )
-
-        except:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        filters_serializer = self.StoryCommentListFilterSerializer(
+            data=request.query_params)
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+        selector = StoryCommentSelector()
+        story_comments = selector.list(
+            story_id=filters.get('story')  # story id값 받아서 넣기
+        )
 
         return get_paginated_response(
             pagination_class=self.Pagination,
@@ -405,32 +379,19 @@ class StoryCommentCreateApi(APIView, ApiAuthMixin):
         },
     )
     def post(self, request):
-        try:
-            serializer = self.StoryCommentCreateInputSerializer(
-                data=request.data)
-            serializer.is_valid(raise_exception=True)
-            data = serializer.validated_data
+        serializer = self.StoryCommentCreateInputSerializer(
+            data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
-            service = StoryCommentCoordinatorService(
-                user=request.user
-            )
-            story_comment = service.create(
-                story_id=data.get('story'),
-                content=data.get('content'),
-                mentioned_email=data.get('mention', '')
-            )
-
-        except ValidationError as e:
-            return Response({
-                'status': 'fail',
-                'message': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        except Exception as e:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        service = StoryCommentCoordinatorService(
+            user=request.user
+        )
+        story_comment = service.create(
+            story_id=data.get('story'),
+            content=data.get('content'),
+            mentioned_email=data.get('mention', '')
+        )
 
         return Response({
             'status': 'success',
@@ -474,32 +435,21 @@ class StoryCommentUpdateApi(APIView, ApiAuthMixin):
         },
     )
     def put(self, request, story_comment_id):
-        try:
-            story_comment = StoryComment.objects.get(id=story_comment_id)
-            serializers = self.StoryCommnetUpdateInputSerializer(
-                data=request.data)
-            serializers.is_valid(raise_exception=True)
-            data = serializers.validated_data
+        story_comment = StoryComment.objects.get(id=story_comment_id)
+        serializers = self.StoryCommnetUpdateInputSerializer(
+            data=request.data)
+        serializers.is_valid(raise_exception=True)
+        data = serializers.validated_data
 
-            service = StoryCommentCoordinatorService(
-                user=request.user
-            )
+        service = StoryCommentCoordinatorService(
+            user=request.user
+        )
 
-            story_comment = service.update(
-                story_comment_id=story_comment_id,
-                content=data.get('content'),
-                mentioned_email=data.get('mentionEmail', ''),
-            )
-        except ValidationError as e:
-            return Response({
-                'status': 'fail',
-                'data': str(e),
-            }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        story_comment = service.update(
+            story_comment_id=story_comment_id,
+            content=data.get('content'),
+            mentioned_email=data.get('mentionEmail', ''),
+        )
 
         return Response({
             'status': 'success',
@@ -523,18 +473,12 @@ class StoryCommentDeleteApi(APIView, ApiAuthMixin):
         },
     )
     def delete(self, request, story_comment_id):
-        try:
-            service = StoryCommentCoordinatorService(
-                user=request.user
-            )
-            service.delete(
-                story_comment_id=story_comment_id
-            )
-        except:
-            return Response({
-                'status': 'fail',
-                'message': 'unknown',
-            }, status=status.HTTP_400_BAD_REQUEST)
+        service = StoryCommentCoordinatorService(
+            user=request.user
+        )
+        service.delete(
+            story_comment_id=story_comment_id
+        )
 
         return Response({
             'status': 'success',

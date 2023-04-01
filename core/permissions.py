@@ -9,6 +9,8 @@ class IsSdpStaff(BasePermission):
         else:
             return False
 
+# TODO: 권한 검증(ex. 작성자 여부 확인)은 service 로직 내부에서 검증하는 게 아니라 Permission으로 검증하는 게 바람직할듯
+
 
 class CommentWriterOrReadOnly(BasePermission):
     # 작성자만 접근, 작성자가 아니면 Create/Read만 가능
