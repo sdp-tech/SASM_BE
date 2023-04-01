@@ -24,7 +24,7 @@ class StoryDto:
     category: int
     semi_category: str
     writer: str
-    writer_is_authorized: bool
+    writer_is_verified: bool
 
 
 class StoryCoordinatorSelector:
@@ -52,7 +52,7 @@ class StoryCoordinatorSelector:
             category=story.category,
             semi_category=semi_cate,
             writer=story.writer,
-            writer_is_authorized=story.writer.is_authorized
+            writer_is_verified=story.writer.is_verified
         )
         return dto
 
@@ -104,7 +104,7 @@ class StorySelector:
         story = Story.objects.get(id=story_id)
         q = Q(address__category=story.address.category)
         recommend_story = Story.objects.filter(q).exclude(id=story_id).annotate(
-            writer_is_authorized=F('writer__is_authorized')
+            writer_is_verified=F('writer__is_verified')
         )
 
         return recommend_story
@@ -124,7 +124,7 @@ class StorySelector:
         story = Story.objects.filter(q).annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
-            writer_is_authorized=F('writer__is_authorized')
+            writer_is_verified=F('writer__is_verified')
         ).order_by(order)
 
         return story
