@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError, Per
 from django.http import Http404
 from rest_framework.views import exception_handler
 from rest_framework import exceptions
+from rest_framework import status
 from rest_framework.serializers import as_serializer_error
 from rest_framework.response import Response
 
@@ -40,7 +41,11 @@ def custom_exception_handler(exc, ctx):
             }
             return Response(data, status=400)
 
-        return response
+        # undefined, unknown error
+        return Response({
+            "status": "fail",
+            "message": "undefined",
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     if isinstance(exc.detail, (list, dict)):
         response.data = {
@@ -55,12 +60,6 @@ def custom_exception_handler(exc, ctx):
             "extra": {
                 "fields": response.data["detail"]
             }
-        }
-    else:
-        response.data = {
-            "status": "fail",
-            "message": response.data["detail"],
-            "extra": {}
         }
 
     return response
