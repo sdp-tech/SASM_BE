@@ -42,7 +42,8 @@ class UserService:
         user = user_selector.get_user_from_email(email)
 
         if not user_selector.check_password(user, password):
-            raise exceptions.ValidationError({"error": "비밀번호가 틀립니다."})
+            raise exceptions.ValidationError(
+                {'detail': "아이디나 비밀번호가 올바르지 않습니다."})
 
         token = RefreshToken.for_user(user=user)
         data = {
@@ -137,8 +138,6 @@ class UserPasswordService:
     def password_change_with_code(self, code: str, password: str):
         user_selector = UserSelector
         user = user_selector.get_user_from_code(code)
-
-        user_selector.check_password_exists(user.email, password)
 
         user.set_password(password)
         user.code = UserPasswordService.email_auth_string()

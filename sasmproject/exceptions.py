@@ -49,8 +49,7 @@ def custom_exception_handler(exc, ctx):
 
     if isinstance(exc.detail, (list, dict)):
         response.data = {
-            "status": "fail",
-            "message": response.data
+            "detail": response.data
         }
 
     if isinstance(exc, exceptions.ValidationError):
@@ -60,6 +59,12 @@ def custom_exception_handler(exc, ctx):
             "extra": {
                 "fields": response.data["detail"]
             }
+        }
+    else:
+        response.data = {
+            "status": "fail",
+            "message": response.data["detail"],
+            "extra": {}
         }
 
     return response
