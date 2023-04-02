@@ -44,7 +44,7 @@ class StoryListApi(APIView):
         category = serializers.CharField()
         semi_category = serializers.SerializerMethodField()
         writer = serializers.CharField()
-        writer_is_authorized = serializers.BooleanField()
+        writer_is_verified = serializers.BooleanField()
 
         def get_semi_category(self, obj):
             result = semi_category(obj.id)
@@ -78,7 +78,7 @@ class StoryListApi(APIView):
                         'rep_pic': 'https://abc.com/1.jpg',
                         'story_like': True,
                         'writer': 'sdptech@gmail.com',
-                        'writer_is_authorized': True
+                        'writer_is_verified': True
                     }
                 }
             ),
@@ -119,7 +119,7 @@ class StoryDetailApi(APIView):
         category = serializers.CharField()
         semi_category = serializers.CharField()
         writer = serializers.CharField()
-        writer_is_authorized = serializers.BooleanField()
+        writer_is_verified = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
@@ -142,7 +142,7 @@ class StoryDetailApi(APIView):
                         'views': 45,
                         'story_like': True,
                         'writer': 'sdptech@gmail.com',
-                        'writer_is_authorized': True
+                        'writer_is_verified': True
                     },
                 }
             ),
@@ -175,7 +175,7 @@ class StoryRecommendApi(APIView):
         title = serializers.CharField()
         created = serializers.DateTimeField()
         writer = serializers.CharField()
-        writer_is_authorized = serializers.BooleanField()
+        writer_is_verified = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='story의 category와 같은 스토리 추천 리스트',

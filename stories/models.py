@@ -34,6 +34,8 @@ class Story(core_models.TimeStampedModel):
     rep_pic = models.ImageField(
         upload_to=get_upload_path, default='story_rep_pic.png')
     html_content = models.TextField(max_length=50000)
+    writer = models.ForeignKey(
+        'users.User', related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
 
     def clean(self):
         self.html_content = self.html_content.replace("\r\n", "")
@@ -53,10 +55,10 @@ class StoryComment(core_models.TimeStampedModel):
         'StoryComment', related_name='childs', on_delete=models.SET_NULL, null=True, blank=True)
     # 댓글 writer가 회원 탈퇴해도, 댓글은 유지, writer를 null 설정
     writer = models.ForeignKey(
-        'users.User', related_name='story_comments', on_delete=models.SET_NULL, null=True, blank=False)  # TODO: related_name을 storyComments로 변경 필요(커뮤니티 comment와 충돌 가능성 존재)
+        'users.User', related_name='story_comments', on_delete=models.SET_NULL, null=True, blank=False)
     # 멘션된 사용자가 회원 탈퇴하더라도, 댓글은 유지, mention을 null 설정
     mention = models.ForeignKey(
-        'users.User', related_name='mentioned_story_comments', on_delete=models.SET_NULL, null=True, blank=True)  # TODO: related_name을 storyMentionedComments로 변경 필요(커뮤니티 comment와 충돌 가능성 존재)
+        'users.User', related_name='mentioned_story_comments', on_delete=models.SET_NULL, null=True, blank=True)
 
     # TODO: TimestampedModel 필드와 중복, 삭제 필요
     created_at = models.DateTimeField(auto_now_add=True)
