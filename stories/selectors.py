@@ -52,7 +52,7 @@ class StoryCoordinatorSelector:
             category=story.category,
             semi_category=semi_cate,
             writer=story.writer,
-            writer_is_verified=story.writer.is_verified
+            writer_is_verified=story.writer_is_verified
         )
         return dto
 
@@ -97,7 +97,8 @@ class StorySelector:
         return Story.objects.annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
-            **extra_fields
+            writer_is_verified=F('writer__is_verified'),
+            ** extra_fields
         ).get(id=story_id)
 
     def recommend_list(story_id: int):
