@@ -35,7 +35,7 @@ class Story(core_models.TimeStampedModel):
         upload_to=get_upload_path, default='story_rep_pic.png')
     html_content = models.TextField(max_length=50000)
     writer = models.ForeignKey(
-        'users.User', related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
+        "users.User", related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
 
     def clean(self):
         self.html_content = self.html_content.replace("\r\n", "")
