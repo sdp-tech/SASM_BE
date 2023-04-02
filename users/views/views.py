@@ -222,6 +222,65 @@ class UserStoryLikeApi(APIView):
         )
 
 
+class UserStoryGetApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 6
+        page_size_query_param = 'page_size'
+
+    class UserStoryGetSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        place_name = serializers.SerializerMethodField()
+        title = serializers.CharField()
+        preview = serializers.CharField()
+        rep_pic = serializers.ImageField()
+        views = serializers.IntegerField()
+        writer = serializers.CharField()
+        created = serializers.DateTimeField()
+
+        def get_place_name(self, obj):
+            return obj.address.place_name
+
+    def get(self, request):
+        selector = UserStorySelector(user=request.user)
+        story_list = selector.list()
+
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.UserStoryGetSerializer,
+            queryset=story_list,
+            request=request,
+            view=self
+        )
+
+
+class UserStoryGetByCommentApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 6
+        page_size_query_param = 'page_size'
+
+    class UserStoryGetSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        place_name = serializers.CharField()
+        title = serializers.CharField()
+        preview = serializers.CharField()
+        rep_pic = serializers.ImageField()
+        views = serializers.IntegerField()
+        writer = serializers.CharField()
+        created = serializers.DateTimeField()
+
+    def get(self, request):
+        selector = UserStorySelector(user=request.user)
+        comment_list = selector.get_by_comment()
+
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.UserStoryGetSerializer,
+            queryset=comment_list,
+            request=request,
+            view=self
+        )
+
+
 class PasswordResetSendEmailApi(APIView):
     permission_classes = (AllowAny,)
 
