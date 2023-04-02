@@ -8,6 +8,7 @@ from places.models import Place
 from stories.models import Story, StoryComment
 
 
+
 class UserSelector:
     def __init__(self):
         pass
@@ -48,11 +49,6 @@ class UserSelector:
     @staticmethod
     def get_user_like_story(user: User):
         return user.StoryLikeUser.all()
-
-    @staticmethod
-    def check_password_exists(email: str, password: str):
-        if (authenticate(email=email, password=password) != None):
-            raise HttpResponseBadRequest
 
     @staticmethod
     def get_user_from_code(code: str) -> User:
