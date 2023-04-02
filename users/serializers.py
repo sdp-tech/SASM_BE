@@ -38,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "address",
             "profile_image",
-            "is_sdp",
+            "is_sdp_admin",
         )
         read_only_fields = ("id",)
 
@@ -49,7 +49,7 @@ class UserSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError('메일 형식이 올바르지 않습니다.')
 
     def create(self, validated_data):
-        #password = validated_data.get("password")
+        # password = validated_data.get("password")
         user = super().create(validated_data)
         user.set_password(validated_data["password"])
         user.is_active = False
