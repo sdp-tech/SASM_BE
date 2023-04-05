@@ -18,8 +18,6 @@ from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
 from users.models import User
 from places.serializers import MapMarkerSerializer
-from core.permissions import CommentWriterOrReadOnly
-from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
