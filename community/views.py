@@ -1,31 +1,25 @@
-import io
-import datetime
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from django.db.models import Q
-from django.core.files.images import ImageFile
-from rest_framework import generics
-from rest_framework import viewsets
-from rest_framework.decorators import action
+
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.serializers import ValidationError
 from rest_framework import serializers
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from rest_framework.views import APIView
-from community.mixins import ApiAuthMixin
+from community.mixins import ApiAuthMixin, ApiNoAuthMixin
 from community.services import PostCoordinatorService, PostCommentCoordinatorService, PostReportService, PostCommentReportService
 from community.selectors import PostCoordinatorSelector, PostHashtagSelector, PostCommentCoordinatorSelector, BoardSelector
 
-from .models import Post, PostComment, PostReport, PostCommentReport, PostHashtag
-from users.models import User
+from .models import Post, PostComment
+from .permissions import IsWriter
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
+import traceback
 
-class BoardPropertyDetailApi(APIView, ApiAuthMixin):
+
+class BoardPropertyDetailApi(ApiNoAuthMixin, APIView):
     class BoardPropertyDetailOutputSerializer(serializers.Serializer):
         name = serializers.CharField()
         supportsHashtags = serializers.BooleanField()
@@ -67,7 +61,7 @@ class BoardPropertyDetailApi(APIView, ApiAuthMixin):
         return Response(serializer.data)
 
 
-class PostCreateApi(APIView, ApiAuthMixin):
+class PostCreateApi(ApiAuthMixin, APIView):
     class PostCreateInputSerializer(serializers.Serializer):
         board = serializers.IntegerField()
         title = serializers.CharField()
@@ -141,7 +135,14 @@ class PostCreateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_201_CREATED)
 
 
-class PostUpdateApi(APIView, ApiAuthMixin):
+class PostUpdateApi(ApiAuthMixin, APIView):
+    permission_classes = (IsWriter, )
+
+    def get_object(self, post_id):
+        post = get_object_or_404(Post, pk=post_id)
+        self.check_object_permissions(self.request, post)
+        return post
+
     class PostUpdateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
         content = serializers.CharField()
@@ -195,12 +196,14 @@ class PostUpdateApi(APIView, ApiAuthMixin):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
+        post = self.get_object(post_id)
+
         service = PostCoordinatorService(
             user=request.user
         )
 
         post = service.update(
-            post_id=post_id,
+            post=post,
             title=data.get('title'),
             content=data.get('content'),
             hashtag_names=data.get('hashtagList', []),
@@ -214,7 +217,13 @@ class PostUpdateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class PostDeleteApi(APIView, ApiAuthMixin):
+class PostDeleteApi(ApiAuthMixin, APIView):
+    permission_classes = (IsWriter, )
+
+    def get_object(self, post_id):
+        post = get_object_or_404(Post, pk=post_id)
+        self.check_object_permissions(self.request, post)
+        return post
 
     @swagger_auto_schema(
         operation_id='커뮤니티 게시글 삭제',
@@ -231,13 +240,14 @@ class PostDeleteApi(APIView, ApiAuthMixin):
         },
     )
     def delete(self, request, post_id):
+        post = self.get_object(post_id)
 
         service = PostCoordinatorService(
             user=request.user
         )
 
         service.delete(
-            post_id=post_id
+            post=post
         )
 
         return Response({
@@ -245,7 +255,11 @@ class PostDeleteApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class PostLikeApi(APIView, ApiAuthMixin):
+class PostLikeApi(ApiAuthMixin, APIView):
+    def get_object(self, post_id):
+        post = get_object_or_404(Post, pk=post_id)
+        self.check_object_permissions(self.request, post)
+        return post
 
     @swagger_auto_schema(
         operation_id='커뮤니티 게시글 좋아요/좋아요 취소',
@@ -269,12 +283,14 @@ class PostLikeApi(APIView, ApiAuthMixin):
         },
     )
     def post(self, request, post_id):
+        post = self.get_object(post_id)
+
         service = PostCoordinatorService(
             user=request.user
         )
 
         likes = service.like_or_dislike(
-            post_id=post_id
+            post=post
         )
 
         return Response({
@@ -299,7 +315,7 @@ def get_paginated_response(*, pagination_class, serializer_class, queryset, requ
     }, status=status.HTTP_200_OK)
 
 
-class PostListApi(APIView):
+class PostListApi(ApiNoAuthMixin, APIView):
     class Pagination(PageNumberPagination):
         page_size = 5
         page_size_query_param = 'page_size'
@@ -387,17 +403,7 @@ class PostListApi(APIView):
         )
 
 
-# class CommaSeperatedStringToListField(serializers.CharField):
-#     def to_representation(self, obj):
-#         if not obj:  # 빈(empty) 문자열일 경우
-#             return []
-#         return obj.split(',')
-
-#     def to_internal_value(self, data):
-#         return super().to_internal_value(self, ",".join(data))
-
-
-class PostDetailApi(APIView):
+class PostDetailApi(ApiNoAuthMixin, APIView):
     class PostDetailOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         board = serializers.IntegerField()
@@ -461,7 +467,7 @@ class PostDetailApi(APIView):
         return Response(serializer.data)
 
 
-class PostHashtagListApi(APIView):
+class PostHashtagListApi(ApiNoAuthMixin, APIView):
     class Pagination(PageNumberPagination):
         page_size = 5
         page_size_query_param = 'page_size'
@@ -508,7 +514,7 @@ class PostHashtagListApi(APIView):
         )
 
 
-class PostCommentListApi(APIView):
+class PostCommentListApi(ApiNoAuthMixin, APIView):
     class Pagination(PageNumberPagination):
         page_size = 20  # 미정
         page_size_query_param = 'page_size'
@@ -582,7 +588,7 @@ class PostCommentListApi(APIView):
         )
 
 
-class PostCommentCreateApi(APIView, ApiAuthMixin):
+class PostCommentCreateApi(ApiAuthMixin, APIView):
     class PostCommentCreateInputSerializer(serializers.Serializer):
         post = serializers.IntegerField()
         content = serializers.CharField()
@@ -651,7 +657,14 @@ class PostCommentCreateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_201_CREATED)
 
 
-class PostCommentUpdateApi(APIView, ApiAuthMixin):
+class PostCommentUpdateApi(ApiAuthMixin, APIView):
+    permission_classes = (IsWriter, )
+
+    def get_object(self, post_comment_id):
+        post_comment = get_object_or_404(PostComment, pk=post_comment_id)
+        self.check_object_permissions(self.request, post_comment)
+        return post_comment
+
     class PostCommentUpdateInputSerializer(serializers.Serializer):
         content = serializers.CharField()
         mentionEmail = serializers.CharField(required=False)
@@ -697,7 +710,7 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
         },
     )
     def put(self, request, post_comment_id):
-        post_comment = PostComment.objects.get(id=post_comment_id)
+        post_comment = self.get_object(post_comment_id)
 
         serializer = self.PostCommentUpdateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -709,7 +722,7 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
 
         # request body가 json 방식이 아닌 multipart/form-data 방식으로 전달
         post_comment = service.update(
-            post_comment_id=post_comment_id,
+            post_comment=post_comment,
             content=data.get('content'),
             mentioned_email=data.get('mentionEmail', ''),
             photo_image_urls=data.get('photoList', []),
@@ -722,7 +735,13 @@ class PostCommentUpdateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class PostCommentDeleteApi(APIView, ApiAuthMixin):
+class PostCommentDeleteApi(ApiAuthMixin, APIView):
+    permission_classes = (IsWriter, )
+
+    def get_object(self, post_comment_id):
+        post_comment = get_object_or_404(PostComment, pk=post_comment_id)
+        self.check_object_permissions(self.request, post_comment)
+        return post_comment
 
     @swagger_auto_schema(
         operation_id='커뮤니티 댓글 삭제',
@@ -739,13 +758,14 @@ class PostCommentDeleteApi(APIView, ApiAuthMixin):
         },
     )
     def delete(self, request, post_comment_id):
+        post_comment = self.get_object(post_comment_id)
 
         service = PostCommentCoordinatorService(
             user=request.user
         )
 
         service.delete(
-            post_comment_id=post_comment_id
+            post_comment=post_comment
         )
 
         return Response({
@@ -753,7 +773,7 @@ class PostCommentDeleteApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class PostReportCreateApi(APIView, ApiAuthMixin):
+class PostReportCreateApi(ApiAuthMixin, APIView):
     class PostReportCreateInputSerializer(serializers.Serializer):
         post = serializers.IntegerField()
         category = serializers.CharField()
@@ -809,7 +829,7 @@ class PostReportCreateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_201_CREATED)
 
 
-class PostCommentReportCreateApi(APIView, ApiAuthMixin):
+class PostCommentReportCreateApi(ApiAuthMixin, APIView):
     class PostCommentReportCreateInputSerializer(serializers.Serializer):
         comment = serializers.IntegerField()
         category = serializers.CharField()

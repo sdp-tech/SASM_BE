@@ -6,13 +6,13 @@ from django.conf import settings
 from django.db import transaction
 from django.core.files.images import ImageFile
 from django.core.files.uploadedfile import UploadedFile, InMemoryUploadedFile
-from django.core.exceptions import ValidationError as DjangoValidationError
 
 from rest_framework import exceptions
 
 from users.models import User
 from community.models import Board, Post, PostHashtag, PostPhoto, PostLike, PostComment, PostCommentPhoto, PostReport, PostCommentReport
 from .selectors import BoardSelector, PostHashtagSelector, PostSelector, PostLikeSelector, PostCommentSelector, PostCommentPhotoSelector
+from core.exceptions import ApplicationError
 
 
 class PostCoordinatorService:
@@ -45,16 +45,12 @@ class PostCoordinatorService:
         return post
 
     @transaction.atomic
-    def update(self, post_id: int, title: str, content: str, hashtag_names: list[str] = [], photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> Post:
+    def update(self, post: Post, title: str, content: str, hashtag_names: list[str] = [], photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> Post:
         post_service = PostService()
         post_selector = PostSelector()
 
-        # user가 해당 post의 writer가 아닐 경우 에러 raise
-        if not post_selector.isWriter(post_id=post_id, user=self.user):
-            raise exceptions.ValidationError({"error": "게시글 작성자가 아닙니다."})
-
         post = post_service.update(
-            post_id=post_id,
+            post=post,
             title=title,
             content=content,
         )
@@ -73,39 +69,33 @@ class PostCoordinatorService:
         return post
 
     @transaction.atomic
-    def delete(self, post_id: int):
+    def delete(self, post: Post):
         post_service = PostService()
-        post_selector = PostSelector()
-
-        # user가 해당 post의 writer가 아닐 경우 에러 raise
-        if not post_selector.isWriter(post_id=post_id, user=self.user):
-            raise exceptions.ValidationError({"error": "게시글 작성자가 아닙니다."})
-
-        post_service.delete(post_id=post_id)
+        post_service.delete(post=post)
 
     @transaction.atomic
-    def like_or_dislike(self, post_id: int) -> bool:
+    def like_or_dislike(self, post: Post) -> bool:
         # 이미 좋아요 한 상태 -> 좋아요 취소 (dislike)
-        if PostLikeSelector.likes(post_id=post_id, user=self.user):
+        if PostLikeSelector.likes(post_id=post.id, user=self.user):
             # PostLike 삭제
             PostLikeService.dislike(
-                post_id=post_id,
+                post_id=post.id,
                 user=self.user
             )
 
             # Post의 like_cnt 1 감소
-            PostService.dislike(post_id=post_id)
+            PostService.dislike(post_id=post.id)
             return False
 
         else:  # 좋아요 하지 않은 상태 -> 좋아요 (like)
             # PostLike 생성
             PostLikeService.like(
-                post_id=post_id,
+                post_id=post.id,
                 user=self.user
             )
 
             # Post의 like_cnt 1 증가
-            PostService.like(post_id=post_id)
+            PostService.like(post_id=post.id)
             return True
 
 
@@ -126,9 +116,7 @@ class PostService:
 
         return post
 
-    def update(self, post_id: int, title: str, content: str) -> Post:
-        post = Post.objects.get(id=post_id)
-
+    def update(self, post: Post, title: str, content: str) -> Post:
         post.update_title(title)
         post.update_content(content)
 
@@ -137,9 +125,7 @@ class PostService:
 
         return post
 
-    def delete(self, post_id: int):
-        post = Post.objects.get(id=post_id)
-
+    def delete(self, post: Post):
         post.delete()
 
     @staticmethod
@@ -254,7 +240,7 @@ class PostPhotoService:
 
         # 신규 image_file을 photo로 생성
         photos.extend(self.create(image_files=image_files))
-     
+
         return photos
 
 
@@ -288,7 +274,7 @@ class PostCommentCoordinatorService:
 
         # 해당 post가 속하는 board의 댓글 지원 여부 확인
         if not comment_selector.isPostCommentAvailable(post_id=post_id):
-            raise exceptions.ValidationError({"error": "댓글을 지원하지 않는 게시글입니다."})
+            raise ApplicationError("댓글을 지원하지 않는 게시글입니다.")
 
         if parent_id:
             parent = PostComment.objects.get(id=parent_id)
@@ -312,33 +298,28 @@ class PostCommentCoordinatorService:
         photo_selector = PostCommentPhotoSelector()
         photo_service = PostCommentPhotoService(post_comment=post_comment)
 
-        #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
+        # 해당 post가 속하는 board의 댓글 사진 지원 여부 확인
         if image_files and not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
-            raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
-        
+            raise ApplicationError("댓글 사진을 지원하지 않는 게시글입니다.")
+
         photo_service.create(image_files=image_files)
 
         return post_comment
 
     @transaction.atomic
-    def update(self, post_comment_id: int, content: str, mentioned_email: str, photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> PostComment:
+    def update(self, post_comment: PostComment, content: str, mentioned_email: str, photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> PostComment:
         post_comment_service = PostCommentService()
-        post_comment_selector = PostCommentSelector()
-
-        # user가 해당 post_comment의 writer가 아닐 경우 에러 raise
-        if not post_comment_selector.isWriter(post_comment_id=post_comment_id, user=self.user):
-            raise exceptions.ValidationError({"error": "댓글 작성자가 아닙니다."})
 
         if mentioned_email:
             mentioned_user = User.objects.get(email=mentioned_email)
         else:
             mentioned_user = None
-              
+
         # elif mentioned_nickname:
         #     mention = User.objects.get(nickname=mentioned_nickname)
 
         post_comment = post_comment_service.update(
-            post_comment_id=post_comment_id,
+            post_comment=post_comment,
             content=content,
             mentioned_user=mentioned_user,
         )
@@ -347,9 +328,9 @@ class PostCommentCoordinatorService:
         photo_selector = PostCommentPhotoSelector()
         photo_service = PostCommentPhotoService(post_comment=post_comment)
 
-        #해당 post가 속하는 board의 댓글 사진 지원 여부 확인
+        # 해당 post가 속하는 board의 댓글 사진 지원 여부 확인
         if image_files and not photo_selector.isPostCommentPhotoAvailable(post_id=post_id):
-            raise exceptions.ValidationError({"error": "댓글 사진을 지원하지 않는 게시글입니다."})
+            raise ApplicationError("댓글 사진을 지원하지 않는 게시글입니다.")
 
         photo_service.update(
             photo_image_urls=photo_image_urls,
@@ -359,15 +340,9 @@ class PostCommentCoordinatorService:
         return post_comment
 
     @transaction.atomic
-    def delete(self, post_comment_id: int):
+    def delete(self, post_comment: PostComment):
         post_comment_service = PostCommentService()
-        post_comment_selector = PostCommentSelector()
-
-        # user가 해당 post_comment의 writer가 아닐 경우 에러 raise
-        if not post_comment_selector.isWriter(post_comment_id=post_comment_id, user=self.user):
-            raise exceptions.ValidationError({"error": "댓글 작성자가 아닙니다."})
-
-        post_comment_service.delete(post_comment_id=post_comment_id)
+        post_comment_service.delete(post_comment=post_comment)
 
 
 class PostCommentService:
@@ -389,9 +364,7 @@ class PostCommentService:
 
         return post_comment
 
-    def update(self, post_comment_id: int, content: str, mentioned_user: User) -> PostComment:
-        post_comment = PostComment.objects.get(id=post_comment_id)
-
+    def update(self, post_comment: PostComment, content: str, mentioned_user: User) -> PostComment:
         post_comment.update_content(content)
         post_comment.update_mention(mentioned_user)
 
@@ -400,9 +373,7 @@ class PostCommentService:
 
         return post_comment
 
-    def delete(self, post_comment_id: int):
-        post_comment = PostComment.objects.get(id=post_comment_id)
-
+    def delete(self, post_comment: PostComment):
         post_comment.delete()
 
 

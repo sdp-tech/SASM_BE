@@ -149,9 +149,6 @@ class PostSelector:
     def __init__(self):
         pass
 
-    def isWriter(self, post_id: int, user: User):
-        return Post.objects.get(id=post_id).writer == user
-
     @ staticmethod
     def list(board: Board, query: str = '', query_type: str = 'default', latest: bool = True, extra_fields: dict = {}):
 
@@ -240,6 +237,9 @@ class PostLikeSelector:
 
     @staticmethod
     def likes(post_id: int, user: User):
+        if not user.is_authenticated:
+            return False
+
         return PostLike.objects.filter(
             post__id=post_id,
             user=user
@@ -308,9 +308,6 @@ class PostCommentCoordinatorSelector:
 class PostCommentSelector:
     def __init__(self):
         pass
-
-    def isWriter(self, post_comment_id: int, user: User):
-        return PostComment.objects.get(id=post_comment_id).writer == user
 
     def isPostCommentAvailable(self, post_id: int):
         post = Post.objects.get(id=post_id)
