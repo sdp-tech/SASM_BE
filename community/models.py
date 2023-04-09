@@ -33,13 +33,16 @@ def validate_str_field_length(target: str):
 class Post(TimeStampedModel):
     title = models.CharField(max_length=200)
     content = models.TextField(max_length=50000)
-    board = models.ForeignKey(
+    board = models.ForeignKey(  # 정보글에선 카테고리에 해당
         'Board', related_name='posts', on_delete=models.CASCADE, null=False, blank=False)
     writer = models.ForeignKey(
         'users.User', related_name='posts', on_delete=models.SET_NULL, null=True, blank=False)
     like_cnt = models.PositiveIntegerField(default=0)
     view_cnt = models.PositiveIntegerField(default=0)
-    comment_cnt = models.PositiveIntegerField(default=0)
+
+    # 정보글 관련 필드
+    subtitle = models.CharField(max_length=200, default="없음")  # 소제목
+    keyword = models.CharField(max_length=100, default="없음")  # 키워드
 
     # ForeignKey와 같은 relational 필드를 제외한 non-relational 필드에 대한 기본적이고 간단한 검증 로직 포함
     # 복잡한 필드 검증이나 모델 필드 외 데이터에 대한 검증, 필드 관계 검증은 Serivce/Serializer에서 수행
@@ -52,17 +55,27 @@ class Post(TimeStampedModel):
 
         # self.content = self.content.replace("\r\n", "")
 
-    def update_title(self, title):
+    def entire_update(self, title, content, subtitle, keyword):
         self.title = title
-
-    def update_content(self, content):
         self.content = content
+        self.subtitle = subtitle
+        self.keyword = keyword
 
     def like(self):
         self.like_cnt += 1
 
     def dislike(self):
         self.like_cnt -= 1
+
+
+class PostPlace(TimeStampedModel):
+    post = models.ForeignKey('Post', related_name='places',
+                             on_delete=models.CASCADE, null=False, blank=False)
+    name = models.CharField(max_length=200)  # 장소명
+    address = models.CharField(max_length=200)  # 장소 주소(지번, 도로명)
+    contact = models.CharField(max_length=200)  # 장소 연락처
+    latitude = models.FloatField(blank=True)
+    longitude = models.FloatField(blank=True)
 
 
 class PostContentStyle(TimeStampedModel):

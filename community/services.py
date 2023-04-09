@@ -1,6 +1,7 @@
 import io
 import time
 import uuid
+import json
 
 from django.conf import settings
 from django.db import transaction
@@ -10,7 +11,7 @@ from django.core.files.uploadedfile import UploadedFile, InMemoryUploadedFile
 from rest_framework import exceptions
 
 from users.models import User
-from community.models import Board, Post, PostHashtag, PostPhoto, PostLike, PostComment, PostCommentPhoto, PostReport, PostCommentReport
+from community.models import Board, Post, PostHashtag, PostPhoto, PostLike, PostComment, PostCommentPhoto, PostReport, PostCommentReport, PostPlace
 from .selectors import BoardSelector, PostHashtagSelector, PostSelector, PostLikeSelector, PostCommentSelector, PostCommentPhotoSelector
 from core.exceptions import ApplicationError
 
@@ -20,7 +21,8 @@ class PostCoordinatorService:
         self.user = user
 
     @transaction.atomic
-    def create(self, board_id: int, title: str, content: str, hashtag_names: list[str] = None, image_files: list[InMemoryUploadedFile] = None) -> Post:
+    def create(self, board_id: int, title: str, content: str, hashtag_names: list[str] = [], image_files: list[InMemoryUploadedFile] = [],
+               subtitle: str = '', keyword: str = '', places: list[str] = []) -> Post:
         board = BoardSelector.get_from_id(id=board_id)
 
         post_service = PostService()
@@ -28,7 +30,9 @@ class PostCoordinatorService:
             title=title,
             content=content,
             board=board,
-            writer=self.user
+            writer=self.user,
+            subtitle=subtitle,
+            keyword=keyword,
         )
 
         if board.supports_hashtags and hashtag_names:
@@ -42,10 +46,14 @@ class PostCoordinatorService:
             photo_service = PostPhotoService(post=post)
             photo_service.create(image_files=image_files)
 
+        if places:
+            PostPlaceService.create(post=post, place_jsons=places)
+
         return post
 
     @transaction.atomic
-    def update(self, post: Post, title: str, content: str, hashtag_names: list[str] = [], photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = []) -> Post:
+    def update(self, post: Post, title: str, content: str, hashtag_names: list[str] = [], photo_image_urls: list[str] = [], image_files: list[InMemoryUploadedFile] = [],
+               subtitle: str = '', keyword: str = '', places: list[str] = []) -> Post:
         post_service = PostService()
         post_selector = PostSelector()
 
@@ -53,6 +61,8 @@ class PostCoordinatorService:
             post=post,
             title=title,
             content=content,
+            subtitle=subtitle,
+            keyword=keyword,
         )
 
         if post.board.supports_hashtags:
@@ -65,6 +75,9 @@ class PostCoordinatorService:
                 photo_image_urls=photo_image_urls,
                 image_files=image_files
             )
+
+        if places:
+            PostPlaceService.update(post=post, place_jsons=places)
 
         return post
 
@@ -103,12 +116,14 @@ class PostService:
     def __init__(self):
         pass
 
-    def create(self, title: str, content: str, board: Board, writer: User) -> Post:
+    def create(self, title: str, content: str, board: Board, writer: User, subtitle: str, keyword: str) -> Post:
         post = Post(
             title=title,
             content=content,
             board=board,
-            writer=writer
+            writer=writer,
+            subtitle=subtitle,
+            keyword=keyword,
         )
 
         post.full_clean()
@@ -116,9 +131,13 @@ class PostService:
 
         return post
 
-    def update(self, post: Post, title: str, content: str) -> Post:
-        post.update_title(title)
-        post.update_content(content)
+    def update(self, post: Post, title: str, content: str, subtitle: str, keyword: str) -> Post:
+        post.entire_update(
+            title=title,
+            content=content,
+            subtitle=subtitle,
+            keyword=keyword,
+        )
 
         post.full_clean()
         post.save()
@@ -260,6 +279,51 @@ class PostLikeService:
     @staticmethod
     def dislike(post_id: int, user: User):
         PostLike.objects.get(post__id=post_id, user=user).delete()
+
+
+class PostPlaceService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def create(post: Post, place_jsons: list[str]):
+        for place_json in place_jsons:
+            place_dict = json.loads(place_json)
+            post_place = PostPlace(
+                post=post,
+                ** place_dict,
+            )
+
+            post_place.full_clean()
+            post_place.save()
+
+    @staticmethod
+    def update(post: Post, place_jsons: list[str]):
+        current_places = post.places.all()
+        places = [json.loads(place_json) for place_json in place_jsons]
+        current_place_dicts = []
+
+        # place_jsons에 포함되지 않는 장소 삭제
+        for current_place in current_places:
+            current_place_dict = {
+                'name': current_place.name,
+                'address': current_place.address,
+                'contact': current_place.contact,
+                'latitude': current_place.latitude,
+                'longitude': current_place.longitude}
+            current_place_dicts.append(current_place_dict)
+            if current_place_dict not in places:
+                current_place.delete()
+
+        # 새롭게 전달된 장소 생성
+        new_place_jsons = []
+        for place in places:
+            if place not in current_place_dicts:
+                new_place_jsons.append(json.dumps(place))
+        PostPlaceService.create(
+            post=post,
+            place_jsons=new_place_jsons
+        )
 
 
 class PostCommentCoordinatorService:
