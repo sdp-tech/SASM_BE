@@ -7,7 +7,7 @@ from rest_framework.pagination import PageNumberPagination
 
 from users.mixins import ApiAuthMixin, ApiAdminAuthMixin, ApiAllowAnyMixin
 from users.services import UserService, UserPasswordService
-from users.selectors import UserSelector
+from users.selectors import UserSelector, UserStorySelector
 
 from core.views import get_paginated_response
 
@@ -240,6 +240,32 @@ class UserStoryGetApi(APIView):
         def get_place_name(self, obj):
             return obj.address.place_name
 
+    @swagger_auto_schema(
+        operation_id='작성한 스토리 조회',
+        operation_description='''
+                유저가 작성한 스토리를 조회합니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "place_name": "르타리",
+                        "title": "버섯의 세계",
+                        "preview": "눈과 입이 즐거운 곳",
+                        "rep_pic": "https://abc.com/1.jpg",
+                        "views": 10,
+                        "writer": "sdptech@gmail.com",
+                        "created": "2023-04-13"
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
     def get(self, request):
         selector = UserStorySelector(user=request.user)
         story_list = selector.list()
@@ -268,6 +294,32 @@ class UserStoryGetByCommentApi(APIView):
         writer = serializers.CharField()
         created = serializers.DateTimeField()
 
+    @swagger_auto_schema(
+        operation_id='댓글 단 스토리 조회',
+        operation_description='''
+                유저가 댓글 단 스토리를 조회합니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "place_name": "르타리",
+                        "title": "버섯의 세계",
+                        "preview": "눈과 입이 즐거운 곳",
+                        "rep_pic": "https://abc.com/1.jpg",
+                        "views": 10,
+                        "writer": "sdptech@gmail.com",
+                        "created": "2023-04-13"
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
     def get(self, request):
         selector = UserStorySelector(user=request.user)
         comment_list = selector.get_by_comment()
