@@ -43,8 +43,6 @@ class CurationCoordinatorService:
     @transaction.atomic
     def update(self, curation: Curation, title: str, stories: list[str], short_curations: list, contents: str, photo_image_url: str, rep_pic: InMemoryUploadedFile):
 
-        # permission
-
         curation_service = CurationService()
         curation = curation_service.update(
             curation=curation,
@@ -52,17 +50,18 @@ class CurationCoordinatorService:
             contents=contents
         )
 
-        pairs = {}  # {<Story: 스토리4>]>: '숏큐 내용'}
-        for story_id in stories:
-            story = Story.objects.get(id=story_id)
-            pairs[story] = short_curations[stories.index(story_id)]
-        stories_qs = Story.objects.filter(id__in=stories)
+        pairs = {}  # {[<Story: 스토리4>]>: '숏큐 내용'}
+        stories = list(Story.objects.get(id=value)  # obj list
+                       for i, value in enumerate(stories))
+
+        for i, story in enumerate(stories):
+            pairs[story] = short_curations[i]
 
         short_curation_service = ShortCurationService()
         short_curations = short_curation_service.update(
             curation=curation,
             pairs=pairs,
-            stories=stories_qs
+            stories=stories
         )
 
         photo_service = CurationPhotoService()

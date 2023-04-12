@@ -7,7 +7,6 @@ from rest_framework import serializers, status
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-from stories.mixins import ApiAuthMixin
 from .selectors import CurationSelector, CuratedStoryCoordinatorSelector
 from .services import CurationCoordinatorService
 from .permissions import IsWriter
@@ -238,7 +237,7 @@ class CuratedStoryDetailApi(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class CurationCreateApi(APIView, ApiAuthMixin):
+class CurationCreateApi(APIView):
     class CurationCreateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
         contents = serializers.CharField()
@@ -293,7 +292,7 @@ class CurationCreateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class CurationUpdateApi(APIView, ApiAuthMixin):
+class CurationUpdateApi(APIView):
     permission_classes = (IsWriter, )
 
     def get_object(self, curation_id):
@@ -361,7 +360,7 @@ class CurationUpdateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class CurationDeleteApi(ApiAuthMixin, APIView):
+class CurationDeleteApi(APIView):
     permission_classes = (IsWriter, )
 
     def get_object(self, curation_id):
