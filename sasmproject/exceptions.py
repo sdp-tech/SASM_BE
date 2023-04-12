@@ -6,6 +6,7 @@ from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.serializers import as_serializer_error
 from rest_framework.response import Response
+import traceback
 
 from core.exceptions import ApplicationError
 
@@ -41,6 +42,7 @@ def custom_exception_handler(exc, ctx):
             }
             return Response(data, status=400)
 
+        print(traceback.format_exc())
         # undefined, unknown error
         return Response({
             "status": "fail",
