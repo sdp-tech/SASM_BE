@@ -18,7 +18,7 @@ class RepCurationListApi(APIView):
         page_size = 10
         page_size_query_param = 'page_size'
 
-    class RepCurationListSerializer(serializers.Serializer):
+    class RepCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.ImageField()
@@ -29,7 +29,6 @@ class RepCurationListApi(APIView):
         operation_description='''
             홈 화면에 보여주는 대표큐레이션을 리스트합니다.<br/>
             ''',
-        query_serializer=RepCurationListSerializer,
         responses={
             "200": openapi.Response(
                 description="OK",
@@ -49,7 +48,7 @@ class RepCurationListApi(APIView):
     )
     def get(self, request):
         curations = CurationSelector.rep_curation_list(self)
-        serializer = self.RepCurationListSerializer(
+        serializer = self.RepCurationListOutputSerializer(
             curations, many=True)
 
         return Response({
@@ -60,7 +59,7 @@ class RepCurationListApi(APIView):
 
 class AdminCurationListApi(APIView):
 
-    class AdminCurationListSerializer(serializers.Serializer):
+    class AdminCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.ImageField()
@@ -71,7 +70,6 @@ class AdminCurationListApi(APIView):
         operation_description='''
             홈 화면에 보여주는 대표큐레이션을 리스트합니다.<br/>
             ''',
-        query_serializer=AdminCurationListSerializer,
         responses={
             "200": openapi.Response(
                 description="OK",
@@ -91,7 +89,7 @@ class AdminCurationListApi(APIView):
     )
     def get(self, request):
         curations = CurationSelector.admin_curation_list(self)
-        serializer = self.AdminCurationListSerializer(
+        serializer = self.AdminCurationListOutputSerializer(
             curations, many=True)
 
         return Response({
@@ -102,7 +100,7 @@ class AdminCurationListApi(APIView):
 
 class VerifiedUserCurationApi(APIView):
 
-    class VerifiedUserCurationListSerializer(serializers.Serializer):
+    class VerifiedUserCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.ImageField()
@@ -113,7 +111,6 @@ class VerifiedUserCurationApi(APIView):
         operation_description='''
             홈 화면에 보여주는 대표큐레이션을 리스트합니다.<br/>
             ''',
-        query_serializer=VerifiedUserCurationListSerializer,
         responses={
             "200": openapi.Response(
                 description="OK",
@@ -133,7 +130,7 @@ class VerifiedUserCurationApi(APIView):
     )
     def get(self, request):
         curations = CurationSelector.verified_user_curation_list(self)
-        serializer = self.VerifiedUserCurationListSerializer(
+        serializer = self.VerifiedUserCurationListOutputSerializer(
             curations, many=True)
 
         return Response({
@@ -143,7 +140,7 @@ class VerifiedUserCurationApi(APIView):
 
 
 class CurationDetailApi(APIView):
-    class CruationDetailSerializer(serializers.Serializer):
+    class CruationDetailOutputSerializer(serializers.Serializer):
 
         title = serializers.CharField()
         contents = serializers.CharField()
@@ -181,7 +178,7 @@ class CurationDetailApi(APIView):
     def get(self, request, curation_id):
         selector = CurationSelector(user=request.user)
         curation = selector.detail(curation_id=curation_id)
-        serializer = self.CruationDetailSerializer(curation, many=True)
+        serializer = self.CruationDetailOutputSerializer(curation, many=True)
 
         return Response({
             'status': 'success',
