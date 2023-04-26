@@ -8,7 +8,6 @@ from places.models import Place
 from stories.models import Story, StoryComment
 
 
-
 class UserSelector:
     def __init__(self):
         pass
@@ -97,3 +96,20 @@ class UserStorySelector:
         ).order_by('created')
 
         return stories
+
+
+class UserFollowSelector:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def follows(source: User, target: User):
+        return source.follows.contains(target)
+
+    @staticmethod
+    def get_following(source: User):
+        return source.follows.all()
+
+    @staticmethod
+    def get_follower(target: User):
+        return target.followers.all()
