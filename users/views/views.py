@@ -477,23 +477,20 @@ class UserDoUndoFollowApi(ApiAuthMixin, APIView):
         },
     )
     def post(self, request):
-        try:
-            serializer = self.UserFollowInputSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            data = serializer.validated_data
+        serializer = self.UserFollowInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
-            target_user = get_object_or_404(
-                User, email=data.get('targetEmail'))
-            follows = UserFollowService.follow_or_unfollow(
-                source=request.user,
-                target=target_user)
+        target_user = get_object_or_404(
+            User, email=data.get('targetEmail'))
+        follows = UserFollowService.follow_or_unfollow(
+            source=request.user,
+            target=target_user)
 
-            return Response({
-                'status': 'success',
-                'data': {'follows': follows},
-            }, status=status.HTTP_200_OK)
-        except:
-            traceback.print_exc()
+        return Response({
+            'status': 'success',
+            'data': {'follows': follows},
+        }, status=status.HTTP_200_OK)
 
 
 class UserFollowingListApi(ApiAllowAnyMixin, APIView):
