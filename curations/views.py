@@ -3,12 +3,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import serializers, status
+from rest_framework.permissions import IsAuthenticated
+
 
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from .selectors import CurationSelector, CuratedStoryCoordinatorSelector
-from .services import CurationCoordinatorService
+from .services import CurationCoordinatorService, CurationLikeService
 from .permissions import IsWriter
 from curations.models import Curation
 
@@ -392,4 +394,49 @@ class CurationDeleteApi(APIView):
 
         return Response({
             'status': 'success',
+        }, status=status.HTTP_200_OK)
+
+
+class CurationLikeApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    class CurationLikeInputSerializer(serializers.Serializer):
+        curation = serializers.IntegerField()
+
+    @swagger_auto_schema(
+        operation_id='큐레이션 좋아요/좋아요 취소',
+        operation_description='''
+            해당 큐레이션에 대해 좋아요/좋아요 취소를 수행합니다.<br/>
+            결과로 좋아요 상태(true: 좋아요, false: 좋아요 x)가 반환됩니다.
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"likes": True}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request):
+        serializer = self.CurationLikeInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        curation = get_object_or_404(
+            Curation, id=data.get('curation'))
+        likes = CurationLikeService.like_or_dislike(
+            curation=curation,
+            user=request.user
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'likes': likes},
         }, status=status.HTTP_200_OK)

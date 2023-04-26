@@ -23,6 +23,8 @@ class CurationSelector:
             writer_is_verified=F('writer__is_verified')
         )
 
+        return curation
+
     def rep_curation_list(self):
         curations = Curation.objects.filter(is_released=True, is_rep=True)
 
@@ -39,6 +41,12 @@ class CurationSelector:
             is_released=True, writer__is_verified=True)
 
         return curations
+
+    # def following_user_curation_list(self):
+    #     curations = Curation.objects.filter(
+    #         is_released=True, writer__is_verified=True)
+
+    #     return curations
 
 
 class CuratedStoryCoordinatorSelector:
@@ -73,3 +81,15 @@ class CuratedStorySelector:
                 default=Value(0),
             )
         )
+
+
+class CurationLikeSelector:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def likes(curation: Curation, user: User):
+        if curation.likeuser_set.filter(pk=user.pk).exists():
+            return True
+        else:
+            return False

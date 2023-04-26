@@ -11,6 +11,7 @@ from users.models import User
 from stories.models import Story
 from places.models import PlacePhoto
 from curations.models import Curation, Curation_Story, CurationPhoto
+from curations.selectors import CurationLikeSelector
 
 
 class CurationCoordinatorService:
@@ -196,3 +197,26 @@ class CurationPhotoService:
             rep_pic = current_rep_pic
 
         return rep_pic
+
+
+class CurationLikeService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def like(curation: Curation, user: User):
+        curation.likeuser_set.add(user)
+
+    @staticmethod
+    def dislike(curation: Curation, user: User):
+        curation.likeuser_set.remove(user)
+
+    @staticmethod
+    def like_or_dislike(curation: Curation, user: User):
+        likes = CurationLikeSelector.likes(curation=curation, user=user)
+        if not likes:
+            CurationLikeService.like(curation=curation, user=user)
+            return True
+        else:
+            CurationLikeService.dislike(curation=curation, user=user)
+            return False
