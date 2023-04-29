@@ -8,8 +8,10 @@ class ApiAuthMixin:
     # permission classes
     permission_classes = (IsAuthenticated,)
 
+
 class ApiAdminAuthMixin:
     permission_classes = (IsAdminUser,)
+
 
 class ApiAllowAnyMixin:
     permission_classes = (AllowAny,)
