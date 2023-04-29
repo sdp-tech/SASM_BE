@@ -36,6 +36,8 @@ class Story(core_models.TimeStampedModel):
     html_content = models.TextField(max_length=50000)
     writer = models.ForeignKey(
         'users.User', related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
+    place = models.ForeignKey(
+        'places.Place', related_name='stories', on_delete=models.CASCADE, null=False, blank=False, default=1)
 
     def clean(self):
         self.html_content = self.html_content.replace("\r\n", "")
