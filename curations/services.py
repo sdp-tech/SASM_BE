@@ -171,7 +171,6 @@ class CurationPhotoService:
         pass
 
     def create(self, curation: Curation, image_file: InMemoryUploadedFile):
-        image_file = image_file[0]
         ext = image_file.name.split(".")[-1]
         file_path = '{}-{}.{}'.format(curation.id,
                                       str(time.time())+str(uuid.uuid4().hex), ext)
@@ -187,7 +186,7 @@ class CurationPhotoService:
         return rep_pic
 
     def update(self, curation: Curation, photo_image_url: str, image_file: InMemoryUploadedFile):
-        current_rep_pic = curation.photos.all()
+        current_rep_pic = curation.photos.all()  # queryset 형태
         image_path = settings.MEDIA_URL + str(current_rep_pic[0].image)
 
         if image_path != photo_image_url:
