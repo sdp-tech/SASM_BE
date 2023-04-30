@@ -23,13 +23,16 @@ class RepCurationListApi(APIView):
     class RepCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
-        rep_pic = serializers.ImageField()
+        rep_pic = serializers.CharField()
         writer = serializers.CharField()
+        is_selected = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='대표큐레이션 리스트',
         operation_description='''
-            홈 화면에 보여주는 대표큐레이션을 리스트합니다.<br/>
+            홈 화면과 모두보기 화면의 대표큐레이션을 리스트합니다.<br/>
+            대표큐레이션이 모두 반환되며, 이 중에서 is_selected=True인 것만 홈 화면에 노출되어야 합니다.<br/>
+            Request시 전달해야 할 파라미터는 없습니다.
             ''',
         responses={
             "200": openapi.Response(
@@ -40,6 +43,7 @@ class RepCurationListApi(APIView):
                         'title': '서울 비건카페 탑5',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer': 'sdptech@gmail.com',
+                        'is_selected': True,
                     }
                 }
             ),
@@ -64,13 +68,16 @@ class AdminCurationListApi(APIView):
     class AdminCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
-        rep_pic = serializers.ImageField()
+        rep_pic = serializers.CharField()
         writer = serializers.CharField()
+        is_selected = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='관리자 큐레이션 리스트',
         operation_description='''
-            홈 화면에 보여주는 대표큐레이션을 리스트합니다.<br/>
+            홈 화면과 모두보기 화면의 관리자 큐레이션을 리스트합니다.<br/>
+            관리자 큐레이션이 모두 반환되며, 이 중에서 is_selected=True인 것만 홈 화면에 노출되어야 합니다.<br/>
+            Request시 전달해야 할 파라미터는 없습니다.
             ''',
         responses={
             "200": openapi.Response(
@@ -81,6 +88,7 @@ class AdminCurationListApi(APIView):
                         'title': '제로웨이스트',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer': 'sdptech@gmail.com',
+                        'is_selected': True,
                     }
                 }
             ),
@@ -105,13 +113,16 @@ class VerifiedUserCurationApi(APIView):
     class VerifiedUserCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
-        rep_pic = serializers.ImageField()
+        rep_pic = serializers.CharField()
         writer = serializers.CharField()
+        is_selected = serializers.BooleanField()
 
     @swagger_auto_schema(
-        operation_id='관리자 큐레이션 리스트',
+        operation_id='인증유저 큐레이션 리스트',
         operation_description='''
-            홈 화면에 보여주는 대표큐레이션을 리스트합니다.<br/>
+            홈 화면과 모두보기 화면의 인증유저 큐레이션을 리스트합니다.<br/>
+            인증유저 큐레이션이 모두 반환되며, 이 중에서 is_selected=True인 것만 홈 화면에 노출되어야 합니다.<br/>
+            Request시 전달해야 할 파라미터는 없습니다.
             ''',
         responses={
             "200": openapi.Response(
@@ -122,6 +133,7 @@ class VerifiedUserCurationApi(APIView):
                         'title': '제로웨이스트',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer': 'sdptech@gmail.com',
+                        'is_selected': True,
                     }
                 }
             ),
@@ -146,7 +158,7 @@ class CurationDetailApi(APIView):
 
         title = serializers.CharField()
         contents = serializers.CharField()
-        rep_pic = serializers.ImageField()
+        rep_pic = serializers.CharField()
         like_curation = serializers.BooleanField()
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
@@ -157,6 +169,7 @@ class CurationDetailApi(APIView):
         operation_id='큐레이션 디테일 조회',
         operation_description='''
             큐레이션 디테일을 조회합니다.<br/>
+            큐레이션 상세페이지 상단에 해당하는, 스토리를 제외한 큐레이션의 기본 정보를 반환합니다.
         ''',
         responses={
             "200": openapi.Response(
@@ -189,7 +202,7 @@ class CurationDetailApi(APIView):
 
 
 class CuratedStoryDetailApi(APIView):
-    class CuratedStoryDetailSerializer(serializers.Serializer):
+    class CuratedStoryDetailOutputSerializer(serializers.Serializer):
 
         story_id = serializers.IntegerField()
         place_name = serializers.CharField()
@@ -203,7 +216,7 @@ class CuratedStoryDetailApi(APIView):
     @swagger_auto_schema(
         operation_id='큐레이션 스토리 디테일 조회',
         operation_description='''
-            큐레이션 스토리 디테일을 조회합니다.<br/>
+            큐레이션 내 스토리 정보를 반환합니다.<br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -228,7 +241,8 @@ class CuratedStoryDetailApi(APIView):
     def get(self, request, curation_id):
         selector = CuratedStoryCoordinatorSelector(user=request.user)
         curation = selector.detail(curation_id=curation_id)
-        serializer = self.CuratedStoryDetailSerializer(curation, many=True)
+        serializer = self.CuratedStoryDetailOutputSerializer(
+            curation, many=True)
 
         return Response({
             'status': 'success',
@@ -242,26 +256,37 @@ class CurationCreateApi(APIView):
         contents = serializers.CharField()
         stories = serializers.ListField()
         short_curations = serializers.ListField()
-        rep_pic = serializers.ListField()
+        rep_pic = serializers.ImageField()
         # is_released
         # is_selected
         # is_rep
 
+        class Meta:
+            examples = {
+                'title': '서울 제로웨이스트샵 5곳',
+                'contents': '서울에서 제로웨이스트샵을 만나보세요.',
+                'stories': ['1', '2', '3'],
+                'short_curations': ['스토리1에 대한 숏큐입니다.', '스토리2에 대한 숏큐입니다.', '스토리3에 대한 숏큐입니다.'],
+                'rep_pic': 'https://abc.com/1.jpg'
+            }
+
     @swagger_auto_schema(
+        request_body=CurationCreateInputSerializer,
+        security=[],
         operation_id='큐레이션 생성',
         operation_description='''
             큐레이션을 생성합니다.<br/>
+            short_curations 리스트 요소 순서는 해당하는 stories 순서와 일치해야 합니다.
         ''',
         responses={
             "200": openapi.Response(
                 description="OK",
                 examples={
                     "application/json": {
-                        'title': '서울 제로웨이스트샵 5곳',
-                        'content': '서울에서 제로웨이스트샵을 만나보세요.',
-                        'stories': ['1', '2', '3'],
-                        'short_curations': ['스토리1에 대한 숏큐입니다.', '스토리2에 대한 숏큐입니다.', '스토리3에 대한 숏큐입니다.'],
-                        'rep_pic': 'https://abc.com/1.jpg'
+                        "status": "success",
+                        "data": {
+                            "id": 1
+                        }
                     },
                 }
             ),
@@ -304,25 +329,36 @@ class CurationUpdateApi(APIView):
         contents = serializers.CharField()
         stories = serializers.ListField()
         short_curations = serializers.ListField()
-        rep_pic = serializers.ListField()
+        rep_pic = serializers.ImageField()
+
+        class Meta:
+            examples = {
+                'title': '서울 제로웨이스트샵 5곳',
+                'content': '서울에서 제로웨이스트샵을 만나보세요.',
+                'stories': ['1', '2', '3'],
+                'short_curations': ['스토리1에 대한 숏큐입니다.', '스토리2에 대한 숏큐입니다.', '스토리3에 대한 숏큐입니다.'],
+                'photo_image_url': 'https://abc.com/1.jpg',
+                'rep_pic': 'https://abc.com/2.jpg'
+            }
 
     @swagger_auto_schema(
+        request_body=CurationUpdateInputSerializer,
+        security=[],
         operation_id='큐레이션 수정',
         operation_description='''
             큐레이션을 수정합니다.<br/>
-            값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+            값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야 합니다.<br/>
+            short_curations 리스트 요소 순서는 해당하는 stories 순서와 일치해야 합니다.
         ''',
         responses={
             "200": openapi.Response(
                 description="OK",
                 examples={
                     "application/json": {
-                        'title': '서울 제로웨이스트샵 5곳',
-                        'content': '서울에서 제로웨이스트샵을 만나보세요.',
-                        'stories': ['1', '2', '3'],
-                        'short_curations': ['스토리1에 대한 숏큐입니다.', '스토리2에 대한 숏큐입니다.', '스토리3에 대한 숏큐입니다.'],
-                        'photo_image_url': 'https://abc.com/1.jpg',
-                        'rep_pic': 'https://abc.com/2.jpg'
+                        "status": "success",
+                        "data": {
+                            "id": 1
+                        }
                     },
                 }
             ),

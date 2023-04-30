@@ -3,7 +3,10 @@
 from curations.models import Curation
 from users.models import User
 from stories.models import Story
-from django.db.models import Q, F, Case, When, Value, Exists, OuterRef
+
+from django.conf import settings
+from django.db.models.functions import Concat, Substr
+from django.db.models import Q, F, Case, When, Value, Exists, OuterRef, CharField
 
 
 class CurationSelector:
@@ -26,19 +29,49 @@ class CurationSelector:
         return curation
 
     def rep_curation_list(self):
-        curations = Curation.objects.filter(is_released=True, is_rep=True)
+        curations = Curation.objects.filter(is_released=True, is_rep=True).annotate(
+            rep_pic=Case(
+                When(
+                    photos__image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('photos__image'),
+                               output_field=CharField())
+            ),
+        )
 
         return curations
 
     def admin_curation_list(self):
         curations = Curation.objects.filter(
-            is_released=True, writer__is_sdp_admin=True, is_rep=False)
+            is_released=True, writer__is_sdp_admin=True, is_rep=False).annotate(
+            rep_pic=Case(
+                When(
+                    photos__image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('photos__image'),
+                               output_field=CharField())
+            ),
+        )
 
         return curations
 
     def verified_user_curation_list(self):
         curations = Curation.objects.filter(
-            is_released=True, writer__is_verified=True)
+            is_released=True, writer__is_verified=True).annotate(
+            rep_pic=Case(
+                When(
+                    photos__image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('photos__image'),
+                               output_field=CharField())
+            ),
+        )
 
         return curations
 
