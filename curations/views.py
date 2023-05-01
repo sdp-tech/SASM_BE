@@ -182,7 +182,7 @@ class CurationDetailApi(APIView):
                         'rep_pic': 'https://abc.com/1.jpg',
                         'like_curation': True,
                         'writer': 'sdptech@gmail.com',
-                        'writer_is_verified': True
+                        'writer_is_verified': True,
                         'map_image': 'https://abc.com/1.jpg',
                     },
                 }
