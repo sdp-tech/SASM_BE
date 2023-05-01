@@ -23,7 +23,10 @@ class CurationSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
-            writer_is_verified=F('writer__is_verified')
+            writer_is_verified=F('writer__is_verified'),
+            map_image=Concat(Value(settings.MEDIA_URL),
+                             F('map_photos__map'),
+                             output_field=CharField())
         )
 
         return curation

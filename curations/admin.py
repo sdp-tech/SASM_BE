@@ -24,3 +24,11 @@ class Curation_Story(admin.ModelAdmin):
     """ """
 
     pass
+
+
+@admin.register(models.CurationMap)
+class CurationMap(admin.ModelAdmin):
+
+    """ """
+
+    pass
