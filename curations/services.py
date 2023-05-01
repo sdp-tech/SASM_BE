@@ -20,13 +20,16 @@ class CurationCoordinatorService:
         self.user = user
 
     @transaction.atomic
-    def create(self, title: str, stories: list, short_curations: list, contents: str, rep_pic: InMemoryUploadedFile):
+    def create(self, title: str, stories: list, short_curations: list, contents: str, rep_pic: InMemoryUploadedFile, is_released: bool, is_selected: bool, is_rep: bool):
 
         curation_service = CurationService()
         curation = curation_service.create(
             title=title,
             contents=contents,
-            writer=self.user
+            writer=self.user,
+            is_released=is_released,  # 개발용
+            is_selected=is_selected,  # 개발용
+            is_rep=is_rep  # 개발용
         )
 
         short_curation_service = ShortCurationService()
@@ -146,11 +149,14 @@ class CurationService:
     def __init__(self):
         pass
 
-    def create(self, title: str, contents: str, writer: User):
+    def create(self, title: str, contents: str, writer: User, is_released: bool, is_selected: bool, is_rep: bool):
         curation = Curation(
             title=title,
             contents=contents,
-            writer=writer
+            writer=writer,
+            is_released=is_released,  # 개발용
+            is_selected=is_selected,  # 개발용
+            is_rep=is_rep  # 개발용
         )
 
         curation.full_clean()
