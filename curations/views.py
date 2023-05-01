@@ -163,6 +163,7 @@ class CurationDetailApi(APIView):
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         created = serializers.CharField()
+        map_image = serializers.CharField()
         # lat, lon
 
     @swagger_auto_schema(
@@ -181,7 +182,8 @@ class CurationDetailApi(APIView):
                         'rep_pic': 'https://abc.com/1.jpg',
                         'like_curation': True,
                         'writer': 'sdptech@gmail.com',
-                        'writer_is_verified': True
+                        'writer_is_verified': True,
+                        'map_image': 'https://abc.com/1.jpg',
                     },
                 }
             ),
