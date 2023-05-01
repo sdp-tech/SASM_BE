@@ -59,7 +59,8 @@ PROJECT_APPS = [
     "core.apps.CoreConfig",
     "sdp_admin.apps.SdpAdminConfig",
     "community.apps.CommunityConfig",
-    "curations.apps.CurationsConfig"
+    "curations.apps.CurationsConfig",
+    "mypage.apps.MypageConfig"
 ]
 THIRD_APPS = [
     'rest_framework',
