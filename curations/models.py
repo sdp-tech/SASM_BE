@@ -65,3 +65,15 @@ class Curation_Story(core_models.TimeStampedModel):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class CurationMap(core_models.TimeStampedModel):
+    curation = models.ForeignKey(
+        "Curation", related_name='map_photos', on_delete=models.CASCADE, null=True)
+    map = models.ImageField(
+        upload_to=get_upload_path, default='curation_map_photo.png')
+
+
+@receiver(models.signals.post_delete, sender=CurationMap)
+def remove_file_from_s3(sender, instance, using, **kwargs):
+    instance.map.delete(save=False)

@@ -10,8 +10,9 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from users.models import User
 from stories.models import Story
 from places.models import PlacePhoto
-from curations.models import Curation, Curation_Story, CurationPhoto
+from curations.models import Curation, Curation_Story, CurationPhoto, CurationMap
 from curations.selectors import CurationLikeSelector
+from core.map_image import Marker, get_static_naver_image
 
 
 class CurationCoordinatorService:
@@ -39,6 +40,8 @@ class CurationCoordinatorService:
         photo_service = CurationPhotoService()
         photo_service.create(curation=curation, image_file=rep_pic)
 
+        CurationMapService.create(curation=curation, stories=stories_qs)
+
         return curation
 
     @transaction.atomic
@@ -52,22 +55,24 @@ class CurationCoordinatorService:
         )
 
         pairs = {}  # {[<Story: 스토리4>]>: '숏큐 내용'}
-        stories = list(Story.objects.get(id=value)  # obj list
-                       for i, value in enumerate(stories))
+        stories_qs = Story.objects.filter(id__in=stories)  # obj list
 
-        for i, story in enumerate(stories):
+        for i, story in enumerate(stories_qs):
             pairs[story] = short_curations[i]
 
         short_curation_service = ShortCurationService()
         short_curations = short_curation_service.update(
             curation=curation,
             pairs=pairs,
-            stories=stories
+            stories=stories_qs
         )
 
         photo_service = CurationPhotoService()
         photo_service.update(
             curation=curation, photo_image_url=photo_image_url, image_file=rep_pic)
+
+        CurationMapService.delete(curation=curation)
+        CurationMapService.create(curation=curation, stories=stories_qs)
 
         return curation
 
@@ -219,3 +224,38 @@ class CurationLikeService:
         else:
             CurationLikeService.dislike(curation=curation, user=user)
             return False
+
+
+class CurationMapService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def create(curation: Curation, stories: list[Story]):
+        places = list(map(lambda x: x.address, stories))
+
+        # 사진 생성하기
+        markers = []
+        for place in places:
+            markers.append(Marker(
+                longitude=place.longitude,
+                latitude=place.latitude,
+                label=place.place_name,
+            ))
+
+        file_path = '{}-{}.{}'.format(curation.id,
+                                      str(time.time())+str(uuid.uuid4().hex), 'jpeg')
+        map_image = ImageFile(io.BytesIO(
+            get_static_naver_image(markers)), name=file_path)
+
+        curation_map = CurationMap(
+            curation=curation,
+            map=map_image
+        )
+
+        curation_map.save()
+
+    @staticmethod
+    def delete(curation: Curation):
+        map = CurationMap.objects.get(curation=curation)
+        map.delete()
