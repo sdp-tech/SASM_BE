@@ -270,7 +270,7 @@ class CurationCreateApi(APIView):
                 'contents': '서울에서 제로웨이스트샵을 만나보세요.',
                 'stories': ['1', '2', '3'],
                 'short_curations': ['스토리1에 대한 숏큐입니다.', '스토리2에 대한 숏큐입니다.', '스토리3에 대한 숏큐입니다.'],
-                'rep_pic': 'https://abc.com/1.jpg',
+                'rep_pic': '<IMAGE FILE BINARY>',
             }
 
     @swagger_auto_schema(
@@ -340,7 +340,8 @@ class CurationUpdateApi(APIView):
         contents = serializers.CharField()
         stories = serializers.ListField()
         short_curations = serializers.ListField()
-        rep_pic = serializers.ImageField()
+        photo_image_url = serializers.CharField()
+        rep_pic = serializers.ImageField(default=None)
 
         class Meta:
             examples = {
@@ -349,7 +350,7 @@ class CurationUpdateApi(APIView):
                 'stories': ['1', '2', '3'],
                 'short_curations': ['스토리1에 대한 숏큐입니다.', '스토리2에 대한 숏큐입니다.', '스토리3에 대한 숏큐입니다.'],
                 'photo_image_url': 'https://abc.com/1.jpg',
-                'rep_pic': 'https://abc.com/2.jpg'
+                'rep_pic': '<IMAGE FILE BINARY>'
             }
 
     @swagger_auto_schema(

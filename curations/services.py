@@ -70,9 +70,10 @@ class CurationCoordinatorService:
             stories=stories_qs
         )
 
-        photo_service = CurationPhotoService()
-        photo_service.update(
-            curation=curation, photo_image_url=photo_image_url, image_file=rep_pic)
+        if rep_pic:
+            photo_service = CurationPhotoService()
+            photo_service.update(
+                curation=curation, photo_image_url=photo_image_url, image_file=rep_pic)
 
         CurationMapService.delete(curation=curation)
         CurationMapService.create(curation=curation, stories=stories_qs)
