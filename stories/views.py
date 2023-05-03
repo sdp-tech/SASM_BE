@@ -43,6 +43,7 @@ class StoryListApi(APIView):
         semi_category = serializers.SerializerMethodField()
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
+        nickname = serializers.CharField()
 
         def get_semi_category(self, obj):
             result = semi_category(obj.id)
@@ -76,7 +77,8 @@ class StoryListApi(APIView):
                         'rep_pic': 'https://abc.com/1.jpg',
                         'story_like': True,
                         'writer': 'sdptech@gmail.com',
-                        'writer_is_verified': True
+                        'writer_is_verified': True,
+                        'nickname': 'sdp_official',
                     }
                 }
             ),
@@ -118,6 +120,8 @@ class StoryDetailApi(APIView):
         semi_category = serializers.CharField()
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
+        nickname=serializers.CharField()
+        created=serializers.DateTimeField()  #게시글 생성 날짜 
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
@@ -140,7 +144,9 @@ class StoryDetailApi(APIView):
                         'views': 45,
                         'story_like': True,
                         'writer': 'sdptech@gmail.com',
-                        'writer_is_verified': True
+                        'writer_is_verified': True,
+                        'nickname': 'sdp_official',
+                        "created": "2023-08-24T14:15:22Z",
                     },
                 }
             ),
