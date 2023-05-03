@@ -25,6 +25,8 @@ class StoryDto:
     semi_category: str
     writer: str
     writer_is_verified: bool
+    nickname: str
+    created: datetime
 
 
 class StoryCoordinatorSelector:
@@ -52,7 +54,9 @@ class StoryCoordinatorSelector:
             category=story.category,
             semi_category=semi_cate,
             writer=story.writer,
-            writer_is_verified=story.writer_is_verified
+            writer_is_verified=story.writer_is_verified,
+            nickname=story.nickname,
+            created=story.created,
         )
         return dto
 
@@ -98,6 +102,7 @@ class StorySelector:
             place_name=F('address__place_name'),
             category=F('address__category'),
             writer_is_verified=F('writer__is_verified'),
+            nickname=F('writer__nickname'),
             ** extra_fields
         ).get(id=story_id)
 
@@ -125,7 +130,8 @@ class StorySelector:
         story = Story.objects.filter(q).annotate(
             place_name=F('address__place_name'),
             category=F('address__category'),
-            writer_is_verified=F('writer__is_verified')
+            writer_is_verified=F('writer__is_verified'),
+            nickname=F('writer__nickname'),
         ).order_by(order)
 
         return story
