@@ -50,3 +50,8 @@ class PostReportAdmin(admin.ModelAdmin):
 @admin.register(models.PostCommentReport)
 class PostCommentReportAdmin(admin.ModelAdmin):
     pass
+
+
+@admin.register(models.PostPlace)
+class PostPlaceAdmin(admin.ModelAdmin):
+    pass

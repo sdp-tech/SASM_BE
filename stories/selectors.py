@@ -62,7 +62,7 @@ def semi_category(story_id: int):
         스토리의 세부 category를 알려 주기 위한 함수
     '''
     story = get_object_or_404(Story, id=story_id)
-    place = story.address
+    place = story.place
     result = []
     vegan = place.vegan_category
     if vegan != '':
@@ -95,15 +95,15 @@ class StorySelector:
 
     def detail(story_id: int, extra_fields: dict = {}):
         return Story.objects.annotate(
-            place_name=F('address__place_name'),
-            category=F('address__category'),
+            place_name=F('place__place_name'),
+            category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             ** extra_fields
         ).get(id=story_id)
 
     def recommend_list(story_id: int):
         story = Story.objects.get(id=story_id)
-        q = Q(address__category=story.address.category)
+        q = Q(place__category=story.place.category)
         recommend_story = Story.objects.filter(q).exclude(id=story_id).annotate(
             writer_is_verified=F('writer__is_verified')
         )
@@ -113,19 +113,18 @@ class StorySelector:
     @staticmethod
     def list(search: str = '', order: str = '', array: list = []):
         q = Q()
-<<<<<<< HEAD
         q.add(Q(title__icontains=search)|
-              Q(address__place_name__icontains=search)|  #스토리 제목 또는 내용 검색
-              Q(address__category__icontains=search)|
+              Q(place__place_name__icontains=search)|  #스토리 제목 또는 내용 검색
+              Q(place__category__icontains=search)|
               Q(tag__icontains=search), q.AND)
 
         if len(array) > 0:
             query = None
             for a in array: 
                 if query is None:
-                    query = Q(address__category=a) 
+                    query = Q(place__category=a) 
                 else: 
-                    query = query | Q(address__category=a)
+                    query = query | Q(place__category=a)
             q.add(query, q.AND)
 
         order_by_time = {'latest' : 'created', 'oldest' : '-created'}
@@ -135,20 +134,10 @@ class StorySelector:
             order = order_by_time[order]
         if order in order_by_likes:
             order = order_by_likes[order]
-=======
-        q.add(Q(title__icontains=search) | Q(
-            address__place_name__icontains=search), q.AND)  # 스토리 제목 또는 내용 검색
-
-        # 최신순 정렬
-        if latest:
-            order = '-created'
-        else:
-            order = 'created'
->>>>>>> e96a17851220ed4de74961ba61cf371a8200d5ab
 
         story = Story.objects.filter(q).annotate(
-            place_name=F('address__place_name'),   
-            category=F('address__category'),
+            place_name=F('place__place_name'),   
+            category=F('place__category'),
             writer_is_verified=F('writer__is_verified')
         ).order_by(order)
 
@@ -161,7 +150,7 @@ class StoryLikeSelector:
 
     @staticmethod
     def likes(story_id: int, user: User):
-        story = get_object_or_404(Story, pk=story_id)
+        story = Story.objects.get(id=story_id)
         # 좋아요가 존재하는 지 안하는 지 확인
         if story.story_likeuser_set.filter(pk=user.pk).exists():
             return True
@@ -176,7 +165,7 @@ class MapMarkerSelector:
     @staticmethod
     def map(story_id: int):
         story = Story.objects.get(id=story_id)
-        place = story.address
+        place = story.place
 
         return place
 

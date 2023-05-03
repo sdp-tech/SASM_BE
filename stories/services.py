@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 from users.models import User
 from stories.models import Story, StoryComment
 from places.models import Place
-from .selectors import StoryLikeSelector, StoryCommentSelector
+from .selectors import StoryLikeSelector, StoryCommentSelector, semi_category
 
 def check_user(user: User):
     if user.is_authenticated: 
@@ -35,6 +35,76 @@ class StoryCoordinatorService:
             # Story의 like_cnt 1 증가
             StoryService.like(story_id=story_id, user=self.user)
             return True
+
+    @transaction.atomic
+    def create(self, 
+               title: str, 
+               writer_id: int,
+               writer_sdp_admin: bool,
+               place_id: int, 
+               preview: str, 
+               tag: str, 
+               story_review: str, 
+               html_content: str, 
+               rep_pic: InMemoryUploadedFile, 
+               category: str,
+               semi_category: str) -> Story:
+        print('coordinate')
+        writer = User.objects.get(id__exact=writer_id)
+        place = Place.objects.get(id__exact=place_id)
+
+        service = StoryService()
+        # semi_category = semi_category
+        story = service.create(
+            title=title,
+            writer=writer,
+            writer_sdp_admin=writer_sdp_admin,
+            place=place,
+            preview=preview,
+            tag=tag,
+            story_review=story_review,
+            html_content=html_content,
+            rep_pic=rep_pic,
+            category=category,
+            semi_category=semi_category,
+        )
+
+        return story
+
+    @transaction.atomic
+    def update(self, 
+               story_id: int, 
+               title: str, 
+               place: Place, 
+               story_review: str, 
+               tag: str, 
+               preview: str, 
+               html_content: str, 
+               rep_pic: InMemoryUploadedFile, 
+               category: str, 
+               semi_category: str) -> Story:
+        service = StoryService()
+
+        story = service.update(
+            story_id=story_id,
+            title=title,
+            place=place,
+            story_review=story_review,
+            tag=tag,
+            preview=preview,
+            html_content=html_content,
+            rep_pic=rep_pic,
+            category=category,
+            semi_category=semi_category,
+        )
+
+        return story
+    
+    @transaction.atomic
+    def delete(self, story_id: int):
+        service = StoryService()
+
+        service.delete(story_id=story_id)
 
 
 class StoryService:
@@ -61,6 +131,72 @@ class StoryService:
         story.full_clean()
         story.save()
 
+    def create(self,
+               title: str, 
+               writer: User,
+               writer_sdp_admin: bool,
+               place: Place, 
+               preview: str, 
+               tag: str, 
+               story_review: str, 
+               html_content: str, 
+               rep_pic: InMemoryUploadedFile, 
+               category: str,
+               semi_category: str) -> Story:
+        print('ll')
+        # print('title:', title, writer, writer_is_verified, place, preview, tag, story_review, html_content, rep_pic, category, semi_category)
+        story= Story(
+            title=title,
+            writer=writer,
+            # writer__sdp_admin=writer_sdp_admin,
+            place=place,
+            preview=preview,
+            tag=tag,
+            story_review=story_review,
+            html_content=html_content,
+            rep_pic=rep_pic,
+            place__category=category,
+            semi_category=semi_category
+        )
+        print('ok')
+        story.full_clean()
+        story.save()
+
+        return story
+    
+    def update(self,
+               story_id: int,
+               title: str, 
+               place: Place, 
+               preview: str, 
+               tag: str, 
+               story_review: str, 
+               html_content: str, 
+               rep_pic: InMemoryUploadedFile, 
+               category: str,
+               semi_category: str) -> Story:
+        story = Story.objects.get(id=story_id)
+
+        update_story = story(
+            title=title,
+            place=place,
+            story_review=story_review,
+            tag=tag,
+            preview=preview,
+            html_content=html_content,
+            rep_pic=rep_pic,
+            category=category,
+            semi_category=semi_category,
+        )
+
+        return update_story
+    
+    @staticmethod
+    def delete(self, story_id: int):
+        story = Story.objects.get(id=story_id)
+
+        story.delete()
+    
 
 class StoryCommentCoordinatorService:
     def __init__(self, user: User):

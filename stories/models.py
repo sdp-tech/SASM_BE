@@ -25,6 +25,8 @@ class Story(core_models.TimeStampedModel):
     title = models.CharField(max_length=200)
     story_review = models.CharField(max_length=200)
     address = models.OneToOneField("places.Place", on_delete=models.CASCADE)
+    place = models.ForeignKey(
+        "places.Place", on_delete=models.CASCADE, related_name='stories')
     story_like_cnt = models.PositiveIntegerField(default=0)
     story_likeuser_set = models.ManyToManyField(
         "users.User", related_name='StoryLikeUser', blank=True)
@@ -36,8 +38,6 @@ class Story(core_models.TimeStampedModel):
     html_content = models.TextField(max_length=50000)
     writer = models.ForeignKey(
         'users.User', related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
-    place = models.ForeignKey(
-        'places.Place', related_name='stories', on_delete=models.CASCADE, null=False, blank=False, default=1)
 
     def clean(self):
         self.html_content = self.html_content.replace("\r\n", "")

@@ -12,7 +12,7 @@ from django.db.models import OuterRef, Subquery
 
 
 from users.models import User
-from community.models import Board, Post, PostHashtag, PostLike, PostPhoto, PostComment, PostCommentPhoto
+from community.models import Board, Post, PostHashtag, PostLike, PostPhoto, PostComment, PostCommentPhoto, PostPlace
 
 # class PostSelector:
 #     def __init__(self):
@@ -82,12 +82,18 @@ class PostDto:
     content: str
     nickname: str
     email: str
+    profile: str
     created: datetime
     updated: datetime
 
     likeCount: int
     viewCount: int
     likes: bool
+
+    # 정보글 관련 필드
+    subtitle: str
+    keyword: str
+    places: list[dict]
 
     hashtagList: list[str] = None  # optional
     photoList: list[str] = None  # optional
@@ -97,7 +103,7 @@ class PostCoordinatorSelector:
     def __init__(self, user: User):
         self.user = user
 
-    def list(self, board_id: int, query: str, query_type: str, latest: bool):
+    def list(self, board_id: int, query: str, query_type: str, latest: bool, keyword: str):
         board = BoardSelector.get_from_id(id=board_id)
 
         extra_fields = {}
@@ -110,6 +116,7 @@ class PostCoordinatorSelector:
             query=query,
             query_type=query_type,
             latest=latest,
+            keyword=keyword,
             extra_fields=extra_fields
         )
 
@@ -129,11 +136,15 @@ class PostCoordinatorSelector:
             content=post.content,
             nickname=post.nickname,
             email=post.email,
+            profile=post.profile,
             created=post.created,
             updated=post.updated,
             likeCount=post.likeCount,
             viewCount=post.viewCount,
             likes=likes,
+            subtitle=post.subtitle,
+            keyword=post.keyword,
+            places=[],
         )
 
         if board.supports_hashtags:
@@ -142,6 +153,10 @@ class PostCoordinatorSelector:
         if board.supports_post_photos:
             dto.photoList = PostPhotoSelector.photos_of_post(post=post)
 
+        places = PostPlaceSelector.places_of_post(post=post)
+        for place in places:
+            dto.places.append({**place})
+
         return dto
 
 
@@ -149,20 +164,22 @@ class PostSelector:
     def __init__(self):
         pass
 
-    def isWriter(self, post_id: int, user: User):
-        return Post.objects.get(id=post_id).writer == user
-
     @ staticmethod
-    def list(board: Board, query: str = '', query_type: str = 'default', latest: bool = True, extra_fields: dict = {}):
+    def list(board: Board, query: str = '', query_type: str = 'default', latest: bool = True, keyword: str = '', extra_fields: dict = {}):
 
         q = Q()
         q.add(Q(board=board), q.AND)
 
         if query_type == 'hashtag':  # 해시태그 검색
             q.add(Q(hashtags__name__exact=query), q.AND)
-        else:  # 게시글 제목 또는 내용 검색 - 기본값
-            q.add(Q(title__icontains=query) | Q(
-                content__icontains=query), q.AND)
+        else:  # 통합 검색(기본값): 게시글 내용, 제목, 댓글 내용, 해쉬태그 연관 검색
+            q.add(Q(title__icontains=query) |
+                  Q(content__icontains=query) |
+                  Q(comments__content__icontains=query) |
+                  Q(hashtags__name__icontains=query), q.AND)
+
+        if keyword:
+            q.add(Q(keyword=keyword), q.AND)
 
         # 최신순 정렬
         if latest:
@@ -175,7 +192,16 @@ class PostSelector:
             nickname=F('writer__nickname'),
             email=F('writer__email'),
             likeCount=F('like_cnt'),
-            **extra_fields
+            rep_photo=Case(
+                When(
+                    photos__image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('photos__image'),
+                               output_field=CharField())
+            ),
+            ** extra_fields
         ).order_by(order)  # .distinct
 
         return posts
@@ -185,6 +211,15 @@ class PostSelector:
         return Post.objects.annotate(
             nickname=F('writer__nickname'),
             email=F('writer__email'),
+            profile=Case(
+                When(
+                    writer__profile_image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('writer__profile_image'),
+                               output_field=CharField())
+            ),
             likeCount=F('like_cnt'),
             viewCount=F('view_cnt'),
             **extra_fields
@@ -240,6 +275,9 @@ class PostLikeSelector:
 
     @staticmethod
     def likes(post_id: int, user: User):
+        if not user.is_authenticated:
+            return False
+
         return PostLike.objects.filter(
             post__id=post_id,
             user=user
@@ -258,6 +296,16 @@ class PostPhotoSelector:
                              F('image'),
                              output_field=CharField())
         ).values_list('imageUrls', flat=True)
+
+
+class PostPlaceSelector:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def places_of_post(post: Post):
+        return PostPlace.objects.filter(post=post).values(
+            'name', 'address', 'contact', 'longitude', 'latitude')
 
 
 '''
@@ -309,9 +357,6 @@ class PostCommentSelector:
     def __init__(self):
         pass
 
-    def isWriter(self, post_comment_id: int, user: User):
-        return PostComment.objects.get(id=post_comment_id).writer == user
-
     def isPostCommentAvailable(self, post_id: int):
         post = Post.objects.get(id=post_id)
         board_id = post.board_id
@@ -334,6 +379,7 @@ class PostCommentSelector:
             ),
             nickname=F('writer__nickname'),
             email=F('writer__email'),
+            profile=F('writer__profile_image'),
             mentionEmail=F('mention__email'),
             mentionNickname=F('mention__nickname'),
             photoList=GroupConcat("photos__image")
@@ -346,7 +392,8 @@ class PostCommentSelector:
                  'mentionEmail',
                  'created',
                  'updated',
-                 'photoList').order_by('group', 'id')
+                 'photoList',
+                 'profile').order_by('group', 'id')
 
         return post_comments
 

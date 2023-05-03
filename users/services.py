@@ -14,7 +14,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_jwt.settings import api_settings
 
 from users.models import User
-from users.selectors import UserSelector
+from users.selectors import UserSelector, UserFollowSelector
 
 JWT_PAYLOAD_HANDLER = api_settings.JWT_PAYLOAD_HANDLER
 JWT_ENCODE_HANDLER = api_settings.JWT_ENCODE_HANDLER
@@ -42,7 +42,8 @@ class UserService:
         user = user_selector.get_user_from_email(email)
 
         if not user_selector.check_password(user, password):
-            raise exceptions.ValidationError({"error": "비밀번호가 틀립니다."})
+            raise exceptions.ValidationError(
+                {'detail': "아이디나 비밀번호가 올바르지 않습니다."})
 
         token = RefreshToken.for_user(user=user)
         data = {
@@ -138,8 +139,6 @@ class UserPasswordService:
         user_selector = UserSelector
         user = user_selector.get_user_from_code(code)
 
-        user_selector.check_password_exists(user.email, password)
-
         user.set_password(password)
         user.code = UserPasswordService.email_auth_string()
 
@@ -151,3 +150,19 @@ class UserPasswordService:
 
         user.full_clean()
         user.save()
+
+
+class UserFollowService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def follow_or_unfollow(source: User, target: User) -> bool:
+        # 이미 팔로우 한 상태 -> 팔로우 취소 (unfollow)
+        if UserFollowSelector.follows(source=source, target=target):
+            source.follows.remove(target)
+            return False
+
+        else:  # 팔로우 하지 않은 상태 -> 팔로우 (follow)
+            source.follows.add(target)
+            return True

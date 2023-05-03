@@ -16,6 +16,8 @@ urlpatterns = [
     path('sdp_admin/', include('sdp_admin.urls')),
     path('silk/', include('silk.urls', namespace='silk')),
     path('community/', include('community.urls')),
+    path('curations/', include('curations.urls')),
+    path('mypage/', include('mypage.urls')),
 ]
 
 # API 문서에 작성될 소개 내용

@@ -1,3 +1,4 @@
+import time
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
@@ -18,8 +19,6 @@ from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
 from users.models import User
 from places.serializers import MapMarkerSerializer
-from core.permissions import CommentWriterOrReadOnly
-from sasmproject.swagger import StoryCommentViewSet_list_params, param_id
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
@@ -97,7 +96,7 @@ class StoryListApi(APIView):
         story = StorySelector.list(
             search=filters.get('search', ''),
             order=filters.get('order', 'latest'),
-            array=request.query_params.getlist('category', None),
+            array=filters.getlist('category', None),
         )
 
         return get_paginated_response(
@@ -167,6 +166,188 @@ class StoryDetailApi(APIView):
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
 
+class StoryCreateApi(ApiAuthMixin, APIView):
+    class StoryCreateInputSerializer(serializers.Serializer):
+        title = serializers.CharField()
+        writer = serializers.IntegerField()
+        writer_sdp_admin = serializers.BooleanField()
+        place = serializers.IntegerField()
+        story_review = serializers.CharField()
+        tag = serializers.CharField()
+        preview = serializers.CharField()
+        html_content = serializers.CharField()
+        rep_pic = serializers.ImageField()
+        category = serializers.CharField()
+        semi_category = serializers.CharField()
+
+        def change_rep_pic_name(self, story, validated_data):
+            place_name = validated_data['place'].place_name
+            ext = story.rep_pic.name.split(".")[-1]
+            story.rep_pic.name = '{}/{}.{}'.format(place_name,
+                                               'rep' + str(int(time.time())), ext)
+
+        class Meta:
+            examples = {
+                'title': '매력적인 편집샵, 지구샵',
+                'writer': 'sdpdgl@naver.com',
+                'writer_sdp_admin': 'True',
+                'place': '지구샵 제로웨이스트홈',
+                'preview': '지구샵으로 초대합니다.',
+                'tag': '#환경친화적 #제로웨이스트',
+                'story_review': '빈손으로는 나올 수 없는 제로웨이스트 샵',
+                'html_content': '망원동, 성수, 연남동을 지나가는 걸음을 멈추게 하는 곳, 편집샵에 가 본 적이 있는가?...',
+                'rep_pic': 'https://abc.com/2.jpg',
+                'category': '제로웨이스트 샵',
+                'semi_category': '비건, 텀블러 사용 가능',
+            }
+
+    @swagger_auto_schema(
+        operation_id='스토리 게시글 생성',
+        operation_description='''
+            전달된 필드를 기반으로 스토리 게시글을 생성합니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request):
+        serializer = self.StoryCreateInputSerializer(data=request.data)
+        print("serializer:", serializer)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        service = StoryCoordinatorService(
+            user=request.user
+        )
+        print('service')
+        story=service.create(
+            title=data.get('title'),
+            writer_id=data.get('writer'),
+            writer_sdp_admin=data.get('sdp_admin'),
+            place_id=data.get('place'),
+            preview=data.get('preview'),
+            tag=data.get('tag'),
+            story_review=data.get('story_review'),
+            html_content=data.get('html_content'),
+            rep_pic=data.get('rep_pic'),
+            category=data.get('category'),
+            semi_category=data.get('semi_category'),
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': story.id},
+        }, status=status.HTTP_201_CREATED)
+    
+
+class StoryUpdateApi(APIView):
+    class StoryUpdateInputSerializer(serializers.Serializer):
+        title = serializers.CharField()
+        place = serializers.CharField()
+        story_review = serializers.CharField()
+        tag = serializers.CharField()
+        preview = serializers.CharField()
+        html_content = serializers.CharField()
+        rep_pic = serializers.ImageField()
+        category = serializers.CharField()
+        semi_category = serializers.CharField()
+
+        # def change_rep_pic_name(self, story, validated_data):
+        # place_name = validated_data['address'].place_name
+        # ext = story.rep_pic.name.split(".")[-1]
+        # story.rep_pic.name = '{}/{}.{}'.format(place_name,
+        #                                        'rep' + str(int(time.time())), ext)
+
+    @swagger_auto_schema(
+        request_body=StoryUpdateInputSerializer,
+        security=[],
+        operation_id='스토리 게시글 업데이트',
+        operation_description='''
+            전송된 모든 필드 값을 그대로 게시글에 업데이트하므로, 게시글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+            즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        }
+    )
+    def put(self, request, story_id):
+        serializer = self.StoryUpdateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        service = StoryCoordinatorService(
+            user=request.user
+        )
+
+        story = service.update(
+            story_id=story_id,
+            title=data.get('title'),
+            place=data.get('place'),
+            story_review=data.get('story_review'),
+            tag=data.get('tag'),
+            preview=data.get('preview'),
+            html_content=data.get('html_content'),
+            rep_pic=data.get('rep_pic'),
+            category=data.get('category'),
+            semi_category=data.get('semi_category'),
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': story.id},
+        }, status=status.HTTP_200_OK)
+
+
+class StoryDeleteApi(ApiAuthMixin, APIView):
+    @swagger_auto_schema(
+        operation_id='스토리 게시글 삭제',
+        operation_description='''
+            전달된 id를 가지는 게시글을 삭제합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        }
+    )
+    def delete(self, request, story_id):
+        service = StoryCoordinatorService(
+            user=request.user
+        )
+
+        service.delete(
+            story_id=story_id
+        )
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_200_OK)
+    
 
 class StoryRecommendApi(APIView):
     class Pagination(PageNumberPagination):
@@ -225,7 +406,7 @@ class StoryLikeApi(APIView, ApiAuthMixin):
                     }
                 }
             ),
-            "401": openapi.Response(
+            "400": openapi.Response(
                 description="Bad Request",
             ),
         },

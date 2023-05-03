@@ -36,6 +36,9 @@ SOCIAL_AUTH_GOOGLE_SECRET = env('SASM_BE_SOCIAL_AUTH_GOOGLE_SECRET')
 NAVER_CLIENT_ID = env('SASM_BE_NAVER_CLIENT_ID')
 NAVER_SECRET_KEY = env('SASM_BE_NAVER_SECRET_KEY')
 
+NAVER_STATIC_MAP_CLIENT_ID = env('SASM_BE_NAVER_STATIC_MAP_CLIENT_ID')
+NAVER_STATIC_MAP_SECRET_KEY = env('SASM_BE_NAVER_STATIC_MAP_SECRET_KEY')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -59,6 +62,8 @@ PROJECT_APPS = [
     "core.apps.CoreConfig",
     "sdp_admin.apps.SdpAdminConfig",
     "community.apps.CommunityConfig",
+    "curations.apps.CurationsConfig",
+    "mypage.apps.MypageConfig"
 ]
 THIRD_APPS = [
     'rest_framework',

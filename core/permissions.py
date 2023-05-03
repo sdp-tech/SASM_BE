@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission
 
 
 class IsSdpStaff(BasePermission):
@@ -6,24 +6,5 @@ class IsSdpStaff(BasePermission):
         if request.user.is_authenticated:
             if request.user.is_sdp_admin:
                 return True
-        else:
-            return False
-
-# TODO: 권한 검증(ex. 작성자 여부 확인)은 service 로직 내부에서 검증하는 게 아니라 Permission으로 검증하는 게 바람직할듯
-
-
-class CommentWriterOrReadOnly(BasePermission):
-    # 작성자만 접근, 작성자가 아니면 Create/Read만 가능
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_authenticated:
-            if request.user.is_sdp_admin:
-                return True
-            # Create/SAFE_METHODS(GET, HEAD, OPTIONS)는 모든 유저에게 허용
-            elif request.method in ['POST'].extend(SAFE_METHODS):
-                return True
-            # comment(obj)의 작성자가 요청자와 동일하다면 Update, Delete 가능
-            elif hasattr(obj, 'writer'):
-                return obj.writer.id == request.user.id
-            return False
         else:
             return False
