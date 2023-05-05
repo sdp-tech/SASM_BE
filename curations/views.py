@@ -164,7 +164,6 @@ class CurationDetailApi(APIView):
         writer_is_verified = serializers.BooleanField()
         created = serializers.CharField()
         map_image = serializers.CharField()
-        # lat, lon
 
     @swagger_auto_schema(
         operation_id='큐레이션 디테일 조회',
@@ -259,9 +258,11 @@ class CurationCreateApi(APIView):
         stories = serializers.ListField()
         short_curations = serializers.ListField()
         rep_pic = serializers.ImageField()
-        # is_released
-        # is_selected
-        # is_rep
+        is_released = serializers.BooleanField(
+            required=False, default=True)  # 개발용
+        is_selected = serializers.BooleanField(
+            required=False, default=True)  # 개발용
+        is_rep = serializers.BooleanField(required=False, default=True)  # 개발용
 
         class Meta:
             examples = {
@@ -269,7 +270,7 @@ class CurationCreateApi(APIView):
                 'contents': '서울에서 제로웨이스트샵을 만나보세요.',
                 'stories': ['1', '2', '3'],
                 'short_curations': ['스토리1에 대한 숏큐입니다.', '스토리2에 대한 숏큐입니다.', '스토리3에 대한 숏큐입니다.'],
-                'rep_pic': 'https://abc.com/1.jpg'
+                'rep_pic': '<IMAGE FILE BINARY>',
             }
 
     @swagger_auto_schema(
@@ -278,7 +279,12 @@ class CurationCreateApi(APIView):
         operation_id='큐레이션 생성',
         operation_description='''
             큐레이션을 생성합니다.<br/>
-            short_curations 리스트 요소 순서는 해당하는 stories 순서와 일치해야 합니다.
+            short_curations 리스트 요소 순서는 해당하는 stories 순서와 일치해야 합니다.<br/>
+            현재 큐레이션을 생성하면 <b>대표큐레이션이자, 홈 화면 노출 대상으로 자동 설정됩니다.</b>
+            큐레이션 작성자가 인증된 유저이면 해당 큐레이션은 인증유저큐레이션이자 대표큐레이션이며,
+            마찬가지로 작성자가 관리자이면 해당 큐레이션은 관리자큐레이션이자 대표큐레이션이 됩니다.<br/>
+            Request example에는 명시하지 않았으나 관련 부분 테스트가 필요하다면
+            'is_rep' : False (대표큐레이션 설정 취소), 'is_selected' : False (홈 화면 노출 취소) 형태로 전달하면 됩니다. 
         ''',
         responses={
             "200": openapi.Response(
@@ -309,7 +315,10 @@ class CurationCreateApi(APIView):
             contents=data.get('contents'),
             stories=data.get('stories'),
             short_curations=data.get('short_curations'),
-            rep_pic=data.get('rep_pic')
+            rep_pic=data.get('rep_pic'),
+            is_released=data.get('is_released'),  # 개발용
+            is_selected=data.get('is_selected'),  # 개발용
+            is_rep=data.get('is_rep')  # 개발용
         )
 
         return Response({
@@ -331,7 +340,8 @@ class CurationUpdateApi(APIView):
         contents = serializers.CharField()
         stories = serializers.ListField()
         short_curations = serializers.ListField()
-        rep_pic = serializers.ImageField()
+        photo_image_url = serializers.CharField()
+        rep_pic = serializers.ImageField(default=None)
 
         class Meta:
             examples = {
@@ -340,7 +350,7 @@ class CurationUpdateApi(APIView):
                 'stories': ['1', '2', '3'],
                 'short_curations': ['스토리1에 대한 숏큐입니다.', '스토리2에 대한 숏큐입니다.', '스토리3에 대한 숏큐입니다.'],
                 'photo_image_url': 'https://abc.com/1.jpg',
-                'rep_pic': 'https://abc.com/2.jpg'
+                'rep_pic': '<IMAGE FILE BINARY>'
             }
 
     @swagger_auto_schema(
