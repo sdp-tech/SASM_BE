@@ -17,6 +17,7 @@ from core.views import get_paginated_response
 
 from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
+from .permissions import IsWriter
 from users.models import User
 from places.serializers import MapMarkerSerializer
 from drf_yasg import openapi
@@ -96,7 +97,7 @@ class StoryListApi(APIView):
         story = StorySelector.list(
             search=filters.get('search', ''),
             order=filters.get('order', 'latest'),
-            array=filters.getlist('category', None),
+            array=request.query_params.getlist('category', None),
         )
 
         return get_paginated_response(
@@ -177,8 +178,6 @@ class StoryCreateApi(ApiAuthMixin, APIView):
         preview = serializers.CharField()
         html_content = serializers.CharField()
         rep_pic = serializers.ImageField()
-        category = serializers.CharField()
-        semi_category = serializers.CharField()
 
         def change_rep_pic_name(self, story, validated_data):
             place_name = validated_data['place'].place_name
@@ -223,14 +222,13 @@ class StoryCreateApi(ApiAuthMixin, APIView):
     )
     def post(self, request):
         serializer = self.StoryCreateInputSerializer(data=request.data)
-        print("serializer:", serializer)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         service = StoryCoordinatorService(
             user=request.user
         )
-        print('service')
+
         story=service.create(
             title=data.get('title'),
             writer_id=data.get('writer'),
@@ -241,8 +239,6 @@ class StoryCreateApi(ApiAuthMixin, APIView):
             story_review=data.get('story_review'),
             html_content=data.get('html_content'),
             rep_pic=data.get('rep_pic'),
-            category=data.get('category'),
-            semi_category=data.get('semi_category'),
         )
 
         return Response({
@@ -251,7 +247,14 @@ class StoryCreateApi(ApiAuthMixin, APIView):
         }, status=status.HTTP_201_CREATED)
     
 
-class StoryUpdateApi(APIView):
+class StoryUpdateApi(ApiAuthMixin, APIView):
+    permission_classes = (IsWriter, )
+
+    def get_object(self, story_id):
+        story = get_object_or_404(Story, pk=story_id)
+        self.check_object_permissions(self.request, story)
+        return story
+
     class StoryUpdateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
         place = serializers.CharField()
@@ -260,8 +263,7 @@ class StoryUpdateApi(APIView):
         preview = serializers.CharField()
         html_content = serializers.CharField()
         rep_pic = serializers.ImageField()
-        category = serializers.CharField()
-        semi_category = serializers.CharField()
+        # photolist
 
         # def change_rep_pic_name(self, story, validated_data):
         # place_name = validated_data['address'].place_name
@@ -297,12 +299,14 @@ class StoryUpdateApi(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
+        story = self.get_object(story_id)
+
         service = StoryCoordinatorService(
             user=request.user
         )
 
         story = service.update(
-            story_id=story_id,
+            story=story,
             title=data.get('title'),
             place=data.get('place'),
             story_review=data.get('story_review'),
@@ -310,8 +314,6 @@ class StoryUpdateApi(APIView):
             preview=data.get('preview'),
             html_content=data.get('html_content'),
             rep_pic=data.get('rep_pic'),
-            category=data.get('category'),
-            semi_category=data.get('semi_category'),
         )
 
         return Response({
