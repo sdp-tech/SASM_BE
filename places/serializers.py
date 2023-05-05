@@ -1,9 +1,13 @@
 import io
 import time
 import datetime
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.images import ImageFile
+from django.db.models import F, Value, CharField
+from django.db.models.functions import Concat
+
 from rest_framework import serializers
 import haversine as hs
 from places.models import Place, PlacePhoto, SNSUrl, PlaceVisitorReview, PlaceVisitorReviewPhoto, PlaceVisitorReviewCategory, CategoryContent
@@ -43,6 +47,7 @@ class PlaceSerializer(serializers.ModelSerializer):
     open_hours = serializers.SerializerMethodField()
     place_like = serializers.SerializerMethodField()
     distance = serializers.SerializerMethodField()
+    extra_pic = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
@@ -59,6 +64,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             'place_review',
             'address',
             'rep_pic',
+            'extra_pic',
             # 'short_cur',
             'latitude',
             'longitude',
@@ -102,6 +108,15 @@ class PlaceSerializer(serializers.ModelSerializer):
             return 'ok'
         else:
             return 'none'
+
+    def get_extra_pic(self, obj):
+        photos = PlacePhoto.objects.filter(
+            place=obj).annotate(
+            imageUrls=Concat(Value(settings.MEDIA_URL),
+                             F('image'),
+                             output_field=CharField())
+        ).values_list('imageUrls', flat=True)
+        return photos
 
 
 class PlaceDetailSerializer(serializers.ModelSerializer):
