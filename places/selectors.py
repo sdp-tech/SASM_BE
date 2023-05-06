@@ -10,7 +10,7 @@ from django.db.models.functions import Concat
 import haversine as hs
 
 from users.models import User
-from places.models import Place, PlaceVisitorReview
+from places.models import Place, PlaceVisitorReview, SNSType
 
 
 class GroupConcat(Aggregate):
@@ -146,3 +146,12 @@ class PlaceReviewSelector:
         ).order_by('id')
 
         return reviews
+
+
+class PlaceSnsTypeSelector:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def list():
+        return SNSType.objects.all()
