@@ -80,7 +80,7 @@ class PlaceListView(viewsets.ModelViewSet):
         return qs
 
     def get_filter_query(self, array):
-        query = Q(is_released=True)  # 심사 완료된 장소만 노출
+        query = None
         for a in array:
             if query is None:
                 query = Q(category=a)
@@ -89,10 +89,11 @@ class PlaceListView(viewsets.ModelViewSet):
         return query
 
     def search_if_given(self, search):
+        only_released = Q(is_released=True)  # 심사 완료된 장소만 노출
         if (search):
-            qs = self.get_queryset().filter(Q(place_name__icontains=search))
+            qs = self.get_queryset().filter(only_released & Q(place_name__icontains=search))
         else:
-            qs = self.get_queryset()
+            qs = self.get_queryset().filter(only_released)
         return qs
 
     @swagger_auto_schema(operation_id='api_places_place_search_get',
