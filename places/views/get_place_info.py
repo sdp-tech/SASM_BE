@@ -80,7 +80,7 @@ class PlaceListView(viewsets.ModelViewSet):
         return qs
 
     def get_filter_query(self, array):
-        query = Q(is_release=True)  # 심사 완료된 장소만 노출
+        query = Q(is_released=True)  # 심사 완료된 장소만 노출
         for a in array:
             if query is None:
                 query = Q(category=a)
