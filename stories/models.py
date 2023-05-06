@@ -29,7 +29,7 @@ class Story(core_models.TimeStampedModel):
     address = models.OneToOneField(
         "places.Place", on_delete=models.CASCADE, null=True, blank=True)
     place = models.ForeignKey(
-        "places.Place", on_delete=models.CASCADE, default=1, related_name='stories')
+        "places.Place", on_delete=models.CASCADE, related_name='stories', null=True, blank=True)
     story_like_cnt = models.PositiveIntegerField(default=0)
     story_likeuser_set = models.ManyToManyField(
         "users.User", related_name='StoryLikeUser', blank=True)
