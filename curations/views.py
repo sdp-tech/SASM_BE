@@ -154,7 +154,7 @@ class VerifiedUserCurationApi(APIView):
 
 
 class CurationDetailApi(APIView):
-    class CruationDetailOutputSerializer(serializers.Serializer):
+    class CurationDetailOutputSerializer(serializers.Serializer):
 
         title = serializers.CharField()
         contents = serializers.CharField()
@@ -194,7 +194,7 @@ class CurationDetailApi(APIView):
     def get(self, request, curation_id):
         selector = CurationSelector(user=request.user)
         curation = selector.detail(curation_id=curation_id)
-        serializer = self.CruationDetailOutputSerializer(curation, many=True)
+        serializer = self.CurationDetailOutputSerializer(curation, many=True)
 
         return Response({
             'status': 'success',
