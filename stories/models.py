@@ -11,6 +11,8 @@ def get_upload_path(instance, filename):
 class StoryPhoto(core_models.TimeStampedModel):
     """Photo Model Definition"""
 
+    story = models.ForeignKey(
+        "Story", related_name='photos', on_delete=models.CASCADE, null=True, blank=True)
     caption = models.CharField(max_length=80)
     image = models.ImageField(
         upload_to=get_upload_path, default='story_image.png')
@@ -24,7 +26,8 @@ class Story(core_models.TimeStampedModel):
 
     title = models.CharField(max_length=200)
     story_review = models.CharField(max_length=200)
-    address = models.OneToOneField("places.Place", on_delete=models.CASCADE)
+    address = models.OneToOneField(
+        "places.Place", on_delete=models.CASCADE, null=True, blank=True)
     place = models.ForeignKey(
         "places.Place", on_delete=models.CASCADE, default=1, related_name='stories')
     story_like_cnt = models.PositiveIntegerField(default=0)

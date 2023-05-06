@@ -1,3 +1,6 @@
+import time
+import uuid
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
@@ -11,7 +14,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from stories.mixins import ApiAuthMixin
 from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector
-from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService
+from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService, StoryPhotoService
 from core.views import get_paginated_response
 
 from .models import Story, StoryComment
@@ -20,6 +23,133 @@ from users.models import User
 from places.serializers import MapMarkerSerializer
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+
+
+class StoryCreateApi(ApiAuthMixin, APIView):
+    class StoryCreateInputSerializer(serializers.Serializer):
+        title = serializers.CharField()
+        place = serializers.IntegerField()
+        story_review = serializers.CharField()
+        tag = serializers.CharField()
+        preview = serializers.CharField()
+        html_content = serializers.CharField()
+        rep_pic = serializers.ImageField()
+        photoList = serializers.ListField()
+
+        def change_rep_pic_name(self, story, validated_data):
+            place_name = validated_data['place'].place_name
+            ext = story.rep_pic.name.split(".")[-1]
+            story.rep_pic.name = '{}/{}.{}'.format(place_name,
+                                                   'rep' + str(time.time())+str(uuid.uuid4().hex), ext)
+
+        class Meta:
+            examples = {
+                'title': '매력적인 편집샵, 지구샵',
+                'place': '지구샵 제로웨이스트홈',
+                'preview': '지구샵으로 초대합니다.',
+                'tag': '#환경친화적 #제로웨이스트',
+                'story_review': '빈손으로는 나올 수 없는 제로웨이스트 샵',
+                'html_content': '망원동, 성수, 연남동을 지나가는 걸음을 멈추게 하는 곳, 편집샵에 가 본 적이 있는가?...',
+                'rep_pic': 'https://abc.com/2.jpg',
+                'photoList': "['https://abc.com/1.jpg', 'https://abc.com/2.jpg', 'https://abc.com/3.jpg']"
+            }
+
+    @swagger_auto_schema(
+        operation_id='스토리 게시글 생성',
+        operation_description='''
+            전달된 필드를 기반으로 스토리 게시글을 생성합니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request):
+        serializer = self.StoryCreateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        service = StoryCoordinatorService(
+            user=request.user
+        )
+
+        story = service.create(
+            title=data.get('title'),
+            writer=request.user,
+            place_id=data.get('place'),
+            preview=data.get('preview'),
+            tag=data.get('tag'),
+            story_review=data.get('story_review'),
+            html_content=data.get('html_content'),
+            rep_pic=data.get('rep_pic'),
+            photoList=data.get('photoList', [])
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': story.id},
+        }, status=status.HTTP_201_CREATED)
+
+
+class StoryPhotoCreateApi(APIView):
+    class StoryPhotoCreateInputSerializer(serializers.Serializer):
+        image = serializers.ImageField()
+        caption = serializers.CharField(required=False)
+        place_id = serializers.IntegerField()
+
+        class Meta:
+            examples = {
+                'image': '<IMAGE BINARY>',
+                'caption': '내부 전경',
+            }
+
+    @swagger_auto_schema(
+        operation_id='스토리 사진 생성',
+        operation_description='''
+            스토리 사진을 생성합니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request):
+        serializer = self.StoryPhotoCreateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        service = StoryPhotoService()
+
+        story_photo = service.create(
+            caption=data.get('caption'),
+            image=request.FILES['image'],
+            place_id=data.get('place_id')
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': story_photo.id},
+        }, status=status.HTTP_201_CREATED)
 
 
 class StoryListApi(APIView):
@@ -120,8 +250,8 @@ class StoryDetailApi(APIView):
         semi_category = serializers.CharField()
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
-        nickname=serializers.CharField()
-        created=serializers.DateTimeField()  #게시글 생성 날짜 
+        nickname = serializers.CharField()
+        created = serializers.DateTimeField()  # 게시글 생성 날짜
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
