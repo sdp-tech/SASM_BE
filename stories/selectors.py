@@ -66,7 +66,7 @@ def semi_category(story_id: int):
         스토리의 세부 category를 알려 주기 위한 함수
     '''
     story = get_object_or_404(Story, id=story_id)
-    place = story.address
+    place = story.place
     result = []
     vegan = place.vegan_category
     if vegan != '':
@@ -99,8 +99,8 @@ class StorySelector:
 
     def detail(story_id: int, extra_fields: dict = {}):
         return Story.objects.annotate(
-            place_name=F('address__place_name'),
-            category=F('address__category'),
+            place_name=F('place__place_name'),
+            category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             nickname=F('writer__nickname'),
             ** extra_fields
@@ -108,7 +108,7 @@ class StorySelector:
 
     def recommend_list(story_id: int):
         story = Story.objects.get(id=story_id)
-        q = Q(address__category=story.address.category)
+        q = Q(place__category=story.place.category)
         recommend_story = Story.objects.filter(q).exclude(id=story_id).annotate(
             writer_is_verified=F('writer__is_verified')
         )
@@ -119,7 +119,7 @@ class StorySelector:
     def list(search: str = '', latest: bool = True):
         q = Q()
         q.add(Q(title__icontains=search) | Q(
-            address__place_name__icontains=search), q.AND)  # 스토리 제목 또는 내용 검색
+            place__place_name__icontains=search), q.AND)  # 스토리 제목 또는 내용 검색
 
         # 최신순 정렬
         if latest:
@@ -128,8 +128,8 @@ class StorySelector:
             order = 'created'
 
         story = Story.objects.filter(q).annotate(
-            place_name=F('address__place_name'),
-            category=F('address__category'),
+            place_name=F('place__place_name'),
+            category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             nickname=F('writer__nickname'),
         ).order_by(order)
