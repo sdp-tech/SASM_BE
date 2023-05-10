@@ -16,7 +16,7 @@ class StorySerializer(serializers.ModelSerializer):
             'id',
             'title',
             'story_review',
-            'address',
+            'place',
             'tag',
             'preview',
             'rep_pic',
@@ -24,9 +24,9 @@ class StorySerializer(serializers.ModelSerializer):
         ]
 
     def change_rep_pic_name(self, story, validated_data):
-        place_name = validated_data['address'].place_name
+        place_id = validated_data['place'].id
         ext = story.rep_pic.name.split(".")[-1]
-        story.rep_pic.name = '{}/{}.{}'.format(place_name,
+        story.rep_pic.name = '{}/{}.{}'.format(place_id,
                                                'rep' + str(int(time.time())), ext)
 
     def create(self, validated_data):

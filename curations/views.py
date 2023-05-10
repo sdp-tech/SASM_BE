@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import serializers, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 
 from drf_yasg import openapi
@@ -16,6 +16,8 @@ from curations.models import Curation
 
 
 class RepCurationListApi(APIView):
+    permission_classes = (AllowAny, )
+
     class Pagination(PageNumberPagination):
         page_size = 10
         page_size_query_param = 'page_size'
@@ -64,6 +66,7 @@ class RepCurationListApi(APIView):
 
 
 class AdminCurationListApi(APIView):
+    permission_classes = (AllowAny, )
 
     class AdminCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -108,7 +111,8 @@ class AdminCurationListApi(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class VerifiedUserCurationApi(APIView):
+class VerifiedUserCurationListApi(APIView):
+    permission_classes = (AllowAny, )
 
     class VerifiedUserCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -154,8 +158,9 @@ class VerifiedUserCurationApi(APIView):
 
 
 class CurationDetailApi(APIView):
-    class CruationDetailOutputSerializer(serializers.Serializer):
+    permission_classes = (AllowAny, )
 
+    class CurationDetailOutputSerializer(serializers.Serializer):
         title = serializers.CharField()
         contents = serializers.CharField()
         rep_pic = serializers.CharField()
@@ -194,7 +199,7 @@ class CurationDetailApi(APIView):
     def get(self, request, curation_id):
         selector = CurationSelector(user=request.user)
         curation = selector.detail(curation_id=curation_id)
-        serializer = self.CruationDetailOutputSerializer(curation, many=True)
+        serializer = self.CurationDetailOutputSerializer(curation, many=True)
 
         return Response({
             'status': 'success',
@@ -203,6 +208,8 @@ class CurationDetailApi(APIView):
 
 
 class CuratedStoryDetailApi(APIView):
+    permission_classes = (AllowAny, )
+
     class CuratedStoryDetailOutputSerializer(serializers.Serializer):
 
         story_id = serializers.IntegerField()
@@ -252,6 +259,9 @@ class CuratedStoryDetailApi(APIView):
 
 
 class CurationCreateApi(APIView):
+    # TODO: admin, verified 사용자만 작성 가능하도록 변경 필요
+    permission_classes = (IsAuthenticated, )
+
     class CurationCreateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
         contents = serializers.CharField()
