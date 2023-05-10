@@ -217,9 +217,16 @@ class CuratedStoryDetailApi(APIView):
         place_address = serializers.CharField()
         place_category = serializers.CharField()
         story_review = serializers.CharField()
+        preview = serializers.CharField()
         # short_curation = serializers.CharField()
         like_story = serializers.BooleanField()
         hashtags = serializers.CharField()
+        rep_photos = serializers.ListField(required=False)
+
+        writer = serializers.CharField()
+        nickname = serializers.CharField()
+        profile_image = serializers.CharField()
+        created = serializers.CharField()
 
     @swagger_auto_schema(
         operation_id='큐레이션 스토리 디테일 조회',
@@ -236,8 +243,14 @@ class CuratedStoryDetailApi(APIView):
                         'place_address': '연세로',
                         'place_category': '식당 및 카페',
                         'place_review': '버섯에서 발견한 도시의 지속가능성',
+                        'preview': '성수동에서 찾은 지속가능성의 의미',
                         'like_story': True,
-                        'hashtags': '#버섯농장 #로컬마켓 #성수동 #비건'
+                        'hashtags': '#버섯농장 #로컬마켓 #성수동 #비건',
+                        'rep_photos':  "['https://abc.com/1.jpg', 'https://abc.com/2.jpg', 'https://abc.com/3.jpg']",
+                        'writer': 'sdp.tech@gmail.com',
+                        'nickname': '스드프',
+                        'profile_image': 'https://abc.com/1.jpg',
+                        'created': '2022-08-24T14:15:22Z'
                     },
                 }
             ),
