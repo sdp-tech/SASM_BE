@@ -65,36 +65,36 @@ class StoryCoordinatorService:
 
         return story
 
-    # @transaction.atomic
-    # def update(self, 
-    #            story: Story, 
-    #            title: str, 
-    #            place: Place, 
-    #            story_review: str, 
-    #            tag: str, 
-    #            preview: str, 
-    #            html_content: str, 
-    #            rep_pic: InMemoryUploadedFile) -> Story:
-    #     service = StoryService()
+    @transaction.atomic
+    def update(self, 
+               story: Story, 
+               title: str, 
+               place: int, 
+               story_review: str, 
+               tag: str, 
+               preview: str, 
+               html_content: str, 
+               rep_pic: InMemoryUploadedFile) -> Story:
+        service = StoryService()
+        place = get_object_or_404(Place, pk=place)
 
-    #     story = service.update(
-    #         story=story,
-    #         title=title,
-    #         place=place,
-    #         story_review=story_review,
-    #         tag=tag,
-    #         preview=preview,
-    #         html_content=html_content,
-    #         rep_pic=rep_pic,
-    #     )
+        story = service.update(
+            story=story,
+            title=title,
+            place=place,
+            story_review=story_review,
+            tag=tag,
+            preview=preview,
+            html_content=html_content,
+            rep_pic=rep_pic,
+        )
 
-    #     return story
+        return story
     
-    # @transaction.atomic
-    # def delete(self, story_id: int):
-    #     service = StoryService()
-
-    #     service.delete(story_id=story_id)
+    @transaction.atomic
+    def delete(self, story: Story):
+        service = StoryService()
+        service.delete(story=story)
 
 
 class StoryService:
@@ -147,34 +147,33 @@ class StoryService:
 
         return story
     
-    # def update(self,
-    #            story: Story,
-    #            title: str, 
-    #            place: Place, 
-    #            preview: str, 
-    #            tag: str, 
-    #            story_review: str, 
-    #            html_content: str, 
-    #            rep_pic: InMemoryUploadedFile) -> Story:
-    #     story = Story.objects.get(id=story)
+    def update(self,
+               story: Story,
+               title: str, 
+               place: Place, 
+               preview: str, 
+               tag: str, 
+               story_review: str, 
+               html_content: str, 
+               rep_pic: InMemoryUploadedFile) -> Story:
 
-    #     update_story = story(
-    #         title=title,
-    #         place=place,
-    #         story_review=story_review,
-    #         tag=tag,
-    #         preview=preview,
-    #         html_content=html_content,
-    #         rep_pic=rep_pic
-    #     )
+        story.entire_update(
+            title=title,
+            place=place,
+            story_review=story_review,
+            tag=tag,
+            preview=preview,
+            html_content=html_content,
+            rep_pic=rep_pic
+        )
 
-    #     return update_story
+        story.full_clean()
+        story.save()
+
+        return story
     
-    # @staticmethod
-    # def delete(self, story_id: int):
-    #     story = Story.objects.get(id=story_id)
-
-    #     story.delete()
+    def delete(self, story: Story):
+        story.delete()
     
 
 class StoryCommentCoordinatorService:

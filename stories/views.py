@@ -32,7 +32,7 @@ class StoryListApi(APIView):
     class StoryListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
         order = serializers.CharField(required=False)
-        array = serializers.CharField(required=False)
+        array = serializers.ListField(required=False)
 
     class StoryListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -99,7 +99,7 @@ class StoryListApi(APIView):
         story = StorySelector.list(
             search=filters.get('search', ''),
             order=filters.get('order', 'latest'),
-            array=request.query_params.getlist('category', None),
+            array=filters.get('array', []),
         )
 
         return get_paginated_response(
@@ -256,26 +256,19 @@ class StoryCreateApi(ApiAuthMixin, APIView):
 class StoryUpdateApi(ApiAuthMixin, APIView):
     permission_classes = (IsWriter, )
 
-    def get_object(self, story_id):
+    def get_story_object(self, story_id):
         story = get_object_or_404(Story, pk=story_id)
         self.check_object_permissions(self.request, story)
         return story
 
     class StoryUpdateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
-        place = serializers.CharField()
+        place = serializers.IntegerField()
         story_review = serializers.CharField()
         tag = serializers.CharField()
         preview = serializers.CharField()
         html_content = serializers.CharField()
         rep_pic = serializers.ImageField()
-        # photolist
-
-        # def change_rep_pic_name(self, story, validated_data):
-        # place_name = validated_data['address'].place_name
-        # ext = story.rep_pic.name.split(".")[-1]
-        # story.rep_pic.name = '{}/{}.{}'.format(place_name,
-        #                                        'rep' + str(int(time.time())), ext)
 
     @swagger_auto_schema(
         request_body=StoryUpdateInputSerializer,
@@ -305,8 +298,7 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        story = self.get_object(story_id)
-
+        story = self.get_story_object(story_id)
         service = StoryCoordinatorService(
             user=request.user
         )
@@ -324,11 +316,18 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
 
         return Response({
             'status': 'success',
-            'data': {'id': story.id},
+            'data': { story.id },
         }, status=status.HTTP_200_OK)
 
 
 class StoryDeleteApi(ApiAuthMixin, APIView):
+    permission_classes = (IsWriter, )
+
+    def get_story_object(self, story_id):
+        story = get_object_or_404(Story, pk=story_id)
+        self.check_object_permissions(self.request, story)
+        return story
+    
     @swagger_auto_schema(
         operation_id='스토리 게시글 삭제',
         operation_description='''
@@ -344,12 +343,13 @@ class StoryDeleteApi(ApiAuthMixin, APIView):
         }
     )
     def delete(self, request, story_id):
+        story = self.get_story_object(story_id)
+
         service = StoryCoordinatorService(
             user=request.user
         )
-
         service.delete(
-            story_id=story_id
+            story=story
         )
 
         return Response({

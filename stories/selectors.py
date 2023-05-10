@@ -125,11 +125,11 @@ class StorySelector:
 
         if len(array) > 0:
             query = None
-            for a in array: 
+            for element in array: 
                 if query is None:
-                    query = Q(place__category=a) 
+                    query = Q(place__category=element) 
                 else: 
-                    query = query | Q(place__category=a)
+                    query = query | Q(place__category=element)
             q.add(query, q.AND)
 
         order_by_time = {'latest' : 'created', 'oldest' : '-created'}
@@ -141,8 +141,8 @@ class StorySelector:
             order = order_by_likes[order]
 
         story = Story.objects.filter(q).annotate(
-            place_name=F('address__place_name'),
-            category=F('address__category'),
+            place_name=F('place__place_name'),
+            category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             nickname=F('writer__nickname'),
         ).order_by(order)
