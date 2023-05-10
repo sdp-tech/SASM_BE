@@ -4,18 +4,20 @@ import uuid
 
 from django.conf import settings
 from django.db import transaction
+from django.core.files.images import ImageFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from django.shortcuts import get_object_or_404
 
 from users.models import User
-from stories.models import Story, StoryComment
+from stories.models import Story, StoryComment, StoryPhoto
 from places.models import Place
 from .selectors import StoryLikeSelector, StoryCommentSelector, semi_category
 
+
 def check_user(user: User):
-    if user.is_authenticated: 
+    if user.is_authenticated:
         pass
     else:
         raise exceptions.ValidationError()
@@ -37,28 +39,38 @@ class StoryCoordinatorService:
             return True
 
     @transaction.atomic
-    def create(self, 
-               title: str, 
-               place_id: int, 
-               preview: str, 
-               tag: str, 
-               story_review: str, 
-               html_content: str, 
-               rep_pic: InMemoryUploadedFile) -> Story:
-        # writer = User.objects.get(id__exact=user)
+    def create(self,
+               title: str,
+               writer: User,
+               place_id: int,
+               preview: str,
+               tag: str,
+               story_review: str,
+               html_content: str,
+               rep_pic: InMemoryUploadedFile,
+               photoList: list[str]) -> Story:
         place = Place.objects.get(id__exact=place_id)
 
         service = StoryService()
         story = service.create(
             title=title,
+            writer=writer,
             place=place,
             preview=preview,
             tag=tag,
             story_review=story_review,
             html_content=html_content,
             rep_pic=rep_pic,
-            user=self.user,
         )
+
+        story.save()
+
+        if len(photoList) > 0:
+
+            photoList = list(
+                map(lambda x: x.replace(settings.MEDIA_URL, ''), photoList))
+            StoryPhoto.objects.filter(
+                image__in=photoList).update(story=story)
 
         return story
 
@@ -90,6 +102,21 @@ class StoryCoordinatorService:
         service = StoryService()
         service.delete(story=story)
 
+class StoryPhotoService:
+    def __init__(self):
+        pass
+
+    def create(self, caption: str, image: InMemoryUploadedFile, place_id: int):
+
+        ext = image.name.split(".")[-1]
+        file_path = '{}/{}.{}'.format(place_id,
+                                      'content' + str(time.time())+str(uuid.uuid4().hex), ext)
+        image = ImageFile(io.BytesIO(image.read()), name=file_path)
+        photo = StoryPhoto(caption=caption, image=image)
+        photo.save()
+
+        return photo
+
 
 class StoryService:
     def __init__(self):
@@ -117,22 +144,22 @@ class StoryService:
 
     def create(self,
                title: str,
-               place: Place, 
-               preview: str, 
-               tag: str, 
-               story_review: str, 
-               html_content: str, 
-               rep_pic: InMemoryUploadedFile,
-               user: User) -> Story:
-        story= Story(
+               writer: User,
+               place: Place,
+               preview: str,
+               tag: str,
+               story_review: str,
+               html_content: str,
+               rep_pic: InMemoryUploadedFile) -> Story:
+        story = Story(
             title=title,
+            writer=writer,
             place=place,
             preview=preview,
             tag=tag,
             story_review=story_review,
             html_content=html_content,
             rep_pic=rep_pic,
-            writer=user,
         )
         story.full_clean()
         story.save()
@@ -189,7 +216,7 @@ class StoryCommentCoordinatorService:
         )
 
         return story_comment
-    
+
     @transaction.atomic
     def update(self, story_comment_id: int, content: str, mentioned_email: str) -> StoryComment:
         story_comment_service = StoryCommentService()
@@ -209,13 +236,13 @@ class StoryCommentCoordinatorService:
             mentioned_user=mentioned_user,
         )
         return story_comment
-    
+
     @transaction.atomic
     def delete(self, story_comment_id: int):
         story_comment_service = StoryCommentService()
         story_comment_selector = StoryCommentSelector()
 
-        # user가 해당 story_comment의 writer가 아닐 경우 에러 발생  
+        # user가 해당 story_comment의 writer가 아닐 경우 에러 발생
         if not story_comment_selector.isWriter(story_comment_id=story_comment_id, user=self.user):
             raise exceptions.ValidationError({'error': '댓글 작성자가 아닙니다.'})
 
@@ -238,7 +265,6 @@ class StoryCommentService:
         story_comment.save()
 
         return story_comment
-    
 
     def update(self, story_comment_id: int, content: str, mentioned_user: User) -> StoryComment:
         story_comment = StoryComment.objects.get(id=story_comment_id)
@@ -249,7 +275,7 @@ class StoryCommentService:
         story_comment.save()
 
         return story_comment
-    
+
     def delete(self, story_comment_id: int):
         story_comment = StoryComment.objects.get(id=story_comment_id)
         story_comment.delete()

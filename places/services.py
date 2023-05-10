@@ -3,6 +3,7 @@ import time
 import uuid
 import datetime
 
+from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.db import transaction
 from django.core.files.images import ImageFile
@@ -12,8 +13,115 @@ from django.core.files.uploadedfile import UploadedFile, InMemoryUploadedFile
 from rest_framework import exceptions
 
 from users.models import User
-from places.models import Place, PlaceVisitorReview, PlaceVisitorReviewCategory, PlaceVisitorReviewPhoto, CategoryContent
+from places.models import Place, PlaceVisitorReview, PlaceVisitorReviewCategory, PlaceVisitorReviewPhoto, CategoryContent, SNSUrl, PlacePhoto, SNSType
 from places.selectors import PlaceReviewSelector
+from places.views.save_place_excel import addr_to_lat_lon
+
+
+class PlaceCoordinatorService:
+    def __init__(self, user):
+        self.user = user
+
+    @transaction.atomic
+    def create(place_name: str, category: str, vegan_category: str, tumblur_category: bool,
+               reusable_con_category: bool, pet_category: bool, mon_hours: str, tues_hours: str,
+               wed_hours: str, thurs_hours: str, fri_hours: str, sat_hours: str, sun_hours: str,
+               etc_hours: str, place_review: str, address: str, short_cur: str, phone_num: str,
+               rep_pic: InMemoryUploadedFile, imageList: list[InMemoryUploadedFile], snsList: list[str]) -> Place:
+
+        place = PlaceService.create(place_name=place_name, category=category, vegan_category=vegan_category,
+                                    tumblur_category=tumblur_category, reusable_con_category=reusable_con_category,
+                                    pet_category=pet_category, mon_hours=mon_hours, tues_hours=tues_hours,
+                                    wed_hours=wed_hours, thurs_hours=thurs_hours, fri_hours=fri_hours, sat_hours=sat_hours,
+                                    sun_hours=sun_hours, etc_hours=etc_hours, address=address, place_review=place_review,
+                                    short_cur=short_cur,  rep_pic=rep_pic, phone_num=phone_num)
+
+        PlacePhotoService.create(place=place, imageList=imageList)
+        PlaceSNSUrlService.create(place=place, snsList=snsList)
+
+        return place
+
+
+class PlaceService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def create(place_name: str, category: str, vegan_category: str, tumblur_category: bool,
+               reusable_con_category: bool, pet_category: bool, mon_hours: str, tues_hours: str,
+               wed_hours: str, thurs_hours: str, fri_hours: str, sat_hours: str, sun_hours: str,
+               etc_hours: str, place_review: str, address: str, short_cur: str, rep_pic: InMemoryUploadedFile,
+               phone_num: str) -> Place:
+
+        longitude, latitude = addr_to_lat_lon(address)
+
+        place = Place(
+            place_name=place_name,
+            category=category,
+            vegan_category=vegan_category,
+            tumblur_category=tumblur_category,
+            reusable_con_category=reusable_con_category,
+            pet_category=pet_category,
+            mon_hours=mon_hours,
+            tues_hours=tues_hours,
+            wed_hours=wed_hours,
+            thurs_hours=thurs_hours,
+            fri_hours=fri_hours,
+            sat_hours=sat_hours,
+            sun_hours=sun_hours,
+            etc_hours=etc_hours,
+            place_review=place_review,
+            address=address,
+            short_cur=short_cur,
+            latitude=latitude,
+            longitude=longitude,
+            rep_pic=rep_pic,
+            phone_num=phone_num,
+            is_released=False,  # 심사 중인 상태로 설정
+        )
+
+        place.full_clean()
+        place.save()
+
+        return place
+
+
+class PlacePhotoService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def create(place: Place, imageList: list[InMemoryUploadedFile]) -> PlacePhoto:
+        for image_file in imageList:
+            ext = image_file.name.split(".")[-1]
+            file_path = '{}-{}.{}'.format(place.id,
+                                          str(time.time())+str(uuid.uuid4().hex), ext)
+            image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
+
+            photo = PlacePhoto(
+                image=image,
+                place=place
+            )
+            photo.full_clean()
+            photo.save()
+
+
+class PlaceSNSUrlService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def create(place: Place, snsList: list[str]) -> SNSUrl:
+        for sns_pair in snsList:
+            sns_type, url = sns_pair.split(',')
+            sns_url = SNSUrl(
+                place=place,
+                snstype=get_object_or_404(SNSType, pk=sns_type),
+                url=url,
+            )
+
+            sns_url.full_clean()
+            sns_url.save()
 
 
 class PlaceVisitorReviewCoordinatorService:

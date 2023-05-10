@@ -24,6 +24,15 @@ class CurationSelector:
                 default=Value(0),
             ),
             writer_is_verified=F('writer__is_verified'),
+            rep_pic=Case(
+                When(
+                    photos__image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('photos__image'),
+                               output_field=CharField())
+            ),
             map_image=Concat(Value(settings.MEDIA_URL),
                              F('map_photos__map'),
                              output_field=CharField())

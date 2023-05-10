@@ -1,11 +1,13 @@
 from django.urls import path
-from .views import StoryDetailApi, StoryCreateApi, StoryUpdateApi, StoryDeleteApi, StoryRecommendApi, StoryLikeApi, StoryListApi, GoToMapApi, StoryCommentListApi, StoryCommentCreateApi, StoryCommentUpdateApi, StoryCommentDeleteApi
+from .views import StoryDetailApi, StoryCreateApi, StoryUpdateApi, StoryDeleteApi, StoryRecommendApi, StoryLikeApi, StoryPhotoCreateApi, StoryListApi, GoToMapApi, StoryCommentListApi, StoryCommentCreateApi, StoryCommentUpdateApi, StoryCommentDeleteApi
 
 urlpatterns = [
      path('story_like/',
           StoryLikeApi.as_view(), name="story_like"),
      path('story_detail/<int:story_id>/', StoryDetailApi.as_view(), name='story_detail'),
      path('create/', StoryCreateApi.as_view(), name='story_create'),
+     path('story_photos/create/',
+         StoryPhotoCreateApi.as_view(), name='story_photo'),
      path('<int:story_id>/update/', StoryUpdateApi.as_view(), name='story_update'),
      path('<int:story_id>/delete/', StoryDeleteApi.as_view(), name='story_delete'),
      path('story_search/',
