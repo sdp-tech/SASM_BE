@@ -40,13 +40,22 @@ class Story(core_models.TimeStampedModel):
         upload_to=get_upload_path, default='story_rep_pic.png')
     html_content = models.TextField(max_length=50000)
     writer = models.ForeignKey(
-        "users.User", related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
+        'users.User', related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
 
     def clean(self):
         self.html_content = self.html_content.replace("\r\n", "")
 
     def __str__(self):
         return self.title
+    
+    def entire_update(self, title, story_review, tag, preview, html_content, rep_pic):
+        self.title = title
+        self.story_review = story_review
+        self.tag = tag
+        self.preview = preview
+        self.html_content = html_content
+        self.rep_pic = rep_pic
+
 
 
 class StoryComment(core_models.TimeStampedModel):
