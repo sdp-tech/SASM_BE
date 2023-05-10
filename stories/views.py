@@ -176,8 +176,6 @@ class StoryDetailApi(APIView):
 class StoryCreateApi(ApiAuthMixin, APIView):
     class StoryCreateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
-        writer = serializers.IntegerField()
-        writer_sdp_admin = serializers.BooleanField()
         place = serializers.IntegerField()
         story_review = serializers.CharField()
         tag = serializers.CharField()
@@ -194,16 +192,12 @@ class StoryCreateApi(ApiAuthMixin, APIView):
         class Meta:
             examples = {
                 'title': '매력적인 편집샵, 지구샵',
-                'writer': 'sdpdgl@naver.com',
-                'writer_sdp_admin': 'True',
                 'place': '지구샵 제로웨이스트홈',
                 'preview': '지구샵으로 초대합니다.',
                 'tag': '#환경친화적 #제로웨이스트',
                 'story_review': '빈손으로는 나올 수 없는 제로웨이스트 샵',
                 'html_content': '망원동, 성수, 연남동을 지나가는 걸음을 멈추게 하는 곳, 편집샵에 가 본 적이 있는가?...',
                 'rep_pic': 'https://abc.com/2.jpg',
-                'category': '제로웨이스트 샵',
-                'semi_category': '비건, 텀블러 사용 가능',
             }
 
     @swagger_auto_schema(
@@ -237,8 +231,6 @@ class StoryCreateApi(ApiAuthMixin, APIView):
 
         story=service.create(
             title=data.get('title'),
-            writer_id=data.get('writer'),
-            writer_sdp_admin=data.get('sdp_admin'),
             place_id=data.get('place'),
             preview=data.get('preview'),
             tag=data.get('tag'),

@@ -39,28 +39,25 @@ class StoryCoordinatorService:
     @transaction.atomic
     def create(self, 
                title: str, 
-               writer_id: int,
-               writer_sdp_admin: bool,
                place_id: int, 
                preview: str, 
                tag: str, 
                story_review: str, 
                html_content: str, 
                rep_pic: InMemoryUploadedFile) -> Story:
-        writer = User.objects.get(id__exact=writer_id)
+        # writer = User.objects.get(id__exact=user)
         place = Place.objects.get(id__exact=place_id)
 
         service = StoryService()
         story = service.create(
             title=title,
-            writer=writer,
-            writer_sdp_admin=writer_sdp_admin,
             place=place,
             preview=preview,
             tag=tag,
             story_review=story_review,
             html_content=html_content,
             rep_pic=rep_pic,
+            user=self.user,
         )
 
         return story
@@ -122,25 +119,23 @@ class StoryService:
         story.save()
 
     def create(self,
-               title: str, 
-               writer: User,
-               writer_sdp_admin: bool,
+               title: str,
                place: Place, 
                preview: str, 
                tag: str, 
                story_review: str, 
                html_content: str, 
-               rep_pic: InMemoryUploadedFile) -> Story:
+               rep_pic: InMemoryUploadedFile,
+               user: User) -> Story:
         story= Story(
             title=title,
-            writer=writer,
-            # writer__sdp_admin=writer_sdp_admin,
             place=place,
             preview=preview,
             tag=tag,
             story_review=story_review,
             html_content=html_content,
             rep_pic=rep_pic,
+            writer=user,
         )
         story.full_clean()
         story.save()
