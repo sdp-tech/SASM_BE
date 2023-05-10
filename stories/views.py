@@ -32,7 +32,7 @@ class StoryListApi(APIView):
     class StoryListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
         order = serializers.CharField(required=False)
-        array = serializers.ListField(required=False)
+        filter = serializers.ListField(required=False)
 
     class StoryListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -47,6 +47,7 @@ class StoryListApi(APIView):
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         nickname = serializers.CharField()
+        created=serializers.DateTimeField()
 
         def get_semi_category(self, obj):
             result = semi_category(obj.id)
@@ -64,6 +65,7 @@ class StoryListApi(APIView):
             <br/>
             search : 제목 혹은 장소 검색어<br/>
             latest : 최신순 정렬 여부 (ex: true)</br>
+            array : 카테고리</br>
             ''',
         query_serializer=StoryListFilterSerializer,
         responses={
@@ -82,6 +84,7 @@ class StoryListApi(APIView):
                         'writer': 'sdptech@gmail.com',
                         'writer_is_verified': True,
                         'nickname': 'sdp_official',
+                        'created': '2023-08-24T14:15:22Z',
                     }
                 }
             ),
@@ -99,7 +102,7 @@ class StoryListApi(APIView):
         story = StorySelector.list(
             search=filters.get('search', ''),
             order=filters.get('order', 'latest'),
-            array=filters.get('array', []),
+            filter=filters.get('filter', []),
         )
 
         return get_paginated_response(
@@ -255,7 +258,6 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
 
     class StoryUpdateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
-        place = serializers.IntegerField()
         story_review = serializers.CharField()
         tag = serializers.CharField()
         preview = serializers.CharField()
@@ -298,7 +300,6 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
         story = service.update(
             story=story,
             title=data.get('title'),
-            place=data.get('place'),
             story_review=data.get('story_review'),
             tag=data.get('tag'),
             preview=data.get('preview'),

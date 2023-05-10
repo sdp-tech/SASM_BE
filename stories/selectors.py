@@ -116,16 +116,16 @@ class StorySelector:
         return recommend_story
 
     @staticmethod
-    def list(search: str = '', order: str = '', array: list = []):
+    def list(search: str = '', order: str = '', filter: list = []):
         q = Q()
         q.add(Q(title__icontains=search)|
               Q(place__place_name__icontains=search)|  #스토리 제목 또는 내용 검색
               Q(place__category__icontains=search)|
               Q(tag__icontains=search), q.AND)
 
-        if len(array) > 0:
+        if len(filter) > 0:
             query = None
-            for element in array: 
+            for element in filter: 
                 if query is None:
                     query = Q(place__category=element) 
                 else: 

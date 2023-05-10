@@ -45,9 +45,8 @@ class Story(core_models.TimeStampedModel):
     def __str__(self):
         return self.title
     
-    def entire_update(self, title, place, story_review, tag, preview, html_content, rep_pic):
+    def entire_update(self, title, story_review, tag, preview, html_content, rep_pic):
         self.title = title
-        self.place = place
         self.story_review = story_review
         self.tag = tag
         self.preview = preview

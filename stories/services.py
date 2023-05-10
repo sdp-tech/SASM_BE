@@ -66,19 +66,16 @@ class StoryCoordinatorService:
     def update(self, 
                story: Story, 
                title: str, 
-               place: int, 
                story_review: str, 
                tag: str, 
                preview: str, 
                html_content: str, 
                rep_pic: InMemoryUploadedFile) -> Story:
         service = StoryService()
-        place = get_object_or_404(Place, pk=place)
 
         story = service.update(
             story=story,
             title=title,
-            place=place,
             story_review=story_review,
             tag=tag,
             preview=preview,
@@ -144,8 +141,7 @@ class StoryService:
     
     def update(self,
                story: Story,
-               title: str, 
-               place: Place, 
+               title: str,
                preview: str, 
                tag: str, 
                story_review: str, 
@@ -154,7 +150,6 @@ class StoryService:
 
         story.entire_update(
             title=title,
-            place=place,
             story_review=story_review,
             tag=tag,
             preview=preview,
