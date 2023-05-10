@@ -15,6 +15,65 @@ from .permissions import IsWriter
 from curations.models import Curation
 
 
+class CurationListApi(APIView):
+    permission_classes = (AllowAny, )
+
+    class CurationListFilterSerializer(serializers.Serializer):
+        search = serializers.CharField(required=False)
+
+    class CurationListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        rep_pic = serializers.CharField()
+        writer = serializers.CharField()
+        is_selected = serializers.BooleanField()
+
+    @swagger_auto_schema(
+        query_serializer=CurationListFilterSerializer,
+        operation_id='큐레이션 검색 결과 리스트',
+        operation_description='''
+            큐레이션의 검색 결과를 리스트합니다.<br/>
+            search(검색어)의 default값은 ''로, 검색어가 없을 시 모든 큐레이션이 반환됩니다.
+            반환되는 정보는 대표/관리자/인증유저 큐레이션 <b>모두보기 레이아웃</b>에서 볼 수 있는 것과 같습니다.
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'title': '서울 비건카페 탑5',
+                        'rep_pic': 'https://abc.com/1.jpg',
+                        'writer': 'sdptech@gmail.com',
+                        'is_selected': True,
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request):
+        filters_serializer = self.CurationListFilterSerializer(
+            data=request.query_params
+        )
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+
+        curations = CurationSelector.list(
+            search=filters.get('search', '')
+        )
+
+        serializer = self.CurationListOutputSerializer(
+            curations, many=True)
+
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
+
+
 class RepCurationListApi(APIView):
     permission_classes = (AllowAny, )
 

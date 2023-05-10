@@ -39,6 +39,30 @@ class CurationSelector:
     def __init__(self, user: User):
         self.user = user
 
+    @staticmethod
+    def list(search: str = ''):
+        q = Q()
+        q.add(Q(title__icontains=search) |
+              Q(contents__icontains=search) |
+              Q(story__title__icontains=search) |
+              Q(story__place__place_name__icontains=search) |  # 스토리 제목 또는 내용 검색
+              Q(story__place__category__icontains=search) |
+              Q(story__tag__icontains=search), q.AND)
+
+        curations = Curation.objects.distinct().filter(q, is_released=True).annotate(
+            rep_pic=Case(
+                When(
+                    photos__image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('photos__image'),
+                               output_field=CharField())
+            )
+        )
+
+        return curations
+
     def detail(self, curation_id: int):
         curation = Curation.objects.filter(id=curation_id).annotate(
             like_curation=Case(
