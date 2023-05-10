@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404
 from users.models import User
 from stories.models import Story, StoryComment, StoryPhoto
 from places.models import Place
-from .selectors import StoryLikeSelector, StoryCommentSelector
+from .selectors import StoryLikeSelector, StoryCommentSelector, semi_category
 
 
 def check_user(user: User):
@@ -74,6 +74,33 @@ class StoryCoordinatorService:
 
         return story
 
+    @transaction.atomic
+    def update(self, 
+               story: Story, 
+               title: str, 
+               story_review: str, 
+               tag: str, 
+               preview: str, 
+               html_content: str, 
+               rep_pic: InMemoryUploadedFile) -> Story:
+        service = StoryService()
+
+        story = service.update(
+            story=story,
+            title=title,
+            story_review=story_review,
+            tag=tag,
+            preview=preview,
+            html_content=html_content,
+            rep_pic=rep_pic,
+        )
+
+        return story
+    
+    @transaction.atomic
+    def delete(self, story: Story):
+        service = StoryService()
+        service.delete(story=story)
 
 class StoryPhotoService:
     def __init__(self):
@@ -138,7 +165,33 @@ class StoryService:
         story.save()
 
         return story
+    
+    def update(self,
+               story: Story,
+               title: str,
+               preview: str, 
+               tag: str, 
+               story_review: str, 
+               html_content: str, 
+               rep_pic: InMemoryUploadedFile) -> Story:
 
+        story.entire_update(
+            title=title,
+            story_review=story_review,
+            tag=tag,
+            preview=preview,
+            html_content=html_content,
+            rep_pic=rep_pic
+        )
+
+        story.full_clean()
+        story.save()
+
+        return story
+    
+    def delete(self, story: Story):
+        story.delete()
+    
 
 class StoryCommentCoordinatorService:
     def __init__(self, user: User):

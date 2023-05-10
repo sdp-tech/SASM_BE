@@ -116,16 +116,29 @@ class StorySelector:
         return recommend_story
 
     @staticmethod
-    def list(search: str = '', latest: bool = True):
+    def list(search: str = '', order: str = '', filter: list = []):
         q = Q()
-        q.add(Q(title__icontains=search) | Q(
-            place__place_name__icontains=search), q.AND)  # 스토리 제목 또는 내용 검색
+        q.add(Q(title__icontains=search)|
+              Q(place__place_name__icontains=search)|  #스토리 제목 또는 내용 검색
+              Q(place__category__icontains=search)|
+              Q(tag__icontains=search), q.AND)
 
-        # 최신순 정렬
-        if latest:
-            order = '-created'
-        else:
-            order = 'created'
+        if len(filter) > 0:
+            query = None
+            for element in filter: 
+                if query is None:
+                    query = Q(place__category=element) 
+                else: 
+                    query = query | Q(place__category=element)
+            q.add(query, q.AND)
+
+        order_by_time = {'latest' : 'created', 'oldest' : '-created'}
+        order_by_likes = {'hot' : '-story_like_cnt'}
+
+        if order in order_by_time:
+            order = order_by_time[order]
+        if order in order_by_likes:
+            order = order_by_likes[order]
 
         story = Story.objects.filter(q).annotate(
             place_name=F('place__place_name'),
@@ -143,7 +156,7 @@ class StoryLikeSelector:
 
     @staticmethod
     def likes(story_id: int, user: User):
-        story = get_object_or_404(Story, pk=story_id)
+        story = Story.objects.get(id=story_id)
         # 좋아요가 존재하는 지 안하는 지 확인
         if story.story_likeuser_set.filter(pk=user.pk).exists():
             return True
@@ -158,7 +171,7 @@ class MapMarkerSelector:
     @staticmethod
     def map(story_id: int):
         story = Story.objects.get(id=story_id)
-        place = story.address
+        place = story.place
 
         return place
 
