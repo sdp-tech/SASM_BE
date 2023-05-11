@@ -322,7 +322,6 @@ class StoryDetailApi(APIView):
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
 
-
 class StoryUpdateApi(APIView):
     permission_classes = (IsWriter, )
 
