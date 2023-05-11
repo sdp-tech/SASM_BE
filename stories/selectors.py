@@ -26,7 +26,9 @@ class StoryDto:
     writer: str
     writer_is_verified: bool
     nickname: str
+    profile: str
     created: datetime
+    map_image: str
 
 
 class StoryCoordinatorSelector:
@@ -56,7 +58,9 @@ class StoryCoordinatorSelector:
             writer=story.writer,
             writer_is_verified=story.writer_is_verified,
             nickname=story.nickname,
+            profile=story.profile,
             created=story.created,
+            map_image=story.map_image,
         )
         return dto
 
@@ -103,6 +107,12 @@ class StorySelector:
             category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             nickname=F('writer__nickname'),
+            profile=Concat(Value(settings.MEDIA_URL),
+                           F('writer__profile_image'),
+                           output_field=CharField()),
+            map_image=Concat(Value(settings.MEDIA_URL),
+                             F('map_photos__map'),
+                             output_field=CharField()),
             ** extra_fields
         ).get(id=story_id)
 
@@ -118,22 +128,22 @@ class StorySelector:
     @staticmethod
     def list(search: str = '', order: str = '', filter: list = []):
         q = Q()
-        q.add(Q(title__icontains=search)|
-              Q(place__place_name__icontains=search)|  #스토리 제목 또는 내용 검색
-              Q(place__category__icontains=search)|
+        q.add(Q(title__icontains=search) |
+              Q(place__place_name__icontains=search) |  # 스토리 제목 또는 내용 검색
+              Q(place__category__icontains=search) |
               Q(tag__icontains=search), q.AND)
 
         if len(filter) > 0:
             query = None
-            for element in filter: 
+            for element in filter:
                 if query is None:
-                    query = Q(place__category=element) 
-                else: 
+                    query = Q(place__category=element)
+                else:
                     query = query | Q(place__category=element)
             q.add(query, q.AND)
 
-        order_by_time = {'latest' : '-created', 'oldest' : 'created'}
-        order_by_likes = {'hot' : '-story_like_cnt'}
+        order_by_time = {'latest': '-created', 'oldest': 'created'}
+        order_by_likes = {'hot': '-story_like_cnt'}
 
         if order in order_by_time:
             order = order_by_time[order]
