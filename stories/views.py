@@ -38,7 +38,7 @@ class StoryCreateApi(APIView):
         preview = serializers.CharField()
         html_content = serializers.CharField()
         rep_pic = serializers.ImageField()
-        photoList = serializers.ListField()
+        photoList = serializers.ListField(required=False)
 
         def change_rep_pic_name(self, story, validated_data):
             place_name = validated_data['place'].place_name
@@ -340,7 +340,7 @@ class StoryUpdateApi(APIView):
         preview = serializers.CharField()
         html_content = serializers.CharField()
         rep_pic = serializers.ImageField()
-        photoList = serializers.ListField()
+        photoList = serializers.ListField(required=False)
 
     @swagger_auto_schema(
         request_body=StoryUpdateInputSerializer,
