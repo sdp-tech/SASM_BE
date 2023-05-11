@@ -11,9 +11,10 @@ from rest_framework import exceptions
 from django.shortcuts import get_object_or_404
 
 from users.models import User
-from stories.models import Story, StoryComment, StoryPhoto
+from stories.models import Story, StoryComment, StoryPhoto, StoryMap
 from places.models import Place
 from .selectors import StoryLikeSelector, StoryCommentSelector, semi_category
+from core.map_image import Marker, get_static_naver_image
 
 
 def check_user(user: User):
@@ -65,24 +66,22 @@ class StoryCoordinatorService:
 
         story.save()
 
-        if len(photoList) > 0:
-
-            photoList = list(
-                map(lambda x: x.replace(settings.MEDIA_URL, ''), photoList))
-            StoryPhoto.objects.filter(
-                image__in=photoList).update(story=story)
+        # 스토리 이전에 생성된 StoryPhoto와 연결
+        StoryPhotoService.process_after_story_creation(story=story,
+                                                       photoList=photoList)
 
         return story
 
     @transaction.atomic
-    def update(self, 
-               story: Story, 
-               title: str, 
-               story_review: str, 
-               tag: str, 
-               preview: str, 
-               html_content: str, 
-               rep_pic: InMemoryUploadedFile) -> Story:
+    def update(self,
+               story: Story,
+               title: str,
+               story_review: str,
+               tag: str,
+               preview: str,
+               html_content: str,
+               rep_pic: InMemoryUploadedFile,
+               photoList: list[str]) -> Story:
         service = StoryService()
 
         story = service.update(
@@ -95,19 +94,23 @@ class StoryCoordinatorService:
             rep_pic=rep_pic,
         )
 
+        # 연관 스토리 photo와의 연결 업데이트
+        StoryPhotoService.process_after_story_update(story=story,
+                                                     photoList=photoList)
+
         return story
-    
+
     @transaction.atomic
     def delete(self, story: Story):
         service = StoryService()
         service.delete(story=story)
+
 
 class StoryPhotoService:
     def __init__(self):
         pass
 
     def create(self, caption: str, image: InMemoryUploadedFile, place_id: int):
-
         ext = image.name.split(".")[-1]
         file_path = '{}/{}.{}'.format(place_id,
                                       'content' + str(time.time())+str(uuid.uuid4().hex), ext)
@@ -116,6 +119,24 @@ class StoryPhotoService:
         photo.save()
 
         return photo
+
+    @staticmethod
+    def process_after_story_creation(story: Story, photoList: list[str]):
+        if len(photoList) > 0:
+            photoList = list(
+                map(lambda x: x.replace(settings.MEDIA_URL, ''), photoList))
+            StoryPhoto.objects.filter(
+                image__in=photoList).update(story=story)
+
+    @staticmethod
+    def process_after_story_update(story: Story, photoList: list[str]):
+        if len(photoList) > 0:
+            photoList = list(
+                map(lambda x: x.replace(settings.MEDIA_URL, ''), photoList))
+
+        # 새롭게 추가된 포토들을 스토리와 연결
+        StoryPhoto.objects.filter(
+            image__in=photoList).update(story=story)
 
 
 class StoryService:
@@ -164,15 +185,17 @@ class StoryService:
         story.full_clean()
         story.save()
 
+        StoryMapService.create(story)
+
         return story
-    
+
     def update(self,
                story: Story,
                title: str,
-               preview: str, 
-               tag: str, 
-               story_review: str, 
-               html_content: str, 
+               preview: str,
+               tag: str,
+               story_review: str,
+               html_content: str,
                rep_pic: InMemoryUploadedFile) -> Story:
 
         story.entire_update(
@@ -188,10 +211,10 @@ class StoryService:
         story.save()
 
         return story
-    
+
     def delete(self, story: Story):
         story.delete()
-    
+
 
 class StoryCommentCoordinatorService:
     def __init__(self, user: User):
@@ -279,3 +302,35 @@ class StoryCommentService:
     def delete(self, story_comment_id: int):
         story_comment = StoryComment.objects.get(id=story_comment_id)
         story_comment.delete()
+
+
+class StoryMapService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def create(story: Story):
+        # 맵 사진 생성하기
+        markers = []
+        markers.append(Marker(
+            longitude=story.place.longitude,
+            latitude=story.place.latitude,
+            label=story.place.place_name,
+        ))
+
+        file_path = 'map-for-story{}-{}.{}'.format(story.id,
+                                                   str(time.time())+str(uuid.uuid4().hex), 'jpeg')
+        map_image = ImageFile(io.BytesIO(
+            get_static_naver_image(markers)), name=file_path)
+
+        story_map = StoryMap(
+            story=story,
+            map=map_image
+        )
+
+        story_map.save()
+
+    @ staticmethod
+    def delete(story: Story):
+        map = StoryMap.objects.get(story=story)
+        map.delete()

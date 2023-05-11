@@ -1,6 +1,7 @@
 import time
 import uuid
 
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
@@ -12,10 +13,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
-from stories.mixins import ApiAuthMixin
 from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector
 from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService, StoryPhotoService
 from core.views import get_paginated_response
+from core.permissions import IsVerifiedOrSdpStaff
 
 from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
@@ -26,7 +27,9 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 
-class StoryCreateApi(ApiAuthMixin, APIView):
+class StoryCreateApi(APIView):
+    permission_classes = (IsVerifiedOrSdpStaff, )
+
     class StoryCreateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
         place = serializers.IntegerField()
@@ -59,6 +62,8 @@ class StoryCreateApi(ApiAuthMixin, APIView):
         operation_id='스토리 게시글 생성',
         operation_description='''
             전달된 필드를 기반으로 스토리 게시글을 생성합니다.<br/>
+            photoList에는 Tinymce 등의 편집기 사용 시 스토리 생성 이전에 story_photos/create/을 통해 업로드된 이미지들의 주소를 포함하여야합니다.
+            photoList에 해당 정보가 포함되어야 스토리와 스토리 포토 간 관계 매핑이 가능해집니다.
             ''',
         responses={
             "200": openapi.Response(
@@ -103,6 +108,8 @@ class StoryCreateApi(ApiAuthMixin, APIView):
 
 
 class StoryPhotoCreateApi(APIView):
+    permission_classes = (IsVerifiedOrSdpStaff, )
+
     class StoryPhotoCreateInputSerializer(serializers.Serializer):
         image = serializers.ImageField()
         caption = serializers.CharField(required=False)
@@ -147,13 +154,17 @@ class StoryPhotoCreateApi(APIView):
             place_id=data.get('place_id')
         )
 
+        image_location = settings.MEDIA_URL + story_photo.image.name
+
         return Response({
             'status': 'success',
-            'data': {'id': story_photo.id},
+            'data': {'location': image_location},
         }, status=status.HTTP_201_CREATED)
 
 
 class StoryListApi(APIView):
+    permission_classes = (AllowAny, )
+
     class Pagination(PageNumberPagination):
         page_size = 4
         page_size_query_param = 'page_size'
@@ -176,7 +187,7 @@ class StoryListApi(APIView):
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         nickname = serializers.CharField()
-        created=serializers.DateTimeField()
+        created = serializers.DateTimeField()
 
         def get_semi_category(self, obj):
             result = semi_category(obj.id)
@@ -244,6 +255,8 @@ class StoryListApi(APIView):
 
 
 class StoryDetailApi(APIView):
+    permission_classes = (AllowAny, )
+
     class StoryDetailOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
@@ -258,7 +271,9 @@ class StoryDetailApi(APIView):
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         nickname = serializers.CharField()
+        profile = serializers.CharField()
         created = serializers.DateTimeField()  # 게시글 생성 날짜
+        map_image = serializers.CharField()
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
@@ -283,7 +298,9 @@ class StoryDetailApi(APIView):
                         'writer': 'sdptech@gmail.com',
                         'writer_is_verified': True,
                         'nickname': 'sdp_official',
+                        'profile': 'https://abc.com/1.jpg',
                         "created": "2023-08-24T14:15:22Z",
+                        'map_image': 'https://abc.com/1.jpg',
                     },
                 }
             ),
@@ -304,9 +321,8 @@ class StoryDetailApi(APIView):
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-    
 
-class StoryUpdateApi(ApiAuthMixin, APIView):
+class StoryUpdateApi(APIView):
     permission_classes = (IsWriter, )
 
     def get_story_object(self, story_id):
@@ -321,6 +337,7 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
         preview = serializers.CharField()
         html_content = serializers.CharField()
         rep_pic = serializers.ImageField()
+        photoList = serializers.ListField()
 
     @swagger_auto_schema(
         request_body=StoryUpdateInputSerializer,
@@ -329,6 +346,9 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
         operation_description='''
             전송된 모든 필드 값을 그대로 게시글에 업데이트하므로, 게시글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
             즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+            photoList에는 Tinymce 등의 편집기 사용 시 스토리 업데이트 이전에 story_photos/create/을 통해 새롭게 업로드된 이미지들의 주소를 포함하여야합니다.
+            이번 업데이트에서 새롭게 추가된 이미지들의 주소만 포함하면 되며, 이전 생성이나 업데이트 시 추가된 이미지 주소는 포함하지 않아도 됩니다.
+            photoList에 해당 정보가 포함되어야 스토리와 스토리 포토 간 관계 매핑이 가능해집니다.
         ''',
         responses={
             "200": openapi.Response(
@@ -363,22 +383,23 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
             preview=data.get('preview'),
             html_content=data.get('html_content'),
             rep_pic=data.get('rep_pic'),
+            photoList=data.get('photoList'),
         )
 
         return Response({
             'status': 'success',
-            'data': { story.id },
+            'data': {story.id},
         }, status=status.HTTP_200_OK)
 
 
-class StoryDeleteApi(ApiAuthMixin, APIView):
+class StoryDeleteApi(APIView):
     permission_classes = (IsWriter, )
 
     def get_story_object(self, story_id):
         story = get_object_or_404(Story, pk=story_id)
         self.check_object_permissions(self.request, story)
         return story
-    
+
     @swagger_auto_schema(
         operation_id='스토리 게시글 삭제',
         operation_description='''
@@ -406,9 +427,11 @@ class StoryDeleteApi(ApiAuthMixin, APIView):
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)
-    
+
 
 class StoryRecommendApi(APIView):
+    permission_classes = (AllowAny, )
+
     class Pagination(PageNumberPagination):
         page_size = 4
         page_size_query_param = 'page_size'
@@ -448,7 +471,9 @@ class StoryRecommendApi(APIView):
         )
 
 
-class StoryLikeApi(APIView, ApiAuthMixin):
+class StoryLikeApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
     @swagger_auto_schema(
         operation_id='스토리 좋아요 또는 좋아요 취소',
         operation_description='''
@@ -495,6 +520,8 @@ class BasicPagination(PageNumberPagination):
 
 
 class GoToMapApi(APIView):
+    permission_classes = (AllowAny, )
+
     @swagger_auto_schema(
         operation_id='스토리의 해당 장소로 Map 연결',
         operation_description='''
@@ -521,6 +548,8 @@ class GoToMapApi(APIView):
 
 
 class StoryCommentListApi(APIView):
+    permission_classes = (AllowAny, )
+
     class Pagination(PageNumberPagination):
         page_size = 20
         page_size_query_param = 'page_size'
@@ -585,7 +614,9 @@ class StoryCommentListApi(APIView):
         )
 
 
-class StoryCommentCreateApi(APIView, ApiAuthMixin):
+class StoryCommentCreateApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
     class StoryCommentCreateInputSerializer(serializers.Serializer):
         story = serializers.IntegerField()
         content = serializers.CharField()
@@ -642,7 +673,9 @@ class StoryCommentCreateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class StoryCommentUpdateApi(APIView, ApiAuthMixin):
+class StoryCommentUpdateApi(APIView):
+    permission_classes = (IsWriter, )
+
     class StoryCommnetUpdateInputSerializer(serializers.Serializer):
         content = serializers.CharField()
         mentionEmail = serializers.CharField(required=False)
@@ -700,7 +733,9 @@ class StoryCommentUpdateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class StoryCommentDeleteApi(APIView, ApiAuthMixin):
+class StoryCommentDeleteApi(APIView):
+    permission_classes = (IsWriter, )
+
     @swagger_auto_schema(
         operation_id='스토리 댓글 삭제',
         operation_description='''
