@@ -59,6 +59,7 @@ class StoryCreateApi(APIView):
             }
 
     @swagger_auto_schema(
+        request_body=StoryCreateInputSerializer,
         operation_id='스토리 게시글 생성',
         operation_description='''
             전달된 필드를 기반으로 스토리 게시글을 생성합니다.<br/>
@@ -122,6 +123,7 @@ class StoryPhotoCreateApi(APIView):
             }
 
     @swagger_auto_schema(
+        request_body=StoryPhotoCreateInputSerializer,
         operation_id='스토리 사진 생성',
         operation_description='''
             스토리 사진을 생성합니다.<br/>
@@ -322,6 +324,7 @@ class StoryDetailApi(APIView):
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
 
+
 class StoryUpdateApi(APIView):
     permission_classes = (IsWriter, )
 
@@ -451,6 +454,15 @@ class StoryRecommendApi(APIView):
         responses={
             "200": openapi.Response(
                 description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'title': '도심 속 모두에게 열려있는 쉼터, 서울숲',
+                        'writer': 'sdptech@gmail.com',
+                        'writer_is_verified': True,
+                        'created': '2023-08-24T14:15:22Z',
+                    }
+                }
             ),
             "400": openapi.Response(
                 description="Bad Request",
