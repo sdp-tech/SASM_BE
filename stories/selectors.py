@@ -11,6 +11,32 @@ from users.models import User
 from stories.models import Story, StoryPhoto, StoryComment
 
 
+class GroupConcat(Aggregate):
+    # Postgres ArrayAgg similar(not exactly equivalent) for sqlite & mysql
+    # https://stackoverflow.com/questions/10340684/group-concat-equivalent-in-django
+    function = 'GROUP_CONCAT'
+    separator = ','
+
+    def __init__(self, expression, distinct=False, ordering=None, **extra):
+        super(GroupConcat, self).__init__(expression,
+                                          distinct='DISTINCT ' if distinct else '',
+                                          ordering=' ORDER BY %s' % ordering if ordering is not None else '',
+                                          output_field=CharField(),
+                                          **extra)
+
+    def as_mysql(self, compiler, connection, separator=separator):
+        return super().as_sql(compiler,
+                              connection,
+                              template='%(function)s(%(distinct)s%(expressions)s%(ordering)s%(separator)s)',
+                              separator=' SEPARATOR \'%s\'' % separator)
+
+    def as_sql(self, compiler, connection, **extra):
+        return super().as_sql(compiler,
+                              connection,
+                              template='%(function)s(%(distinct)s%(expressions)s%(ordering)s)',
+                              **extra)
+
+
 @dataclass
 class StoryDto:
     id: int
@@ -29,6 +55,12 @@ class StoryDto:
     profile: str
     created: datetime
     map_image: str
+    rep_pic: str
+    extra_pics: list[str]
+
+
+def append_media_url(rest):
+    return settings.MEDIA_URL + rest
 
 
 class StoryCoordinatorSelector:
@@ -61,7 +93,10 @@ class StoryCoordinatorSelector:
             profile=story.profile,
             created=story.created,
             map_image=story.map_image,
+            rep_pic=story.rep_pic.url,
+            extra_pics=map(append_media_url, story.extra_pics.split(',')[:3])
         )
+
         return dto
 
 
@@ -113,6 +148,7 @@ class StorySelector:
             map_image=Concat(Value(settings.MEDIA_URL),
                              F('map_photos__map'),
                              output_field=CharField()),
+            extra_pics=GroupConcat('photos__image'),
             ** extra_fields
         ).get(id=story_id)
 
@@ -150,14 +186,20 @@ class StorySelector:
         if order in order_by_likes:
             order = order_by_likes[order]
 
-        story = Story.objects.filter(q).annotate(
+        stories = Story.objects.filter(q).annotate(
             place_name=F('place__place_name'),
             category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             nickname=F('writer__nickname'),
+            extra_pics=GroupConcat('photos__image'),
         ).order_by(order)
 
-        return story
+        for story in stories:
+            story.rep_pic = story.rep_pic.url
+            story.extra_pics = map(
+                append_media_url, story.extra_pics.split(',')[:3])
+
+        return stories
 
 
 class StoryLikeSelector:
