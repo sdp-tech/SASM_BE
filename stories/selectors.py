@@ -11,6 +11,32 @@ from users.models import User
 from stories.models import Story, StoryPhoto, StoryComment
 
 
+class GroupConcat(Aggregate):
+    # Postgres ArrayAgg similar(not exactly equivalent) for sqlite & mysql
+    # https://stackoverflow.com/questions/10340684/group-concat-equivalent-in-django
+    function = 'GROUP_CONCAT'
+    separator = ','
+
+    def __init__(self, expression, distinct=False, ordering=None, **extra):
+        super(GroupConcat, self).__init__(expression,
+                                          distinct='DISTINCT ' if distinct else '',
+                                          ordering=' ORDER BY %s' % ordering if ordering is not None else '',
+                                          output_field=CharField(),
+                                          **extra)
+
+    def as_mysql(self, compiler, connection, separator=separator):
+        return super().as_sql(compiler,
+                              connection,
+                              template='%(function)s(%(distinct)s%(expressions)s%(ordering)s%(separator)s)',
+                              separator=' SEPARATOR \'%s\'' % separator)
+
+    def as_sql(self, compiler, connection, **extra):
+        return super().as_sql(compiler,
+                              connection,
+                              template='%(function)s(%(distinct)s%(expressions)s%(ordering)s)',
+                              **extra)
+
+
 @dataclass
 class StoryDto:
     id: int
@@ -25,6 +51,16 @@ class StoryDto:
     semi_category: str
     writer: str
     writer_is_verified: bool
+    nickname: str
+    profile: str
+    created: datetime
+    map_image: str
+    rep_pic: str
+    extra_pics: list[str]
+
+
+def append_media_url(rest):
+    return settings.MEDIA_URL + rest
 
 
 class StoryCoordinatorSelector:
@@ -52,8 +88,15 @@ class StoryCoordinatorSelector:
             category=story.category,
             semi_category=semi_cate,
             writer=story.writer,
-            writer_is_verified=story.writer_is_verified
+            writer_is_verified=story.writer_is_verified,
+            nickname=story.nickname,
+            profile=story.profile,
+            created=story.created,
+            map_image=story.map_image,
+            rep_pic=story.rep_pic.url,
+            extra_pics=map(append_media_url, story.extra_pics.split(',')[:3])
         )
+
         return dto
 
 
@@ -62,7 +105,7 @@ def semi_category(story_id: int):
         스토리의 세부 category를 알려 주기 위한 함수
     '''
     story = get_object_or_404(Story, id=story_id)
-    place = story.address
+    place = story.place
     result = []
     vegan = place.vegan_category
     if vegan != '':
@@ -95,15 +138,23 @@ class StorySelector:
 
     def detail(story_id: int, extra_fields: dict = {}):
         return Story.objects.annotate(
-            place_name=F('address__place_name'),
-            category=F('address__category'),
+            place_name=F('place__place_name'),
+            category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
+            nickname=F('writer__nickname'),
+            profile=Concat(Value(settings.MEDIA_URL),
+                           F('writer__profile_image'),
+                           output_field=CharField()),
+            map_image=Concat(Value(settings.MEDIA_URL),
+                             F('map_photos__map'),
+                             output_field=CharField()),
+            extra_pics=GroupConcat('photos__image'),
             ** extra_fields
         ).get(id=story_id)
 
     def recommend_list(story_id: int):
         story = Story.objects.get(id=story_id)
-        q = Q(address__category=story.address.category)
+        q = Q(place__category=story.place.category)
         recommend_story = Story.objects.filter(q).exclude(id=story_id).annotate(
             writer_is_verified=F('writer__is_verified')
         )
@@ -111,24 +162,44 @@ class StorySelector:
         return recommend_story
 
     @staticmethod
-    def list(search: str = '', latest: bool = True):
+    def list(search: str = '', order: str = '', filter: list = []):
         q = Q()
-        q.add(Q(title__icontains=search) | Q(
-            address__place_name__icontains=search), q.AND)  # 스토리 제목 또는 내용 검색
+        q.add(Q(title__icontains=search) |
+              Q(place__place_name__icontains=search) |  # 스토리 제목 또는 내용 검색
+              Q(place__category__icontains=search) |
+              Q(tag__icontains=search), q.AND)
 
-        # 최신순 정렬
-        if latest:
-            order = '-created'
-        else:
-            order = 'created'
+        if len(filter) > 0:
+            query = None
+            for element in filter:
+                if query is None:
+                    query = Q(place__category=element)
+                else:
+                    query = query | Q(place__category=element)
+            q.add(query, q.AND)
 
-        story = Story.objects.filter(q).annotate(
-            place_name=F('address__place_name'),
-            category=F('address__category'),
-            writer_is_verified=F('writer__is_verified')
+        order_by_time = {'latest': '-created', 'oldest': 'created'}
+        order_by_likes = {'hot': '-story_like_cnt'}
+
+        if order in order_by_time:
+            order = order_by_time[order]
+        if order in order_by_likes:
+            order = order_by_likes[order]
+
+        stories = Story.objects.filter(q).annotate(
+            place_name=F('place__place_name'),
+            category=F('place__category'),
+            writer_is_verified=F('writer__is_verified'),
+            nickname=F('writer__nickname'),
+            extra_pics=GroupConcat('photos__image'),
         ).order_by(order)
 
-        return story
+        for story in stories:
+            story.rep_pic = story.rep_pic.url
+            story.extra_pics = map(
+                append_media_url, story.extra_pics.split(',')[:3])
+
+        return stories
 
 
 class StoryLikeSelector:
@@ -137,7 +208,7 @@ class StoryLikeSelector:
 
     @staticmethod
     def likes(story_id: int, user: User):
-        story = get_object_or_404(Story, pk=story_id)
+        story = Story.objects.get(id=story_id)
         # 좋아요가 존재하는 지 안하는 지 확인
         if story.story_likeuser_set.filter(pk=user.pk).exists():
             return True
@@ -152,7 +223,7 @@ class MapMarkerSelector:
     @staticmethod
     def map(story_id: int):
         story = Story.objects.get(id=story_id)
-        place = story.address
+        place = story.place
 
         return place
 

@@ -15,6 +15,8 @@ from core.permissions import IsSdpStaff
 from sasmproject.swagger import StoryViewSet_post_params
 
 # TODO: stories/views.py와 코드 중복, core로 빼기
+
+
 class StoryPagination(PageNumberPagination):
     page_size = 4
     page_size_query_param = 'page_size'
@@ -37,23 +39,23 @@ class StoryViewSet(viewsets.ModelViewSet):
         return Response({
             'status': 'Success',
             'data': response.data,
-            },status=status.HTTP_200_OK)
-    
+        }, status=status.HTTP_200_OK)
+
     @swagger_auto_schema(operation_id='api_sdp_admin_stories_post')
     def create(self, request, *args, **kwargs):
         super().create(request, *args, **kwargs)
         return Response({
             'status': 'Success',
-            },status=status.HTTP_200_OK)
+        }, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(operation_id='api_sdp_admin_stories_put')
     def update(self, request, *args, **kwargs):
         super().update(request, *args, **kwargs)
         return Response({
             'status': 'Success',
-            },status=status.HTTP_200_OK)
+        }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(operation_id='api_sdp_admin_stories_photo_post',request_body=StoryViewSet_post_params)
+    @swagger_auto_schema(operation_id='api_sdp_admin_stories_photo_post', request_body=StoryViewSet_post_params)
     @action(detail=False, methods=['post'])
     def photos(self, request):
         file_obj = request.FILES['file']
@@ -62,15 +64,15 @@ class StoryViewSet(viewsets.ModelViewSet):
         if ext not in ["jpg", "png", "gif", "jpeg", ]:
             return Response({
                 'status': 'fail',
-                'data': {'photo' : 'Wrong file format'},
+                'data': {'photo': 'Wrong file format'},
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             caption = request.POST['caption']
-            place_name = request.POST['place_name']
+            place_id = request.POST['place_id']
 
-            file_path = '{}/{}.{}'.format(place_name,
-                                            'content' + str(int(time.time())), ext)
+            file_path = '{}/{}.{}'.format(place_id,
+                                          'content' + str(int(time.time())), ext)
             image = ImageFile(io.BytesIO(file_obj.read()), name=file_path)
 
             photo = StoryPhoto(caption=caption, image=image)
@@ -79,7 +81,7 @@ class StoryViewSet(viewsets.ModelViewSet):
             return Response({
                 'status': 'error',
                 'message': 'Unknown',
-                'code' : 400,
+                'code': 400,
             }, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = StoryPhotoSerializer(photo)

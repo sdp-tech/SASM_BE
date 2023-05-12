@@ -1,7 +1,6 @@
 from django.db import models
 from core import models as core_models
-
-# Create your models here.
+from django.dispatch import receiver
 
 
 def get_upload_path(instance, filename):
@@ -11,6 +10,8 @@ def get_upload_path(instance, filename):
 class StoryPhoto(core_models.TimeStampedModel):
     """Photo Model Definition"""
 
+    story = models.ForeignKey(
+        "Story", related_name='photos', on_delete=models.CASCADE, null=True, blank=True)
     caption = models.CharField(max_length=80)
     image = models.ImageField(
         upload_to=get_upload_path, default='story_image.png')
@@ -19,14 +20,20 @@ class StoryPhoto(core_models.TimeStampedModel):
         return self.caption
 
 
+@receiver(models.signals.post_delete, sender=StoryPhoto)
+def remove_file_from_s3(sender, instance, using, **kwargs):
+    instance.image.delete(save=False)
+
+
 class Story(core_models.TimeStampedModel):
     """Room Model Definition"""
 
     title = models.CharField(max_length=200)
     story_review = models.CharField(max_length=200)
-    address = models.OneToOneField("places.Place", on_delete=models.CASCADE)
+    address = models.OneToOneField(
+        "places.Place", on_delete=models.CASCADE, null=True, blank=True)
     place = models.ForeignKey(
-        "places.Place", on_delete=models.CASCADE, default=1, related_name='stories')
+        "places.Place", on_delete=models.CASCADE, related_name='stories', null=True, blank=True)
     story_like_cnt = models.PositiveIntegerField(default=0)
     story_likeuser_set = models.ManyToManyField(
         "users.User", related_name='StoryLikeUser', blank=True)
@@ -37,13 +44,21 @@ class Story(core_models.TimeStampedModel):
         upload_to=get_upload_path, default='story_rep_pic.png')
     html_content = models.TextField(max_length=50000)
     writer = models.ForeignKey(
-        "users.User", related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
+        'users.User', related_name='stories', on_delete=models.SET_NULL, null=True, blank=False)
 
     def clean(self):
         self.html_content = self.html_content.replace("\r\n", "")
 
     def __str__(self):
         return self.title
+
+    def entire_update(self, title, story_review, tag, preview, html_content, rep_pic):
+        self.title = title
+        self.story_review = story_review
+        self.tag = tag
+        self.preview = preview
+        self.html_content = html_content
+        self.rep_pic = rep_pic
 
 
 class StoryComment(core_models.TimeStampedModel):
@@ -69,3 +84,15 @@ class StoryComment(core_models.TimeStampedModel):
 
     def __str__(self):
         return '{} {}'.format(self.story.title, str(self.id))
+
+
+class StoryMap(core_models.TimeStampedModel):
+    story = models.ForeignKey(
+        "Story", related_name='map_photos', on_delete=models.CASCADE, null=True)
+    map = models.ImageField(
+        upload_to=get_upload_path, default='story_map_photo.png')
+
+
+@receiver(models.signals.post_delete, sender=StoryMap)
+def remove_file_from_s3(sender, instance, using, **kwargs):
+    instance.map.delete(save=False)
