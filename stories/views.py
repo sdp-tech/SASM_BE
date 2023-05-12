@@ -190,6 +190,7 @@ class StoryListApi(APIView):
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         nickname = serializers.CharField()
+        profile = serializers.CharField()
         created = serializers.DateTimeField()
 
         def get_semi_category(self, obj):

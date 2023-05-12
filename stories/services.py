@@ -70,6 +70,9 @@ class StoryCoordinatorService:
         StoryPhotoService.process_after_story_creation(story=story,
                                                        photoList=photoList)
 
+        # 스토리 맵 이미지 생성
+        StoryMapService.create(story)
+
         return story
 
     @transaction.atomic
@@ -184,8 +187,6 @@ class StoryService:
         )
         story.full_clean()
         story.save()
-
-        StoryMapService.create(story)
 
         return story
 

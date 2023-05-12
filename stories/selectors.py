@@ -8,7 +8,8 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, F, Aggregate, Value, CharField, Case, When
 from django.db.models.functions import Concat, Substr
 from users.models import User
-from stories.models import Story, StoryPhoto, StoryComment
+import stories as st
+from stories.models import Story, StoryPhoto, StoryComment, StoryMap
 
 
 class GroupConcat(Aggregate):
@@ -94,8 +95,12 @@ class StoryCoordinatorSelector:
             created=story.created,
             map_image=story.map_image,
             rep_pic=story.rep_pic.url,
-            extra_pics=map(append_media_url, story.extra_pics.split(',')[:3])
+            extra_pics=[],
         )
+
+        if story.extra_pics is not None:
+            dto.extra_pics = map(
+                append_media_url, story.extra_pics.split(',')[:3])
 
         return dto
 
@@ -137,6 +142,12 @@ class StorySelector:
         pass
 
     def detail(story_id: int, extra_fields: dict = {}):
+        stories = Story.objects.all()
+
+        for story in stories:
+            if not StoryMap.objects.filter(story=story).exists():
+                st.services.StoryMapService.create(story=story)
+
         return Story.objects.annotate(
             place_name=F('place__place_name'),
             category=F('place__category'),
@@ -191,13 +202,17 @@ class StorySelector:
             category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             nickname=F('writer__nickname'),
+            profile=Concat(Value(settings.MEDIA_URL),
+                           F('writer__profile_image'),
+                           output_field=CharField()),
             extra_pics=GroupConcat('photos__image'),
         ).order_by(order)
 
         for story in stories:
             story.rep_pic = story.rep_pic.url
-            story.extra_pics = map(
-                append_media_url, story.extra_pics.split(',')[:3])
+            if story.extra_pics is not None:
+                story.extra_pics = map(
+                    append_media_url, story.extra_pics.split(',')[:3])
 
         return stories
 

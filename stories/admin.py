@@ -26,3 +26,11 @@ class StoryCommentAdmin(admin.ModelAdmin):
     """ """
 
     pass
+
+
+@admin.register(models.StoryMap)
+class StoryMapAdmin(admin.ModelAdmin):
+
+    """ """
+
+    pass
