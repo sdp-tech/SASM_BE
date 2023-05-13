@@ -225,6 +225,8 @@ class CurationDetailApi(APIView):
         rep_pic = serializers.CharField()
         like_curation = serializers.BooleanField()
         writer_email = serializers.CharField()
+        nickname = serializers.CharField()
+        profile_image = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         created = serializers.CharField()
         map_image = serializers.CharField()
@@ -245,6 +247,8 @@ class CurationDetailApi(APIView):
                         'rep_pic': 'https://abc.com/1.jpg',
                         'like_curation': True,
                         'writer_email': 'sdptech@gmail.com',
+                        'nickname': '스드프',
+                        'profile_image': 'https://abc.com/1.jpg',
                         'writer_is_verified': True,
                         'map_image': 'https://abc.com/1.jpg',
                     },
