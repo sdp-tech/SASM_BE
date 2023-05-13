@@ -87,7 +87,11 @@ class CurationSelector:
             map_image=Concat(Value(settings.MEDIA_URL),
                              F('map_photos__map'),
                              output_field=CharField()),
-            writer_email=F('writer__email')
+            writer_email=F('writer__email'),
+            nickname=F('writer__nickname'),
+            profile_image=Concat(Value(settings.MEDIA_URL),
+                                 F('writer__profile_image'),
+                                 output_field=CharField())
         )
 
         return curation
