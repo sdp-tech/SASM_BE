@@ -258,7 +258,9 @@ class StoryCommentSelector:
         story_comments = StoryComment.objects.filter(q).annotate(
             nickname=F('writer__nickname'),
             email=F('writer__email'),
-            profile_image=F('writer__profile_image'),
+            profile_image=Concat(Value(settings.MEDIA_URL),
+                                 F('writer__profile_image'),
+                                 output_field=CharField()),
         ).values(
             'id',
             'story',
