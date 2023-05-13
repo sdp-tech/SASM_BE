@@ -343,7 +343,7 @@ class StoryUpdateApi(APIView):
         tag = serializers.CharField()
         preview = serializers.CharField()
         html_content = serializers.CharField()
-        rep_pic = serializers.ImageField()
+        rep_pic = serializers.ImageField(required=False)
         photoList = serializers.ListField(required=False)
 
     @swagger_auto_schema(
@@ -352,6 +352,7 @@ class StoryUpdateApi(APIView):
         operation_id='스토리 게시글 업데이트',
         operation_description='''
             전송된 모든 필드 값을 그대로 게시글에 업데이트하므로, 게시글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+            rep_pic은 수정이 있는 경우에만 포함하면 됩니다. <br/>
             즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
             photoList에는 Tinymce 등의 편집기 사용 시 스토리 업데이트 이전에 story_photos/create/을 통해 새롭게 업로드된 이미지들의 주소를 포함하여야합니다.
             이번 업데이트에서 새롭게 추가된 이미지들의 주소만 포함하면 되며, 이전 생성이나 업데이트 시 추가된 이미지 주소는 포함하지 않아도 됩니다.
@@ -389,7 +390,7 @@ class StoryUpdateApi(APIView):
             tag=data.get('tag'),
             preview=data.get('preview'),
             html_content=data.get('html_content'),
-            rep_pic=data.get('rep_pic'),
+            rep_pic=data.get('rep_pic', None),
             photoList=data.get('photoList'),
         )
 

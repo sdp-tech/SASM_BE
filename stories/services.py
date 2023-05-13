@@ -205,8 +205,10 @@ class StoryService:
             tag=tag,
             preview=preview,
             html_content=html_content,
-            rep_pic=rep_pic
         )
+
+        if rep_pic is not None:
+            story.rep_pic = rep_pic
 
         story.full_clean()
         story.save()
