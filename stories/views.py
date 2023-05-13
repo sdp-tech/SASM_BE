@@ -393,7 +393,7 @@ class StoryUpdateApi(APIView):
             preview=data.get('preview'),
             html_content=data.get('html_content'),
             rep_pic=data.get('rep_pic', None),
-            photoList=data.get('photoList'),
+            photoList=data.get('photoList', []),
         )
 
         return Response({
