@@ -158,7 +158,7 @@ class CuratedStoryCoordinatorSelector:
         self.user = user
 
     def detail(self, curation_id: int):
-        story_id_list = Curation.objects.get(id=curation_id).story.all()
+        story_id_list = Curation.objects.distinct().get(id=curation_id).story.all()
         curated_stories_qs = CuratedStorySelector.detail(
             story_id_list=story_id_list, user=self.user)
 
