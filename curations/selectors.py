@@ -189,7 +189,7 @@ class CuratedStorySelector:
                 )),
                     then=Value(1)),
                 default=Value(0),
-            ))
+            )).distinct()
 
         return Story.objects.filter(id__in=story_id_list).values('id', 'story_review', 'preview', 'writer', 'tag', 'created').annotate(
             story_id=F('id'),
