@@ -265,6 +265,7 @@ class StoryDetailApi(APIView):
         id = serializers.IntegerField()
         title = serializers.CharField()
         story_review = serializers.CharField()
+        preview = serializers.CharField()
         rep_pic = serializers.CharField()
         extra_pics = serializers.ListField()
         tag = serializers.CharField()
@@ -298,6 +299,7 @@ class StoryDetailApi(APIView):
                         'semi_category': '반려동물 출입 가능, 텀블러 사용 가능, 비건',
                         'tag': '#생명 다양성 #자연 친화 #함께 즐기는',
                         'story_review': '"모두에게 열려있는 도심 속 가장 자연 친화적인 여가공간"',
+                        'story_review': '"서울숲. 가장 도시적인 단어..."',
                         'html_content': '서울숲. 가장 도시적인 단어...(최대 150자)',
                         'views': 45,
                         'story_like': True,
@@ -343,7 +345,7 @@ class StoryUpdateApi(APIView):
         tag = serializers.CharField()
         preview = serializers.CharField()
         html_content = serializers.CharField()
-        rep_pic = serializers.ImageField()
+        rep_pic = serializers.ImageField(required=False)
         photoList = serializers.ListField(required=False)
 
     @swagger_auto_schema(
@@ -352,6 +354,7 @@ class StoryUpdateApi(APIView):
         operation_id='스토리 게시글 업데이트',
         operation_description='''
             전송된 모든 필드 값을 그대로 게시글에 업데이트하므로, 게시글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+            rep_pic은 수정이 있는 경우에만 포함하면 됩니다. <br/>
             즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
             photoList에는 Tinymce 등의 편집기 사용 시 스토리 업데이트 이전에 story_photos/create/을 통해 새롭게 업로드된 이미지들의 주소를 포함하여야합니다.
             이번 업데이트에서 새롭게 추가된 이미지들의 주소만 포함하면 되며, 이전 생성이나 업데이트 시 추가된 이미지 주소는 포함하지 않아도 됩니다.
@@ -389,13 +392,8 @@ class StoryUpdateApi(APIView):
             tag=data.get('tag'),
             preview=data.get('preview'),
             html_content=data.get('html_content'),
-<<<<<<< Updated upstream
-            rep_pic=data.get('rep_pic'),
-            photoList=data.get('photoList'),
-=======
             rep_pic=data.get('rep_pic', None),
             photoList=data.get('photoList', []),
->>>>>>> Stashed changes
         )
 
         return Response({
