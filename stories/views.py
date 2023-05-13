@@ -265,6 +265,7 @@ class StoryDetailApi(APIView):
         id = serializers.IntegerField()
         title = serializers.CharField()
         story_review = serializers.CharField()
+        preview = serializers.CharField()
         rep_pic = serializers.CharField()
         extra_pics = serializers.ListField()
         tag = serializers.CharField()
@@ -298,6 +299,7 @@ class StoryDetailApi(APIView):
                         'semi_category': '반려동물 출입 가능, 텀블러 사용 가능, 비건',
                         'tag': '#생명 다양성 #자연 친화 #함께 즐기는',
                         'story_review': '"모두에게 열려있는 도심 속 가장 자연 친화적인 여가공간"',
+                        'story_review': '"서울숲. 가장 도시적인 단어..."',
                         'html_content': '서울숲. 가장 도시적인 단어...(최대 150자)',
                         'views': 45,
                         'story_like': True,
