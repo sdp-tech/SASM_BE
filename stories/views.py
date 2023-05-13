@@ -389,8 +389,13 @@ class StoryUpdateApi(APIView):
             tag=data.get('tag'),
             preview=data.get('preview'),
             html_content=data.get('html_content'),
+<<<<<<< Updated upstream
             rep_pic=data.get('rep_pic'),
             photoList=data.get('photoList'),
+=======
+            rep_pic=data.get('rep_pic', None),
+            photoList=data.get('photoList', []),
+>>>>>>> Stashed changes
         )
 
         return Response({
