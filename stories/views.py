@@ -580,7 +580,7 @@ class StoryCommentListApi(APIView):
         nickname = serializers.CharField()
         email = serializers.CharField()
         mention = serializers.CharField()
-        profile_image = serializers.ImageField()
+        profile_image = serializers.CharField()
         created_at = serializers.DateTimeField()
         updated_at = serializers.DateTimeField()
 
