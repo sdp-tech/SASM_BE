@@ -58,7 +58,8 @@ class CurationSelector:
                 default=Concat(Value(settings.MEDIA_URL),
                                F('photos__image'),
                                output_field=CharField())
-            )
+            ),
+            writer_email=F('writer__email')
         )
 
         return curations
@@ -85,7 +86,8 @@ class CurationSelector:
             ),
             map_image=Concat(Value(settings.MEDIA_URL),
                              F('map_photos__map'),
-                             output_field=CharField())
+                             output_field=CharField()),
+            writer_email=F('writer__email')
         )
 
         return curation
@@ -101,13 +103,14 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
+            writer_email=F('writer__email')
         )
 
         return curations
 
     def admin_curation_list(self):
         curations = Curation.objects.filter(
-            is_released=True, writer__is_sdp_admin=True, is_rep=False).annotate(
+            is_released=True, writer__is_sdp_admin=True).annotate(
             rep_pic=Case(
                 When(
                     photos__image=None,
@@ -117,6 +120,7 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
+            writer_email=F('writer__email')
         )
 
         return curations
@@ -133,6 +137,7 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
+            writer_email=F('writer__email')
         )
 
         return curations
@@ -190,7 +195,8 @@ class CuratedStorySelector:
             nickname=F('writer__nickname'),
             profile_image=Concat(Value(settings.MEDIA_URL),
                                  F('writer__profile_image'),
-                                 output_field=CharField())
+                                 output_field=CharField()),
+            writer_email=F('writer__email')
         )
 
 
