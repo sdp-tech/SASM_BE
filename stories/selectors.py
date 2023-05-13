@@ -44,6 +44,7 @@ class StoryDto:
     title: str
     place_name: str
     story_review: str
+    preview: str
     html_content: str
     tag: str
     views: int
@@ -82,6 +83,7 @@ class StoryCoordinatorSelector:
             title=story.title,
             place_name=story.place_name,
             story_review=story.story_review,
+            preview=story.preview,
             html_content=story.html_content,
             tag=story.tag,
             views=story.views,
