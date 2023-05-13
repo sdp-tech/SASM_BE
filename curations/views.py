@@ -11,7 +11,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from .selectors import CurationSelector, CuratedStoryCoordinatorSelector
 from .services import CurationCoordinatorService, CurationLikeService
-from .permissions import IsWriter
+from .permissions import IsWriter, IsVerifiedOrSdpAdmin
 from curations.models import Curation
 
 
@@ -331,8 +331,7 @@ class CuratedStoryDetailApi(APIView):
 
 
 class CurationCreateApi(APIView):
-    # TODO: admin, verified 사용자만 작성 가능하도록 변경 필요
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsVerifiedOrSdpAdmin, )
 
     class CurationCreateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
