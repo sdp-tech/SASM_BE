@@ -1,6 +1,7 @@
 import time
 import uuid
 
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
@@ -12,10 +13,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
-from stories.mixins import ApiAuthMixin
 from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector
 from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService, StoryPhotoService
 from core.views import get_paginated_response
+from core.permissions import IsVerifiedOrSdpStaff
 
 from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
@@ -26,7 +27,9 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 
-class StoryCreateApi(ApiAuthMixin, APIView):
+class StoryCreateApi(APIView):
+    permission_classes = (IsVerifiedOrSdpStaff, )
+
     class StoryCreateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
         place = serializers.IntegerField()
@@ -35,7 +38,7 @@ class StoryCreateApi(ApiAuthMixin, APIView):
         preview = serializers.CharField()
         html_content = serializers.CharField()
         rep_pic = serializers.ImageField()
-        photoList = serializers.ListField()
+        photoList = serializers.ListField(required=False)
 
         def change_rep_pic_name(self, story, validated_data):
             place_name = validated_data['place'].place_name
@@ -56,9 +59,12 @@ class StoryCreateApi(ApiAuthMixin, APIView):
             }
 
     @swagger_auto_schema(
+        request_body=StoryCreateInputSerializer,
         operation_id='스토리 게시글 생성',
         operation_description='''
             전달된 필드를 기반으로 스토리 게시글을 생성합니다.<br/>
+            photoList에는 Tinymce 등의 편집기 사용 시 스토리 생성 이전에 story_photos/create/을 통해 업로드된 이미지들의 주소를 포함하여야합니다.
+            photoList에 해당 정보가 포함되어야 스토리와 스토리 포토 간 관계 매핑이 가능해집니다.
             ''',
         responses={
             "200": openapi.Response(
@@ -103,6 +109,8 @@ class StoryCreateApi(ApiAuthMixin, APIView):
 
 
 class StoryPhotoCreateApi(APIView):
+    permission_classes = (IsVerifiedOrSdpStaff, )
+
     class StoryPhotoCreateInputSerializer(serializers.Serializer):
         image = serializers.ImageField()
         caption = serializers.CharField(required=False)
@@ -115,6 +123,7 @@ class StoryPhotoCreateApi(APIView):
             }
 
     @swagger_auto_schema(
+        request_body=StoryPhotoCreateInputSerializer,
         operation_id='스토리 사진 생성',
         operation_description='''
             스토리 사진을 생성합니다.<br/>
@@ -147,13 +156,17 @@ class StoryPhotoCreateApi(APIView):
             place_id=data.get('place_id')
         )
 
+        image_location = settings.MEDIA_URL + story_photo.image.name
+
         return Response({
             'status': 'success',
-            'data': {'id': story_photo.id},
+            'data': {'location': image_location},
         }, status=status.HTTP_201_CREATED)
 
 
 class StoryListApi(APIView):
+    permission_classes = (AllowAny, )
+
     class Pagination(PageNumberPagination):
         page_size = 4
         page_size_query_param = 'page_size'
@@ -167,7 +180,8 @@ class StoryListApi(APIView):
         id = serializers.IntegerField()
         title = serializers.CharField()
         preview = serializers.CharField()
-        rep_pic = serializers.ImageField()
+        rep_pic = serializers.CharField()
+        extra_pics = serializers.ListField()
         views = serializers.IntegerField()
         story_like = serializers.SerializerMethodField()
         place_name = serializers.CharField()
@@ -176,7 +190,8 @@ class StoryListApi(APIView):
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         nickname = serializers.CharField()
-        created=serializers.DateTimeField()
+        profile = serializers.CharField()
+        created = serializers.DateTimeField()
 
         def get_semi_category(self, obj):
             result = semi_category(obj.id)
@@ -244,10 +259,15 @@ class StoryListApi(APIView):
 
 
 class StoryDetailApi(APIView):
+    permission_classes = (AllowAny, )
+
     class StoryDetailOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
         story_review = serializers.CharField()
+        preview = serializers.CharField()
+        rep_pic = serializers.CharField()
+        extra_pics = serializers.ListField()
         tag = serializers.CharField()
         html_content = serializers.CharField()
         story_like = serializers.BooleanField()
@@ -258,7 +278,9 @@ class StoryDetailApi(APIView):
         writer = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         nickname = serializers.CharField()
+        profile = serializers.CharField()
         created = serializers.DateTimeField()  # 게시글 생성 날짜
+        map_image = serializers.CharField()
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
@@ -277,13 +299,16 @@ class StoryDetailApi(APIView):
                         'semi_category': '반려동물 출입 가능, 텀블러 사용 가능, 비건',
                         'tag': '#생명 다양성 #자연 친화 #함께 즐기는',
                         'story_review': '"모두에게 열려있는 도심 속 가장 자연 친화적인 여가공간"',
+                        'story_review': '"서울숲. 가장 도시적인 단어..."',
                         'html_content': '서울숲. 가장 도시적인 단어...(최대 150자)',
                         'views': 45,
                         'story_like': True,
                         'writer': 'sdptech@gmail.com',
                         'writer_is_verified': True,
                         'nickname': 'sdp_official',
+                        'profile': 'https://abc.com/1.jpg',
                         "created": "2023-08-24T14:15:22Z",
+                        'map_image': 'https://abc.com/1.jpg',
                     },
                 }
             ),
@@ -305,79 +330,8 @@ class StoryDetailApi(APIView):
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
 
-class StoryCreateApi(ApiAuthMixin, APIView):
-    class StoryCreateInputSerializer(serializers.Serializer):
-        title = serializers.CharField()
-        place = serializers.IntegerField()
-        story_review = serializers.CharField()
-        tag = serializers.CharField()
-        preview = serializers.CharField()
-        html_content = serializers.CharField()
-        rep_pic = serializers.ImageField()
 
-        def change_rep_pic_name(self, story, validated_data):
-            place_name = validated_data['place'].place_name
-            ext = story.rep_pic.name.split(".")[-1]
-            story.rep_pic.name = '{}/{}.{}'.format(place_name,
-                                               'rep' + str(int(time.time())), ext)
-
-        class Meta:
-            examples = {
-                'title': '매력적인 편집샵, 지구샵',
-                'place': '지구샵 제로웨이스트홈',
-                'preview': '지구샵으로 초대합니다.',
-                'tag': '#환경친화적 #제로웨이스트',
-                'story_review': '빈손으로는 나올 수 없는 제로웨이스트 샵',
-                'html_content': '망원동, 성수, 연남동을 지나가는 걸음을 멈추게 하는 곳, 편집샵에 가 본 적이 있는가?...',
-                'rep_pic': 'https://abc.com/2.jpg',
-            }
-
-    @swagger_auto_schema(
-        operation_id='스토리 게시글 생성',
-        operation_description='''
-            전달된 필드를 기반으로 스토리 게시글을 생성합니다.<br/>
-            ''',
-        responses={
-            "200": openapi.Response(
-                description="OK",
-                examples={
-                    "application/json": {
-                        "status": "success",
-                        "data": {"id": 1}
-                    }
-                }
-            ),
-            "400": openapi.Response(
-                description="Bad Request",
-            ),
-        },
-    )
-    def post(self, request):
-        serializer = self.StoryCreateInputSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
-        service = StoryCoordinatorService(
-            user=request.user
-        )
-
-        story=service.create(
-            title=data.get('title'),
-            place_id=data.get('place'),
-            preview=data.get('preview'),
-            tag=data.get('tag'),
-            story_review=data.get('story_review'),
-            html_content=data.get('html_content'),
-            rep_pic=data.get('rep_pic'),
-        )
-
-        return Response({
-            'status': 'success',
-            'data': {'id': story.id},
-        }, status=status.HTTP_201_CREATED)
-    
-
-class StoryUpdateApi(ApiAuthMixin, APIView):
+class StoryUpdateApi(APIView):
     permission_classes = (IsWriter, )
 
     def get_story_object(self, story_id):
@@ -391,7 +345,8 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
         tag = serializers.CharField()
         preview = serializers.CharField()
         html_content = serializers.CharField()
-        rep_pic = serializers.ImageField()
+        rep_pic = serializers.ImageField(required=False)
+        photoList = serializers.ListField(required=False)
 
     @swagger_auto_schema(
         request_body=StoryUpdateInputSerializer,
@@ -399,7 +354,11 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
         operation_id='스토리 게시글 업데이트',
         operation_description='''
             전송된 모든 필드 값을 그대로 게시글에 업데이트하므로, 게시글에 포함되어야 하는 모든 필드 값이 request body에 포함되어야합니다.<br/>
+            rep_pic은 수정이 있는 경우에만 포함하면 됩니다. <br/>
             즉, 값이 수정된 필드뿐만 아니라 값이 그대로 유지되어야하는 필드도 함께 전송되어야합니다.<br/>
+            photoList에는 Tinymce 등의 편집기 사용 시 스토리 업데이트 이전에 story_photos/create/을 통해 새롭게 업로드된 이미지들의 주소를 포함하여야합니다.
+            이번 업데이트에서 새롭게 추가된 이미지들의 주소만 포함하면 되며, 이전 생성이나 업데이트 시 추가된 이미지 주소는 포함하지 않아도 됩니다.
+            photoList에 해당 정보가 포함되어야 스토리와 스토리 포토 간 관계 매핑이 가능해집니다.
         ''',
         responses={
             "200": openapi.Response(
@@ -433,23 +392,24 @@ class StoryUpdateApi(ApiAuthMixin, APIView):
             tag=data.get('tag'),
             preview=data.get('preview'),
             html_content=data.get('html_content'),
-            rep_pic=data.get('rep_pic'),
+            rep_pic=data.get('rep_pic', None),
+            photoList=data.get('photoList', []),
         )
 
         return Response({
             'status': 'success',
-            'data': { story.id },
+            'data': {story.id},
         }, status=status.HTTP_200_OK)
 
 
-class StoryDeleteApi(ApiAuthMixin, APIView):
+class StoryDeleteApi(APIView):
     permission_classes = (IsWriter, )
 
     def get_story_object(self, story_id):
         story = get_object_or_404(Story, pk=story_id)
         self.check_object_permissions(self.request, story)
         return story
-    
+
     @swagger_auto_schema(
         operation_id='스토리 게시글 삭제',
         operation_description='''
@@ -477,9 +437,11 @@ class StoryDeleteApi(ApiAuthMixin, APIView):
         return Response({
             'status': 'success',
         }, status=status.HTTP_200_OK)
-    
+
 
 class StoryRecommendApi(APIView):
+    permission_classes = (AllowAny, )
+
     class Pagination(PageNumberPagination):
         page_size = 4
         page_size_query_param = 'page_size'
@@ -499,6 +461,15 @@ class StoryRecommendApi(APIView):
         responses={
             "200": openapi.Response(
                 description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'title': '도심 속 모두에게 열려있는 쉼터, 서울숲',
+                        'writer': 'sdptech@gmail.com',
+                        'writer_is_verified': True,
+                        'created': '2023-08-24T14:15:22Z',
+                    }
+                }
             ),
             "400": openapi.Response(
                 description="Bad Request",
@@ -519,7 +490,9 @@ class StoryRecommendApi(APIView):
         )
 
 
-class StoryLikeApi(APIView, ApiAuthMixin):
+class StoryLikeApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
     @swagger_auto_schema(
         operation_id='스토리 좋아요 또는 좋아요 취소',
         operation_description='''
@@ -566,6 +539,8 @@ class BasicPagination(PageNumberPagination):
 
 
 class GoToMapApi(APIView):
+    permission_classes = (AllowAny, )
+
     @swagger_auto_schema(
         operation_id='스토리의 해당 장소로 Map 연결',
         operation_description='''
@@ -592,6 +567,8 @@ class GoToMapApi(APIView):
 
 
 class StoryCommentListApi(APIView):
+    permission_classes = (AllowAny, )
+
     class Pagination(PageNumberPagination):
         page_size = 20
         page_size_query_param = 'page_size'
@@ -606,7 +583,7 @@ class StoryCommentListApi(APIView):
         nickname = serializers.CharField()
         email = serializers.CharField()
         mention = serializers.CharField()
-        profile_image = serializers.ImageField()
+        profile_image = serializers.CharField()
         created_at = serializers.DateTimeField()
         updated_at = serializers.DateTimeField()
 
@@ -656,7 +633,9 @@ class StoryCommentListApi(APIView):
         )
 
 
-class StoryCommentCreateApi(APIView, ApiAuthMixin):
+class StoryCommentCreateApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
     class StoryCommentCreateInputSerializer(serializers.Serializer):
         story = serializers.IntegerField()
         content = serializers.CharField()
@@ -713,7 +692,9 @@ class StoryCommentCreateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class StoryCommentUpdateApi(APIView, ApiAuthMixin):
+class StoryCommentUpdateApi(APIView):
+    permission_classes = (IsWriter, )
+
     class StoryCommnetUpdateInputSerializer(serializers.Serializer):
         content = serializers.CharField()
         mentionEmail = serializers.CharField(required=False)
@@ -771,7 +752,9 @@ class StoryCommentUpdateApi(APIView, ApiAuthMixin):
         }, status=status.HTTP_200_OK)
 
 
-class StoryCommentDeleteApi(APIView, ApiAuthMixin):
+class StoryCommentDeleteApi(APIView):
+    permission_classes = (IsWriter, )
+
     @swagger_auto_schema(
         operation_id='스토리 댓글 삭제',
         operation_description='''
