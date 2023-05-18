@@ -490,7 +490,11 @@ class StoryRecommendApi(APIView):
 class StoryLikeApi(APIView):
     permission_classes = (IsAuthenticated, )
 
+    class StoryLikeInputSerializer(serializers.Serializer):
+        id = serializers.CharField()
+
     @swagger_auto_schema(
+        request_body=StoryLikeInputSerializer,
         operation_id='스토리 좋아요 또는 좋아요 취소',
         operation_description='''
             전달된 id를 가지는 스토리글에 대한 사용자의 좋아요/좋아요 취소를 수행합니다.<br/>
@@ -512,22 +516,17 @@ class StoryLikeApi(APIView):
         },
     )
     def post(self, request):
-        try:
-            service = StoryCoordinatorService(
-                user=request.user
-            )
-            story_like = service.like_or_dislike(
-                story_id=request.data['id'],
-            )
-        except:  # TODO: 에러 발생 상황 명시하고 ApplicationError raise하기
-            return Response({
-                'status': 'fail',
-                'message': '권한이 없거나 story가 존재하지 않습니다.',
-            }, status=status.HTTP_401_UNAUTHORIZED)
+        service = StoryCoordinatorService(
+            user=request.user
+        )
+        story_like = service.like_or_dislike(
+            story_id=request.data['id'],
+        )
+
         return Response({
             'status': 'success',
             'data': {'story_like': story_like},
-        }, status=status.HTTP_201_CREATED)
+        }, status=status.HTTP_200_OK)
 
 
 class BasicPagination(PageNumberPagination):
