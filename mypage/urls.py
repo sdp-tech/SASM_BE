@@ -2,8 +2,6 @@ from django.urls import path
 from .views import stories_views, user_following
 
 urlpatterns = [
-     # path('like_story/', stories_views.UserStoryListGetApi.as_view(), 
-     #      name='like_story'),
      path('follow/', user_following.UserDoUndoFollowApi.as_view(),
           name='user_do_undo_follow'),
      path('following/', user_following.UserFollowingListApi.as_view(),

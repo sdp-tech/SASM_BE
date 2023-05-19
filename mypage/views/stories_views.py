@@ -86,7 +86,8 @@ class UserStoryListGetApi(APIView):
         filters_serializer.is_valid(raise_exception=True)
         filters = filters_serializer.validated_data
 
-        user_story = UserStorySelector.list(
+        selector = UserStorySelector(user=request.user)
+        like_story = selector.list(
             search=filters.get('search', ''),
             filter=filters.get('filter', []),
         )
@@ -94,7 +95,7 @@ class UserStoryListGetApi(APIView):
         return get_paginated_response(
             pagination_class=self.Pagination,
             serializer_class=self.UserStoryOutputSerializer,
-            queryset=user_story,
+            queryset=like_story,
             request=request,
             view=self,
         )
@@ -172,7 +173,7 @@ class UserCreatedStoryApi(APIView):
         filters = filters_serializer.validated_data
 
         selector = UserCreatedStorySelector(user=request.user)
-        story_list = selector.list(
+        user_story = selector.list(
             search = filters.get('search', ''),
             filter = filters.get('filter', []),
         )
@@ -180,7 +181,7 @@ class UserCreatedStoryApi(APIView):
         return get_paginated_response(
             pagination_class=self.Pagination,
             serializer_class=self.UserCreatedStoryOutputSerializer,
-            queryset=story_list,
+            queryset=user_story,
             request=request,
             view=self,
         )

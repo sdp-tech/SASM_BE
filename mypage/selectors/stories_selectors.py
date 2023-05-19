@@ -37,7 +37,9 @@ class UserStorySelector:
     def __init__(self, user: User):
         self.user = user
 
-    def list(search: str = '', filter: list = []):
+    def list(self, search: str = '', filter: list = []):
+        like_story = self.user.StoryLikeUser.all()
+
         q = Q()
         q.add(Q(title__icontains=search) |
               Q(place__place_name__icontains=search) |
@@ -53,7 +55,7 @@ class UserStorySelector:
                     query = query | Q(place__category=element)
             q.add(query, q.AND)
 
-        stories = Story.objects.filter(q).annotate(
+        stories = like_story.filter(q).annotate(
             place_name=F('place__place_name'),
             category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
@@ -90,7 +92,7 @@ class UserCreatedStorySelector:
         self.user = user
 
     def list(self, search: str = '', filter: list = []):
-        story = self.user.stories.filter(
+        user_story = self.user.stories.filter(
             writer=self.user)
 
         q = Q()
@@ -108,7 +110,7 @@ class UserCreatedStorySelector:
                     query = query | Q(place__category=element)
             q.add(query, q.AND)
         
-        stories = story.filter(q).annotate(
+        stories = user_story.filter(q).annotate(
             place_name=F('place__place_name'),
             category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
@@ -118,6 +120,12 @@ class UserCreatedStorySelector:
             #                output_field=CharField()),
             extra_pics=GroupConcat('photos__image'),
         ).order_by('-created')
+
+        for story in stories:
+            story.rep_pic = story.rep_pic.url
+            if story.extra_pics is not None:
+                story.extra_pics = map(
+                    append_media_url, story.extra_pics.split(',')[:3])
 
         return stories
         
