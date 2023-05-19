@@ -1,6 +1,7 @@
 import os
 import string
 import random
+import datetime
 from email.mime.image import MIMEImage
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -86,6 +87,39 @@ class UserService:
             if (check_nickname):
                 return '이미 사용중인 닉네임입니다'
             return '사용 가능한 닉네임입니다'
+
+    @staticmethod
+    def sign_up(email: str, password: str, nickname: str, birthdate: datetime.date):
+        user = User(
+            email=email,
+            nickname=nickname,
+            password=password,
+            birthdate=birthdate
+        )
+        user.set_password(password)
+        user.is_active = False
+        user.save()
+
+        html_content = render_to_string('users/user_activate_email.html', {
+            'user': user,
+            'nickname': user.nickname,
+            'domain': 'api.sasmbe.com',
+            'uid': force_str(urlsafe_base64_encode(force_bytes(user.pk))),
+            'token': JWT_ENCODE_HANDLER(JWT_PAYLOAD_HANDLER(user)),
+        })
+        to_email = user.email
+        from_email = 'sdpygl@gmail.com'
+        msg = EmailMultiAlternatives(
+            '[SDP] 회원가입 인증 메일입니다', '...', from_email, [to_email])
+        msg.attach_alternative(html_content, "text/html")
+
+        file_path = os.path.join(
+            settings.BASE_DIR, 'static/img/SASM_LOGO_BLACK.png')
+        img_data = open(file_path, 'rb').read()
+        image = MIMEImage(img_data)
+        image.add_header('Content-ID', '<{}>'.format('SASM_LOGO_BLACK.png'))
+        msg.attach(image)
+        msg.send()
 
 
 class UserPasswordService:

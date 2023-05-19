@@ -4,28 +4,20 @@ from functools import partial
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils.decorators import method_decorator
-from django.core.exceptions import ValidationError
 from rest_framework import status
-from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
-from rest_framework.generics import CreateAPIView, GenericAPIView
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.generics import CreateAPIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 
-from places.serializers import PlaceSerializer
-from stories.serializers import StoryListSerializer
 from ..models import User
-from places.models import Place
-from stories.models import Story
-from users.serializers import UserSerializer, UserLoginSerializer, EmailFindSerializer, RepetitionCheckSerializer, UserLogoutSerializer
+from users.serializers import UserSerializer, RepetitionCheckSerializer
 from core.exceptions import ApplicationError
-from sasmproject.swagger import param_filter
-from users.mixins import ApiAuthMixin, ApiAdminAuthMixin
+from users.mixins import ApiAuthMixin
 
 # serializer에 partial=True를 주기위한 Mixin
 
