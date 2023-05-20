@@ -124,7 +124,7 @@ class MySearchedCurationListApi(APIView):
         operation_id='마이페이지 큐레이션 검색 결과 리스트',
         operation_description='''
             유저가 좋아요 한 큐레이션 중 검색 결과를 리스트합니다.<br/>
-            search(검색어)의 default값은 ''로, 검색어가 없을 시 모든 큐레이션이 반환됩니다.
+            search(검색어)의 default값은 ''로, 검색어가 없을 시 좋아요 한 모든 큐레이션이 반환됩니다.
             ''',
         responses={
             "200": openapi.Response(

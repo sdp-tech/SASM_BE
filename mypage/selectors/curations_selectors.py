@@ -77,7 +77,7 @@ class CurationSelector:
         q.add(Q(title__icontains=search) |
               Q(contents__icontains=search) |
               Q(story__title__icontains=search) |
-              Q(story__place__place_name__icontains=search) |  # 스토리 제목 또는 내용 검색
+              Q(story__place__place_name__icontains=search) |
               Q(story__place__category__icontains=search) |
               Q(story__tag__icontains=search), q.AND)
 
