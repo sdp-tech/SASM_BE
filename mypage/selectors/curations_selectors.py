@@ -54,25 +54,7 @@ class CurationSelector:
         return curations
 
     @staticmethod
-    def my_liked_list(user: User):
-
-        curations = Curation.objects.distinct().filter(likeuser_set__in=[user]).annotate(
-            rep_pic=Case(
-                When(
-                    photos__image=None,
-                    then=None
-                ),
-                default=Concat(Value(settings.MEDIA_URL),
-                               F('photos__image'),
-                               output_field=CharField())
-            ),
-            writer_nickname=F('writer__nickname')
-        )
-
-        return curations
-
-    @staticmethod
-    def my_searched_list(user: User, search: str = ''):
+    def my_liked_list(user: User, search: str = ''):
         q = Q()
         q.add(Q(title__icontains=search) |
               Q(contents__icontains=search) |

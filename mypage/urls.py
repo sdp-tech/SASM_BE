@@ -17,7 +17,5 @@ urlpatterns = [
     path('my_curation/', curations_views.MyCurationListApi.as_view(),
          name='my_curation'),
     path('my_liked_curation/', curations_views.MyLikedCurationListApi.as_view(),
-         name='my_liked_curation'),
-    path('my_searched_curation/', curations_views.MySearchedCurationListApi.as_view(),
-         name='my_searched_curation')
+         name='my_liked_curation')
 ]

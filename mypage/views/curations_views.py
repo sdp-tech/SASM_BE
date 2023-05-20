@@ -30,9 +30,9 @@ class MyCurationListApi(APIView):
 
     @swagger_auto_schema(
         query_serializer=MyCurationSerializer,
-        operation_id='내가 작성한 큐레이션 리스트',
+        operation_id='마이페이지 내가 작성한 큐레이션 리스트',
         operation_description='''
-            내가 작성한 큐레이션의 검색 결과를 리스트합니다.<br/>
+            내가 작성한 큐레이션을 리스트합니다.<br/>
             request시 전달해야 할 파라미터는 없습니다.
             ''',
         responses={
@@ -64,66 +64,20 @@ class MyCurationListApi(APIView):
 
 
 class MyLikedCurationListApi(APIView):
-    class Pagination(PageNumberPagination):
-        page_size = 6
-        page_size_query_param = 'page_size'
-
-    class MyLikedCurationSerializer(serializers.Serializer):
-        id = serializers.IntegerField()
-        title = serializers.CharField()
-        rep_pic = serializers.CharField()
-        writer_nickname = serializers.CharField()
-
-    @swagger_auto_schema(
-        query_serializer=MyLikedCurationSerializer,
-        operation_id='내가 좋아요 한 큐레이션 리스트',
-        operation_description='''
-            내가 좋아요 한 큐레이션의 검색 결과를 리스트합니다.<br/>
-            request시 전달해야 할 파라미터는 없습니다.
-            ''',
-        responses={
-            "200": openapi.Response(
-                description="OK",
-                examples={
-                    "application/json": {
-                        'id': 1,
-                        'title': '서울 비건카페 탑5',
-                        'rep_pic': 'https://abc.com/1.jpg',
-                        'writer_nickname': '스드프'
-                    }
-                }
-            ),
-            "400": openapi.Response(
-                description="Bad Request",
-            ),
-        },
-    )
-    def get(self, request):
-        curations = CurationSelector.my_liked_list(user=request.user)
-        serializer = self.MyLikedCurationSerializer(
-            curations, many=True)
-
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
-
-
-class MySearchedCurationListApi(APIView):
-    class CurationListFilterSerializer(serializers.Serializer):
+    class MyLikedCurationListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
 
-    class CurationListOutputSerializer(serializers.Serializer):
+    class MyLikedCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.CharField()
         writer_nickname = serializers.CharField()
 
     @swagger_auto_schema(
-        query_serializer=CurationListFilterSerializer,
+        query_serializer=MyLikedCurationListFilterSerializer,
         operation_id='마이페이지 큐레이션 검색 결과 리스트',
         operation_description='''
-            유저가 좋아요 한 큐레이션 중 검색 결과를 리스트합니다.<br/>
+            유저가 좋아요 한 큐레이션의 검색 결과를 리스트합니다.<br/>
             search(검색어)의 default값은 ''로, 검색어가 없을 시 좋아요 한 모든 큐레이션이 반환됩니다.
             ''',
         responses={
@@ -144,18 +98,18 @@ class MySearchedCurationListApi(APIView):
         },
     )
     def get(self, request):
-        filters_serializer = self.CurationListFilterSerializer(
+        filters_serializer = self.MyLikedCurationListFilterSerializer(
             data=request.query_params
         )
         filters_serializer.is_valid(raise_exception=True)
         filters = filters_serializer.validated_data
 
-        curations = CurationSelector.my_searched_list(
+        curations = CurationSelector.my_liked_list(
             user=request.user,
             search=filters.get('search', '')
         )
 
-        serializer = self.CurationListOutputSerializer(
+        serializer = self.MyLikedCurationListOutputSerializer(
             curations, many=True)
 
         return Response({
