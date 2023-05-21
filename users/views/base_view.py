@@ -27,6 +27,8 @@ class SetPartialMixin:
         serializer_class = super().get_serializer_class(*args, **kwargs)
         return partial(serializer_class, partial=True)
 
+# TODO: 리팩토링 완료. 제거 요망
+
 
 @method_decorator(name='post', decorator=swagger_auto_schema(
     operation_id='api_users_signup_post', security=[]))
@@ -47,6 +49,8 @@ class SignupView(SetPartialMixin, CreateAPIView):
         return Response({
             'status': 'Success',
         }, status=status.HTTP_200_OK)
+
+# TODO: 리팩토링 진행 중. 제거 요망
 
 
 class MeView(ApiAuthMixin, APIView):
