@@ -21,7 +21,7 @@ JWT_ENCODE_HANDLER = api_settings.JWT_ENCODE_HANDLER
 
 User = get_user_model()
 
-
+# TODO: 제거 요망
 class UserSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(use_url=True)
     password = serializers.CharField(write_only=True)
