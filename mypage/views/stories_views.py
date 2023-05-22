@@ -49,7 +49,7 @@ class UserStoryListGetApi(APIView):
             re_user = self.context['request'].user
             likes = StoryLikeSelector.likes(obj.id, user=re_user)
             return likes
-        
+
     @swagger_auto_schema(
         operation_id='마이페이지 스토리 편집',
         operation_description='''
@@ -67,7 +67,7 @@ class UserStoryListGetApi(APIView):
                         'story_review': '"모두에게 열려있는 도심 속 가장 자연 친화적인 여가공간"',
                         'tag': '#생명 다양성 #자연 친화 #함께 즐기는',
                         'rep_pic': 'https://abc.com/1.jpg',
-                        'extra_pics': ['https://abc.com/2.jpg'],    
+                        'extra_pics': ['https://abc.com/2.jpg'],
                         'story_like': True,
                         'writer': 'sdptech@gmail.com',
                         'nickname': 'sdp_official',
@@ -99,15 +99,15 @@ class UserStoryListGetApi(APIView):
             request=request,
             view=self,
         )
-    
-    
+
+
 class UserCreatedStoryApi(APIView):
     permission_classes = (IsWriter, )
 
     class Pagination(PageNumberPagination):
         page_size = 6
         page_size_query_param = 'page_size'
-    
+
     class UserCreatedStoryFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
         filter = serializers.ListField(required=False)
@@ -133,9 +133,8 @@ class UserCreatedStoryApi(APIView):
             re_user = self.context['request'].user
             likes = StoryLikeSelector.likes(obj.id, user=re_user)
             return likes
-        
+
     @swagger_auto_schema(
-        request_body=UserCreatedStoryOutputSerializer,
         security=[],
         operation_id='사용자가 작성한 스토리 조회',
         operation_description='''
@@ -153,7 +152,7 @@ class UserCreatedStoryApi(APIView):
                         'story_review': '"모두에게 열려있는 도심 속 가장 자연 친화적인 여가공간"',
                         'tag': '#생명 다양성 #자연 친화 #함께 즐기는',
                         'rep_pic': 'https://abc.com/1.jpg',
-                        'extra_pics': ['https://abc.com/2.jpg'],    
+                        'extra_pics': ['https://abc.com/2.jpg'],
                         'story_like': True,
                         'writer': 'sdptech@gmail.com',
                         'nickname': 'sdp_official',
@@ -174,8 +173,8 @@ class UserCreatedStoryApi(APIView):
 
         selector = UserCreatedStorySelector(user=request.user)
         user_story = selector.list(
-            search = filters.get('search', ''),
-            filter = filters.get('filter', []),
+            search=filters.get('search', ''),
+            filter=filters.get('filter', []),
         )
 
         return get_paginated_response(
@@ -185,7 +184,7 @@ class UserCreatedStoryApi(APIView):
             request=request,
             view=self,
         )
-        
+
 
 class UserStoryLikeApi(APIView):
     permission_classes = (IsAuthenticated, )
@@ -204,7 +203,7 @@ class UserStoryLikeApi(APIView):
                         "status": "success",
                         "data": {"story_like": True}
                     }
-                }    
+                }
             ),
             "400": openapi.Response(
                 description="Bad Request",
@@ -213,7 +212,7 @@ class UserStoryLikeApi(APIView):
     )
     def post(self, request):
         service = StoryCoordinatorService(
-            user = request.user
+            user=request.user
         )
         story_like = service.like_or_dislike(
             story_id=request.data['id'],
