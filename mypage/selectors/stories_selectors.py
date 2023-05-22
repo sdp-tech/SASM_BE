@@ -92,8 +92,7 @@ class UserCreatedStorySelector:
         self.user = user
 
     def list(self, search: str = '', filter: list = []):
-        user_story = self.user.stories.filter(
-            writer=self.user)
+        user_story = self.user.stories
 
         q = Q()
         q.add(Q(title__icontains=search) |
