@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import stories_views, user_following
+from .views import stories_views, user_following, curations_views
 from .views.views import UserGetApi, UserUpdateApi
 
 urlpatterns = [
@@ -15,6 +15,10 @@ urlpatterns = [
           name='story_edit_like'),
      path('my_story/', stories_views.UserCreatedStoryApi.as_view(),
           name='my_story'),
+     path('my_curation/', curations_views.MyCurationListApi.as_view(),
+         name='my_curation'),
+     path('my_liked_curation/', curations_views.MyLikedCurationListApi.as_view(),
+         name='my_liked_curation'),
      path('me/', UserGetApi.as_view(), name='me'),
      path('me_update/', UserUpdateApi.as_view(), name='me_update'),
 ]

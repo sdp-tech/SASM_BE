@@ -37,7 +37,7 @@ class PlaceCreateApi(APIView):
         phone_num = serializers.CharField()
         rep_pic = serializers.ImageField()
         imageList = serializers.ListField()
-        snsList = serializers.ListField()
+        snsList = serializers.ListField(required=False)
 
         class Meta:
             examples = {
