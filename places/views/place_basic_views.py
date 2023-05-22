@@ -19,10 +19,10 @@ class PlaceCreateApi(APIView):
     class PlaceCreateInputSerializer(serializers.Serializer):
         place_name = serializers.CharField()
         category = serializers.CharField()
-        vegan_category = serializers.CharField()
-        tumblur_category = serializers.BooleanField(required=False)
-        reusable_con_category = serializers.BooleanField(required=False)
-        pet_category = serializers.BooleanField(required=False)
+        vegan_category = serializers.CharField(allow_null=True)
+        tumblur_category = serializers.BooleanField(allow_null=True)
+        reusable_con_category = serializers.BooleanField(allow_null=True)
+        pet_category = serializers.BooleanField(allow_null=True)
         mon_hours = serializers.CharField()
         tues_hours = serializers.CharField()
         wed_hours = serializers.CharField()
@@ -70,7 +70,7 @@ class PlaceCreateApi(APIView):
         operation_id='장소 제보하기',
         operation_description='''
             일반 유저를 위한 장소 제보하기 기능입니다.<br/>
-            vegan_category, tumblur_category, reusable_con_category의 경우, "알 수 없는 경우"에 해당하는 경우 false로 값을 넘겨주면 됩니다.<br/>
+            vegan_category, tumblur_category, reusable_con_category, pet_category의 경우, "알 수 없는 경우"에 해당하는 경우 null 값을 넘겨주면 됩니다.<br/>
             SNS 정보는 "SNS 타입 id(예: 1),https://instagram.com/abc/" 형태의 문자열로 snsList 필드에 담아보내면 됩니다. <br/>
             SNS 타입 종류 리스트는 GET: /places/sns_types/을 통해서 가져올 수 있습니다.
         ''',
@@ -97,7 +97,8 @@ class PlaceCreateApi(APIView):
         place = PlaceCoordinatorService.create(
             place_name=data.get('place_name'),
             category=data.get('category'),
-            vegan_category=data.get('vegan_category'),
+            vegan_category=(data.get('vegan_category') if data.get(
+                'vegan_category') != 'null' else None),
             tumblur_category=data.get('tumblur_category'),
             reusable_con_category=data.get('reusable_con_category'),
             pet_category=data.get('pet_category'),
@@ -114,8 +115,8 @@ class PlaceCreateApi(APIView):
             short_cur=data.get('short_cur'),
             phone_num=data.get('phone_num'),
             rep_pic=data.get('rep_pic'),
-            imageList=data.get('imageList'),
-            snsList=data.get('snsList'),
+            imageList=data.get('imageList', []),
+            snsList=data.get('snsList', []),
         )
 
         return Response({
@@ -151,7 +152,7 @@ class PlaceSnsTypeListApi(APIView):
         id = serializers.IntegerField()
         name = serializers.CharField()
 
-    @swagger_auto_schema(
+    @ swagger_auto_schema(
         operation_id='장소 SNS 타입 리스트',
         operation_description='''
             사용 가능한 SNS 타입 리스트를 반환합니다.
