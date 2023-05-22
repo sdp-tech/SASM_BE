@@ -12,6 +12,7 @@ from users.models import User
 from users.serializers import UserSerializer
 from sasmproject.swagger import PlaceLikeView_post_params
 
+# TODO: 마이페이지 이관 및 제거 요망
 class PlaceLikeView(viewsets.ModelViewSet):
     serializer_class=PlaceSerializer
     queryset = Place.objects.all()
