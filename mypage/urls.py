@@ -20,5 +20,5 @@ urlpatterns = [
      path('my_liked_curation/', curations_views.MyLikedCurationListApi.as_view(),
          name='my_liked_curation'),
      path('me/', UserGetApi.as_view(), name='me'),
-     path('me_update/', UserUpdateApi.as_view(), name='me_update'),
+     path('me/update/', UserUpdateApi.as_view(), name='me_update'),
 ]
