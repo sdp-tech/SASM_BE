@@ -25,6 +25,8 @@ class UserGetApi(APIView):
         is_verified = serializers.BooleanField()
 
     @swagger_auto_schema(
+        request_body=UserGetOutputSerializer,
+        security=[],
         operation_id='나의 정보 조회',
         operation_description='''
             마이페이지에 저장된 나의 정보를 조회합니다.<br/>
@@ -74,6 +76,8 @@ class UserUpdateApi(APIView):
         profile_image = serializers.ImageField()
 
     @swagger_auto_schema(
+        request_body=UserUpdateInputSerializer,
+        security=[],
         operation_id='나의 정보를 변경',
         operation_description='''
             마이페이지에 저장된 나의 정보를 변경합니다.<br/>
