@@ -1,7 +1,7 @@
 import datetime
 from rest_framework_jwt.settings import api_settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
-
+from core.exceptions import ApplicationError
 
 from users.models import User
 from mypage.selectors.follow_selectors import UserFollowSelector
@@ -43,12 +43,19 @@ class UserInfoService:
             self.user.password=password
         if gender is not None:
             self.user.gender=gender
+        # 중복된 닉네임 수정 시 reject
         if nickname is not None:
-            self.user.nickname=nickname
+            if User.objects.filter(nickname=nickname).exists():
+                raise ApplicationError(
+                    message="사용 중인 닉네임 전달", extra={"nickname": "이미 사용 중인 닉네임 입니다."})
+            else:
+                self.user.nickname=nickname
         if birthdate is not None:
             self.user.birthdate=birthdate
+        # email 수정 시 reject
         if email is not None:
-            self.user.email=email
+            raise ApplicationError(
+                message="이메일 변경 불가", extra={"email": "이메일은 변경할 수 없습니다."})
         if address is not None:
             self.user.address=address
         if profile_image is not None:
