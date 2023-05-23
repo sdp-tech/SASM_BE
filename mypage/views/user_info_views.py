@@ -25,11 +25,10 @@ class UserGetApi(APIView):
         is_verified = serializers.BooleanField()
 
     @swagger_auto_schema(
-        request_body=UserGetOutputSerializer,
-        security=[],
         operation_id='나의 정보 조회',
         operation_description='''
             마이페이지에 저장된 나의 정보를 조회합니다.<br/>
+            Request시 전달해야 할 파라미터는 없습니다.<br/>
         ''',
         responses={
             "200": openapi.Response(
