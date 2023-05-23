@@ -49,7 +49,7 @@ class UserStoryListGetApi(APIView):
             re_user = self.context['request'].user
             likes = StoryLikeSelector.likes(obj.id, user=re_user)
             return likes
-
+        
     @swagger_auto_schema(
         operation_id='마이페이지 스토리 편집',
         operation_description='''
@@ -107,7 +107,7 @@ class UserCreatedStoryApi(APIView):
     class Pagination(PageNumberPagination):
         page_size = 6
         page_size_query_param = 'page_size'
-
+        
     class UserCreatedStoryFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
         filter = serializers.ListField(required=False)
@@ -184,7 +184,6 @@ class UserCreatedStoryApi(APIView):
             request=request,
             view=self,
         )
-
 
 class UserStoryLikeApi(APIView):
     permission_classes = (IsAuthenticated, )
