@@ -21,3 +21,7 @@ class UserFollowService:
         else:  # 팔로우 하지 않은 상태 -> 팔로우 (follow)
             source.follows.add(target)
             return True
+        
+    def only_unfollow(source :User, target:User) -> bool:
+        source.follows.remove(target)
+        return False

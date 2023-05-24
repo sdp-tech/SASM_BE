@@ -49,6 +49,7 @@ class UserDoUndoFollowApi(ApiAuthMixin, APIView):
             ),
         },
     )
+    
     def post(self, request):
         serializer = self.UserFollowInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -64,6 +65,23 @@ class UserDoUndoFollowApi(ApiAuthMixin, APIView):
             'status': 'success',
             'data': {'follows': follows},
         }, status=status.HTTP_200_OK)
+    
+    def delete(self,request):
+        serializer = self.UserFollowInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        target_user = get_object_or_404(
+            User, email=data.get('targetEmail'))
+        
+        follows = UserFollowService.only_unfollow(source=request.user, 
+                                                  target= target_user)
+
+        return Response({
+            'status' : 'success',
+            'data': {'follows' : follows},
+        }, status=status.HTTP_200_OK)   
+
+
 
 
 class UserFollowingListApi(ApiAllowAnyMixin, APIView):
@@ -74,8 +92,7 @@ class UserFollowingListApi(ApiAllowAnyMixin, APIView):
     class UserFollowingListFilterSerializer(serializers.Serializer):
         email = serializers.CharField(required=True)
         page = serializers.IntegerField(required=False)
-        #소스 이메일 변수 추가
-        source_email = serializers.CharField(required=True, allow_blank=True) 
+        search_email = serializers.CharField(required=True, allow_blank=True) 
         
     class UserFollowingListOutputSerializer(serializers.Serializer):
         email = serializers.CharField()
@@ -113,7 +130,7 @@ class UserFollowingListApi(ApiAllowAnyMixin, APIView):
 
         target_user = get_object_or_404(User, email=filters.get('email'))
         followings = UserFollowSelector.get_following_with_filter(
-            source_email=filters.get('source_email'),
+            search_email=filters.get('search_email'),
             target_email=target_user.email
         )
 
@@ -133,7 +150,7 @@ class UserFollowerListApi(ApiAllowAnyMixin, APIView):
     class UserFollowerListFilterSerializer(serializers.Serializer):
         email = serializers.CharField(required=True)
         page = serializers.IntegerField(required=False)
-        source_email = serializers.CharField(required =True,allow_blank=True)
+        search_email = serializers.CharField(required =True,allow_blank=True)
 
     class UserFollowerListOutputSerializer(serializers.Serializer):
         email = serializers.CharField()
@@ -171,7 +188,7 @@ class UserFollowerListApi(ApiAllowAnyMixin, APIView):
 
         target_user = get_object_or_404(User, email=filters.get('email'))
         followers = UserFollowSelector.get_follower_with_filter(
-            source_email=filters.get('source_email'),
+            search_email=filters.get('search_email'),
             target_email=target_user.email
         )
 
