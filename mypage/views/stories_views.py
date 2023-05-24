@@ -51,9 +51,9 @@ class UserStoryListGetApi(APIView):
             return likes
         
     @swagger_auto_schema(
-        operation_id='마이페이지 스토리 편집',
+        operation_id='마이페이지 좋아요한 스토리 조회',
         operation_description='''
-            마이페이지에 저장된 스토리를 수정합니다.<br/>
+            마이페이지에서 좋아요한 스토리를 조회합니다.<br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -189,9 +189,9 @@ class UserStoryLikeApi(APIView):
     permission_classes = (IsAuthenticated, )
 
     @swagger_auto_schema(
-        operation_id='스토리 편집에서 좋아요 취소',
+        operation_id='마이페이지 스토리 좋아요 취소',
         operation_description='''
-            전달된 id를 가지는 저장된 스토리글에 대한 사용자의 좋아요 취소를 수행합니다.<br/>
+            전달된 id를 가지는 저장된 스토리글에 대한 사용자의 좋아요 취소 또는 좋아요를 수행합니다.<br/>
             결과로 좋아요 상태(TRUE:좋아요, FALSE:좋아요X)가 반환됩니다.
         ''',
         responses={

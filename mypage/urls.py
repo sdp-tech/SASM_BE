@@ -8,7 +8,7 @@ urlpatterns = [
           name='user_following_list'),
      path('follower/', user_following.UserFollowerListApi.as_view(),
           name='user_follower_list'),
-     path('story_edit/', stories_views.UserStoryListGetApi.as_view(), 
+     path('mypick_story/', stories_views.UserStoryListGetApi.as_view(), 
           name='story_edit'),
      path('story_like/', stories_views.UserStoryLikeApi.as_view(), 
           name='story_edit_like'),
