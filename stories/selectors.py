@@ -8,7 +8,34 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, F, Aggregate, Value, CharField, Case, When
 from django.db.models.functions import Concat, Substr
 from users.models import User
-from stories.models import Story, StoryPhoto, StoryComment
+import stories as st
+from stories.models import Story, StoryPhoto, StoryComment, StoryMap
+
+
+class GroupConcat(Aggregate):
+    # Postgres ArrayAgg similar(not exactly equivalent) for sqlite & mysql
+    # https://stackoverflow.com/questions/10340684/group-concat-equivalent-in-django
+    function = 'GROUP_CONCAT'
+    separator = ','
+
+    def __init__(self, expression, distinct=False, ordering=None, **extra):
+        super(GroupConcat, self).__init__(expression,
+                                          distinct='DISTINCT ' if distinct else '',
+                                          ordering=' ORDER BY %s' % ordering if ordering is not None else '',
+                                          output_field=CharField(),
+                                          **extra)
+
+    def as_mysql(self, compiler, connection, separator=separator):
+        return super().as_sql(compiler,
+                              connection,
+                              template='%(function)s(%(distinct)s%(expressions)s%(ordering)s%(separator)s)',
+                              separator=' SEPARATOR \'%s\'' % separator)
+
+    def as_sql(self, compiler, connection, **extra):
+        return super().as_sql(compiler,
+                              connection,
+                              template='%(function)s(%(distinct)s%(expressions)s%(ordering)s)',
+                              **extra)
 
 
 @dataclass
@@ -17,6 +44,7 @@ class StoryDto:
     title: str
     place_name: str
     story_review: str
+    preview: str
     html_content: str
     tag: str
     views: int
@@ -26,7 +54,15 @@ class StoryDto:
     writer: str
     writer_is_verified: bool
     nickname: str
+    profile: str
     created: datetime
+    map_image: str
+    rep_pic: str
+    extra_pics: list[str]
+
+
+def append_media_url(rest):
+    return settings.MEDIA_URL + rest
 
 
 class StoryCoordinatorSelector:
@@ -47,6 +83,7 @@ class StoryCoordinatorSelector:
             title=story.title,
             place_name=story.place_name,
             story_review=story.story_review,
+            preview=story.preview,
             html_content=story.html_content,
             tag=story.tag,
             views=story.views,
@@ -56,8 +93,17 @@ class StoryCoordinatorSelector:
             writer=story.writer,
             writer_is_verified=story.writer_is_verified,
             nickname=story.nickname,
+            profile=story.profile,
             created=story.created,
+            map_image=story.map_image,
+            rep_pic=story.rep_pic.url,
+            extra_pics=[],
         )
+
+        if story.extra_pics is not None:
+            dto.extra_pics = map(
+                append_media_url, story.extra_pics.split(',')[:3])
+
         return dto
 
 
@@ -98,11 +144,24 @@ class StorySelector:
         pass
 
     def detail(story_id: int, extra_fields: dict = {}):
+        stories = Story.objects.all()
+
+        for story in stories:
+            if not StoryMap.objects.filter(story=story).exists():
+                st.services.StoryMapService.create(story=story)
+
         return Story.objects.annotate(
             place_name=F('place__place_name'),
             category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             nickname=F('writer__nickname'),
+            profile=Concat(Value(settings.MEDIA_URL),
+                           F('writer__profile_image'),
+                           output_field=CharField()),
+            map_image=Concat(Value(settings.MEDIA_URL),
+                             F('map_photos__map'),
+                             output_field=CharField()),
+            extra_pics=GroupConcat('photos__image'),
             ** extra_fields
         ).get(id=story_id)
 
@@ -118,36 +177,46 @@ class StorySelector:
     @staticmethod
     def list(search: str = '', order: str = '', filter: list = []):
         q = Q()
-        q.add(Q(title__icontains=search)|
-              Q(place__place_name__icontains=search)|  #스토리 제목 또는 내용 검색
-              Q(place__category__icontains=search)|
+        q.add(Q(title__icontains=search) |
+              Q(place__place_name__icontains=search) |  # 스토리 제목 또는 내용 검색
+              Q(place__category__icontains=search) |
               Q(tag__icontains=search), q.AND)
 
         if len(filter) > 0:
             query = None
-            for element in filter: 
+            for element in filter:
                 if query is None:
-                    query = Q(place__category=element) 
-                else: 
+                    query = Q(place__category=element)
+                else:
                     query = query | Q(place__category=element)
             q.add(query, q.AND)
 
-        order_by_time = {'latest' : '-created', 'oldest' : 'created'}
-        order_by_likes = {'hot' : '-story_like_cnt'}
+        order_by_time = {'latest': '-created', 'oldest': 'created'}
+        order_by_likes = {'hot': '-story_like_cnt'}
 
         if order in order_by_time:
             order = order_by_time[order]
         if order in order_by_likes:
             order = order_by_likes[order]
 
-        story = Story.objects.filter(q).annotate(
+        stories = Story.objects.filter(q).annotate(
             place_name=F('place__place_name'),
             category=F('place__category'),
             writer_is_verified=F('writer__is_verified'),
             nickname=F('writer__nickname'),
+            profile=Concat(Value(settings.MEDIA_URL),
+                           F('writer__profile_image'),
+                           output_field=CharField()),
+            extra_pics=GroupConcat('photos__image'),
         ).order_by(order)
 
-        return story
+        for story in stories:
+            story.rep_pic = story.rep_pic.url
+            if story.extra_pics is not None:
+                story.extra_pics = map(
+                    append_media_url, story.extra_pics.split(',')[:3])
+
+        return stories
 
 
 class StoryLikeSelector:
@@ -191,7 +260,9 @@ class StoryCommentSelector:
         story_comments = StoryComment.objects.filter(q).annotate(
             nickname=F('writer__nickname'),
             email=F('writer__email'),
-            profile_image=F('writer__profile_image'),
+            profile_image=Concat(Value(settings.MEDIA_URL),
+                                 F('writer__profile_image'),
+                                 output_field=CharField()),
         ).values(
             'id',
             'story',

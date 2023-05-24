@@ -11,8 +11,67 @@ from drf_yasg.utils import swagger_auto_schema
 
 from .selectors import CurationSelector, CuratedStoryCoordinatorSelector
 from .services import CurationCoordinatorService, CurationLikeService
-from .permissions import IsWriter
+from .permissions import IsWriter, IsVerifiedOrSdpAdmin
 from curations.models import Curation
+
+
+class CurationListApi(APIView):
+    permission_classes = (AllowAny, )
+
+    class CurationListFilterSerializer(serializers.Serializer):
+        search = serializers.CharField(required=False)
+
+    class CurationListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        rep_pic = serializers.CharField()
+        writer_email = serializers.CharField()
+        is_selected = serializers.BooleanField()
+
+    @swagger_auto_schema(
+        query_serializer=CurationListFilterSerializer,
+        operation_id='큐레이션 검색 결과 리스트',
+        operation_description='''
+            큐레이션의 검색 결과를 리스트합니다.<br/>
+            search(검색어)의 default값은 ''로, 검색어가 없을 시 모든 큐레이션이 반환됩니다.
+            반환되는 정보는 대표/관리자/인증유저 큐레이션 <b>모두보기 레이아웃</b>에서 볼 수 있는 것과 같습니다.
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'title': '서울 비건카페 탑5',
+                        'rep_pic': 'https://abc.com/1.jpg',
+                        'writer_email': 'sdptech@gmail.com',
+                        'is_selected': True,
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request):
+        filters_serializer = self.CurationListFilterSerializer(
+            data=request.query_params
+        )
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+
+        curations = CurationSelector.list(
+            search=filters.get('search', '')
+        )
+
+        serializer = self.CurationListOutputSerializer(
+            curations, many=True)
+
+        return Response({
+            'status': 'success',
+            'data': serializer.data,
+        }, status=status.HTTP_200_OK)
 
 
 class RepCurationListApi(APIView):
@@ -26,7 +85,7 @@ class RepCurationListApi(APIView):
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.CharField()
-        writer = serializers.CharField()
+        writer_email = serializers.CharField()
         is_selected = serializers.BooleanField()
 
     @swagger_auto_schema(
@@ -44,7 +103,7 @@ class RepCurationListApi(APIView):
                         'id': 1,
                         'title': '서울 비건카페 탑5',
                         'rep_pic': 'https://abc.com/1.jpg',
-                        'writer': 'sdptech@gmail.com',
+                        'writer_email': 'sdptech@gmail.com',
                         'is_selected': True,
                     }
                 }
@@ -72,7 +131,7 @@ class AdminCurationListApi(APIView):
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.CharField()
-        writer = serializers.CharField()
+        writer_email = serializers.CharField()
         is_selected = serializers.BooleanField()
 
     @swagger_auto_schema(
@@ -90,7 +149,7 @@ class AdminCurationListApi(APIView):
                         'id': 1,
                         'title': '제로웨이스트',
                         'rep_pic': 'https://abc.com/1.jpg',
-                        'writer': 'sdptech@gmail.com',
+                        'writer_email': 'sdptech@gmail.com',
                         'is_selected': True,
                     }
                 }
@@ -118,7 +177,7 @@ class VerifiedUserCurationListApi(APIView):
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.CharField()
-        writer = serializers.CharField()
+        writer_email = serializers.CharField()
         is_selected = serializers.BooleanField()
 
     @swagger_auto_schema(
@@ -136,7 +195,7 @@ class VerifiedUserCurationListApi(APIView):
                         'id': 1,
                         'title': '제로웨이스트',
                         'rep_pic': 'https://abc.com/1.jpg',
-                        'writer': 'sdptech@gmail.com',
+                        'writer_email': 'sdptech@gmail.com',
                         'is_selected': True,
                     }
                 }
@@ -165,7 +224,9 @@ class CurationDetailApi(APIView):
         contents = serializers.CharField()
         rep_pic = serializers.CharField()
         like_curation = serializers.BooleanField()
-        writer = serializers.CharField()
+        writer_email = serializers.CharField()
+        nickname = serializers.CharField()
+        profile_image = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         created = serializers.CharField()
         map_image = serializers.CharField()
@@ -185,7 +246,9 @@ class CurationDetailApi(APIView):
                         'contents': '서울 비건카페 5곳을 소개합니다',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'like_curation': True,
-                        'writer': 'sdptech@gmail.com',
+                        'writer_email': 'sdptech@gmail.com',
+                        'nickname': '스드프',
+                        'profile_image': 'https://abc.com/1.jpg',
                         'writer_is_verified': True,
                         'map_image': 'https://abc.com/1.jpg',
                     },
@@ -217,9 +280,16 @@ class CuratedStoryDetailApi(APIView):
         place_address = serializers.CharField()
         place_category = serializers.CharField()
         story_review = serializers.CharField()
+        preview = serializers.CharField()
         # short_curation = serializers.CharField()
         like_story = serializers.BooleanField()
         hashtags = serializers.CharField()
+        rep_photos = serializers.ListField(required=False)
+
+        writer_email = serializers.CharField()
+        nickname = serializers.CharField()
+        profile_image = serializers.CharField()
+        created = serializers.CharField()
 
     @swagger_auto_schema(
         operation_id='큐레이션 스토리 디테일 조회',
@@ -236,8 +306,14 @@ class CuratedStoryDetailApi(APIView):
                         'place_address': '연세로',
                         'place_category': '식당 및 카페',
                         'place_review': '버섯에서 발견한 도시의 지속가능성',
+                        'preview': '성수동에서 찾은 지속가능성의 의미',
                         'like_story': True,
-                        'hashtags': '#버섯농장 #로컬마켓 #성수동 #비건'
+                        'hashtags': '#버섯농장 #로컬마켓 #성수동 #비건',
+                        'rep_photos':  "['https://abc.com/1.jpg', 'https://abc.com/2.jpg', 'https://abc.com/3.jpg']",
+                        'writer_email': 'sdp.tech@gmail.com',
+                        'nickname': '스드프',
+                        'profile_image': 'https://abc.com/1.jpg',
+                        'created': '2022-08-24T14:15:22Z'
                     },
                 }
             ),
@@ -259,8 +335,7 @@ class CuratedStoryDetailApi(APIView):
 
 
 class CurationCreateApi(APIView):
-    # TODO: admin, verified 사용자만 작성 가능하도록 변경 필요
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsVerifiedOrSdpAdmin, )
 
     class CurationCreateInputSerializer(serializers.Serializer):
         title = serializers.CharField()
