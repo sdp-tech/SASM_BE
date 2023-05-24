@@ -17,19 +17,11 @@ from .selectors import StoryLikeSelector, StoryCommentSelector, semi_category
 from core.map_image import Marker, get_static_naver_image
 
 
-def check_user(user: User):
-    if user.is_authenticated:
-        pass
-    else:
-        raise exceptions.ValidationError()
-
-
 class StoryCoordinatorService:
     def __init__(self, user: User):
         self.user = user
 
     def like_or_dislike(self, story_id: int) -> bool:
-        check_user(self.user)
         if StoryLikeSelector.likes(story_id=story_id, user=self.user):
             # Story의 like_cnt 1 감소
             StoryService.dislike(story_id=story_id, user=self.user)
@@ -69,6 +61,9 @@ class StoryCoordinatorService:
         # 스토리 이전에 생성된 StoryPhoto와 연결
         StoryPhotoService.process_after_story_creation(story=story,
                                                        photoList=photoList)
+
+        # 스토리 맵 이미지 생성
+        StoryMapService.create(story)
 
         return story
 
@@ -185,8 +180,6 @@ class StoryService:
         story.full_clean()
         story.save()
 
-        StoryMapService.create(story)
-
         return story
 
     def update(self,
@@ -204,8 +197,10 @@ class StoryService:
             tag=tag,
             preview=preview,
             html_content=html_content,
-            rep_pic=rep_pic
         )
+
+        if rep_pic is not None:
+            story.rep_pic = rep_pic
 
         story.full_clean()
         story.save()

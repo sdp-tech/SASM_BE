@@ -4,28 +4,20 @@ from functools import partial
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils.decorators import method_decorator
-from django.core.exceptions import ValidationError
 from rest_framework import status
-from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
-from rest_framework.generics import CreateAPIView, GenericAPIView
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.generics import CreateAPIView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 
-from places.serializers import PlaceSerializer
-from stories.serializers import StoryListSerializer
 from ..models import User
-from places.models import Place
-from stories.models import Story
-from users.serializers import UserSerializer, UserLoginSerializer, EmailFindSerializer, RepetitionCheckSerializer, UserLogoutSerializer
+from users.serializers import UserSerializer, RepetitionCheckSerializer
 from core.exceptions import ApplicationError
-from sasmproject.swagger import param_filter
-from users.mixins import ApiAuthMixin, ApiAdminAuthMixin
+from users.mixins import ApiAuthMixin
 
 # serializer에 partial=True를 주기위한 Mixin
 
@@ -34,6 +26,8 @@ class SetPartialMixin:
     def get_serializer_class(self, *args, **kwargs):
         serializer_class = super().get_serializer_class(*args, **kwargs)
         return partial(serializer_class, partial=True)
+
+# TODO: 리팩토링 완료. 제거 요망
 
 
 @method_decorator(name='post', decorator=swagger_auto_schema(
@@ -55,6 +49,8 @@ class SignupView(SetPartialMixin, CreateAPIView):
         return Response({
             'status': 'Success',
         }, status=status.HTTP_200_OK)
+
+# TODO: 리팩토링 진행 중. 제거 요망
 
 
 class MeView(ApiAuthMixin, APIView):

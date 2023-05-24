@@ -69,13 +69,14 @@ class Place(core_models.TimeStampedModel):
         (VEGAN4, "페스코"),
         (VEGAN5, "폴로"),
         (VEGAN6, "그 외"),
+        (None, "알 수 없음")
     )
 
     place_name = models.CharField(max_length=100)
     category = models.CharField(
         choices=PLACE_CHOICES, max_length=30, blank=True)
     vegan_category = models.CharField(
-        choices=VEGAN_CHOICES, max_length=10, blank=True)
+        choices=VEGAN_CHOICES, max_length=10, blank=True, null=True)
     tumblur_category = models.BooleanField(null=True, blank=True)
     reusable_con_category = models.BooleanField(null=True, blank=True)
     pet_category = models.BooleanField(null=True, blank=True)

@@ -607,6 +607,33 @@ class UserFollowerListApi(ApiAllowAnyMixin, APIView):
         )
 
 
+class SignUpApi(APIView):
+    permission_classes = (AllowAny,)
+
+    class SignUpInputSerializer(serializers.Serializer):
+        email = serializers.EmailField()
+        password = serializers.CharField()
+        nickname = serializers.CharField()
+        birthdate = serializers.DateField()
+
+    def post(self, request):
+        serializer = self.SignUpInputSerializer(
+            data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        UserService.sign_up(
+            email=data.get('email'),
+            password=data.get('password'),
+            nickname=data.get('nickname'),
+            birthdate=data.get('birthdate'),
+        )
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_201_CREATED)
+
+
 # class UserUpdateApi(APIView, ApiAuthMixin):
 #     class UserUpdateInputSerializer(serializers.Serializer):
 #         profile_image = serializers.ImageField()

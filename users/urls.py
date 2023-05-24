@@ -1,18 +1,16 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-from .views import base_view, email_auth, login_google, login_kakao, login_naver, pw_change, views
+from .views import base_view, email_auth, login_google, login_kakao, login_naver, views
 app_name = "users"
 
 urlpatterns = [
-    path("signup/", base_view.SignupView.as_view()),
+    path("signup/", views.SignUpApi.as_view()),
     path("me/", base_view.MeView.as_view()),
     #     path("<int:pk>/", base_view.user_detail),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # 위 url에 refresh token 넣어서 POST 보내면 access token 갱신 가능
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('kakao/callback/', login_kakao.kakao_callback, name='kakao_callback'),
-    path('kakao/login/finish/', login_kakao.KakaoLogin.as_view(),
-         name='kakao_login_todjango'),
     path('google/callback/', login_google.google_callback, name='google_callback'),
     path('naver/callback/', login_naver.naver_callback, name='naver_callback'),
     path('activate/<str:uid>/<str:token>',
