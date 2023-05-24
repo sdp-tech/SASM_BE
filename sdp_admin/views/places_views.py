@@ -14,17 +14,14 @@ from core.permissions import IsSdpStaff
 from places.views.save_place_excel import addr_to_lat_lon
 from sasmproject.swagger import SAMPLE_RESP, param_place_name, param_pk, OVERLAP_RESP
 
+
 class SetPartialMixin:
     def get_serializer_class(self, *args, **kwargs):
         serializer_class = super().get_serializer_class(*args, **kwargs)
         return partial(serializer_class, partial=True)
 
+
 class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
-
-    aws_access_key_id = getattr(settings, 'AWS_ACCESS_KEY_ID')
-    aws_secret_access_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY')
-    kakao_rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
-
     queryset = Place.objects.all().order_by('id')
     serializer_class = PlacesAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
@@ -35,7 +32,7 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
         return Response({
             'status': 'Success',
             'data': response.data,
-            },status=status.HTTP_200_OK)
+        }, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(operation_id='api_sdp_admin_places_get')
     def retrieve(self, request, *args, **kwargs):
@@ -43,10 +40,10 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
         return Response({
             'status': 'Success',
             'data': response.data,
-            },status=status.HTTP_200_OK)
-            
-    @swagger_auto_schema(operation_id='api_sdp_admin_places_save_place_post',request_body=PlacesAdminSerializer,
-                        responses=SAMPLE_RESP)
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_save_place_post', request_body=PlacesAdminSerializer,
+                         responses=SAMPLE_RESP)
     @action(detail=False, methods=['post'])
     def save_place(self, request):
         """
@@ -55,25 +52,26 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
         place_info = request.data
         addr = place_info['address']
         place_info['longitude'], place_info['latitude'] = addr_to_lat_lon(addr)
-        #category 값이 null로 들어오는 경우
-        category_array = ['vegan_category','tumblur_category','reusable_con_category','pet_category']
+        # category 값이 null로 들어오는 경우
+        category_array = ['vegan_category', 'tumblur_category',
+                          'reusable_con_category', 'pet_category']
         for a in category_array:
-            if(place_info[a]=='null'):
+            if (place_info[a] == 'null'):
                 place_info[a] = ""
 
         rep_pic = place_info['rep_pic']
         pic1, pic2, pic3 = place_info['placephoto1'], place_info['placephoto2'], place_info['placephoto3']
         pics = [pic1, pic2, pic3]
-        
+
         del place_info['placephoto1']
         del place_info['placephoto2']
         del place_info['placephoto3']
-        
+
         # sns info 받기
         count = int(place_info['snscount'])
         sns = {}
-        #sns data 값 없을 시 0 :: [',,']으로 data 넘어옴
-        if(place_info[str(0)]!=',,'):
+        # sns data 값 없을 시 0 :: [',,']으로 data 넘어옴
+        if (place_info[str(0)] != ',,'):
             for i in range(count):
                 snstype, snstype_name, url = place_info[str(i)].split(',')
                 sns[snstype] = [snstype_name, url]
@@ -82,20 +80,22 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
         serializer = PlacesAdminSerializer(data=place_info)
         if serializer.is_valid():
             created_place = serializer.save()
-            
+
             """ sns """
-            for key,value in sns.items():
+            for key, value in sns.items():
                 try:
                     snstype = SNSType.objects.get(id=key)
-                    snsurl = SNSUrl(url=value[1], place=created_place, snstype=snstype)
+                    snsurl = SNSUrl(
+                        url=value[1], place=created_place, snstype=snstype)
                     snsurl.save()
                 except:
                     snstype = SNSType(name=value[0])
                     snstype.save()
                     created_snstype = SNSType.objects.get(name=value[0])
-                    snsurl = SNSUrl(url=value[1], place=created_place, snstype=created_snstype)
+                    snsurl = SNSUrl(
+                        url=value[1], place=created_place, snstype=created_snstype)
                     snsurl.save()
-                    
+
             """ pics """
             for pic in pics:
                 ext = pic.name.split(".")[-1]
@@ -117,7 +117,7 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
                     return Response({
                         'status': 'error',
                         'message': 'Unknown',
-                        'code' : 400,
+                        'code': 400,
                     }, status=status.HTTP_400_BAD_REQUEST)
 
             return Response({
@@ -126,12 +126,12 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
 
         else:
             return Response({
-                'status' : 'fail',
-                'data' : serializer.errors,
-            },status=status.HTTP_400_BAD_REQUEST)
+                'status': 'fail',
+                'data': serializer.errors,
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(operation_id='api_sdp_admin_places_update_place_put',request_body=PlacesAdminSerializer,
-                        responses=SAMPLE_RESP)
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_update_place_put', request_body=PlacesAdminSerializer,
+                         responses=SAMPLE_RESP)
     @action(detail=False, methods=['put'])
     def update_place(self, request):
         """
@@ -143,85 +143,91 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
 
         addr = place_info['address']
         place_info['longitude'], place_info['latitude'] = addr_to_lat_lon(addr)
-        
-        category_array = ['vegan_category','tumblur_category','reusable_con_category','pet_category']
+
+        category_array = ['vegan_category', 'tumblur_category',
+                          'reusable_con_category', 'pet_category']
         for a in category_array:
-            if(place_info[a]=='null'):
+            if (place_info[a] == 'null'):
                 place_info[a] = ""
         pics = {}
         cnt = 0
-        photo_array = ['placephoto1','placephoto2','placephoto3']
+        photo_array = ['placephoto1', 'placephoto2', 'placephoto3']
         for p in photo_array:
             if p in place_info:
                 pics[cnt] = place_info[p]
                 del place_info[p]
             cnt += 1
-        #rep_pic이 변경되지 않았을 경우 serializer에서 삭제
+        # rep_pic이 변경되지 않았을 경우 serializer에서 삭제
         if type(place_info['rep_pic']) is str:
             del place_info['rep_pic']
 
         # sns info 받기
         count = int(place_info['snscount'])
         sns = {}
-        if(count >0):
+        if (count > 0):
             for i in range(count):
                 snstype, snstype_name, url = place_info[str(i)].split(',')
-                sns[snstype] = [snstype_name, url]                
+                sns[snstype] = [snstype_name, url]
                 del place_info[str(i)]
 
-        serializer = PlacesAdminSerializer(instance=place, data=place_info, partial=True)
-    
+        serializer = PlacesAdminSerializer(
+            instance=place, data=place_info, partial=True)
+
         if serializer.is_valid():
             created_place = serializer.save()
-            
+
             """ sns """
             # 해당 place의 sns list 가져오기
             list = SNSUrl.objects.filter(place=created_place)
             for l in list:
                 snsid = str(l.snstype.id)
                 # 원래 있던 snstype인 경우
-                if(snsid in sns):
+                if (snsid in sns):
                     # url 비교해서 일치하면 sns info 삭제, 다르면 url update 후 삭제
-                    if(l.url == sns[snsid][1]):
-                        del(sns[snsid])
+                    if (l.url == sns[snsid][1]):
+                        del (sns[snsid])
                     else:
                         l.url = sns[snsid][1]
                         l.save()
-                        del(sns[snsid])
-                                        
+                        del (sns[snsid])
+
                 else:
                     # 해당하는 타입의 sns가 삭제된 경우 db에서 삭제
                     l.delete()
-        
-            # 추가된 sns               
-            for key,value in sns.items():
+
+            # 추가된 sns
+            for key, value in sns.items():
                 try:
                     snstype = SNSType.objects.get(name=value[0])
-                    snsurl = SNSUrl(url=value[1], place=created_place, snstype=snstype)
+                    snsurl = SNSUrl(
+                        url=value[1], place=created_place, snstype=snstype)
                     snsurl.save()
                 except:
                     snstype = SNSType(name=value[0])
                     snstype.save()
                     created_snstype = SNSType.objects.get(name=value[0])
-                    snsurl = SNSUrl(url=value[1], place=created_place, snstype=created_snstype)
+                    snsurl = SNSUrl(
+                        url=value[1], place=created_place, snstype=created_snstype)
                     snsurl.save()
-                    
+
             photo_list = created_place.photos.all().order_by("id")
 
             """ pics """
-            if(len(pics) > 0):
-                for key,value in pics.items():
+            if (len(pics) > 0):
+                for key, value in pics.items():
                     ext = value.name.split(".")[-1]
 
-                    if ext not in ["jpg", "png", "gif", "jpeg",]:
+                    if ext not in ["jpg", "png", "gif", "jpeg", ]:
                         return Response({
                             'status': 'fail',
                             'data': 'Wrong file format',
                         }, status=status.HTTP_400_BAD_REQUEST)
 
                     try:
-                        file_path = '{}/{}.{}'.format(created_place.place_name,key+1, ext)
-                        image = ImageFile(io.BytesIO(value.read()), name=file_path)
+                        file_path = '{}/{}.{}'.format(
+                            created_place.place_name, key+1, ext)
+                        image = ImageFile(io.BytesIO(
+                            value.read()), name=file_path)
 
                         photo_id = photo_list[key].id
                         print(photo_id)
@@ -233,7 +239,7 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
                         return Response({
                             'status': 'error',
                             'message': 'Unknown',
-                            'code' : 400,
+                            'code': 400,
                         }, status=status.HTTP_400_BAD_REQUEST)
 
             return Response({
@@ -243,12 +249,12 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
 
         else:
             return Response({
-                'status' : 'fail',
-                'data' : serializer.errors,
-            },status=status.HTTP_400_BAD_REQUEST)
+                'status': 'fail',
+                'data': serializer.errors,
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(operation_id='api_sdp_admin_places_check_name_overlap_get',manual_parameters=[param_place_name],
-                        responses=OVERLAP_RESP)
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_check_name_overlap_get', manual_parameters=[param_place_name],
+                         responses=OVERLAP_RESP)
     @action(detail=False, methods=['get'])
     def check_name_overlap(self, request):
         try:
@@ -264,21 +270,23 @@ class PlaceViewSet(SetPartialMixin, viewsets.ModelViewSet):
             return Response({
                 'status': 'error',
                 'message': 'Unknown',
-                'code' : 400,
+                'code': 400,
             }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class PlacesPhotoViewSet(viewsets.ModelViewSet):
     queryset = PlacePhoto.objects.all()
     serializer_class = PlacePhotoAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
 
-    @swagger_auto_schema(operation_id='api_sdp_admin_places_placephoto_pk_get',manual_parameters=[param_pk])
-    def get(self,request,pk):
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_placephoto_pk_get', manual_parameters=[param_pk])
+    def get(self, request, pk):
         photo = PlacePhoto.objects.filter(place_id=pk)
         return Response({
-                'status': 'success',
-                'data': self.get_serializer(photo,many=True).data,
-            }, status=status.HTTP_200_OK)
+            'status': 'success',
+            'data': self.get_serializer(photo, many=True).data,
+        }, status=status.HTTP_200_OK)
+
 
 class SNSTypeViewSet(viewsets.ModelViewSet):
     """
@@ -288,14 +296,15 @@ class SNSTypeViewSet(viewsets.ModelViewSet):
     queryset = SNSType.objects.all()
     serializer_class = SNSTypeAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
-    
+
     @swagger_auto_schema(operation_id='api_sdp_admin_places_snstype_get')
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
         return Response({
             'status': 'Success',
             'data': response.data,
-            },status=status.HTTP_200_OK) 
+        }, status=status.HTTP_200_OK)
+
 
 class SNSUrlViewSet(viewsets.ModelViewSet):
     """
@@ -306,11 +315,10 @@ class SNSUrlViewSet(viewsets.ModelViewSet):
     serializer_class = SNSUrlAdminSerializer
     permission_classes = [IsAuthenticated, IsSdpStaff]
 
-    @swagger_auto_schema(operation_id='api_sdp_admin_places_snsurl_get',manual_parameters=[param_pk])
-    def get(self,request,pk):
+    @swagger_auto_schema(operation_id='api_sdp_admin_places_snsurl_get', manual_parameters=[param_pk])
+    def get(self, request, pk):
         snsurl = SNSUrl.objects.filter(place_id=pk)
         return Response({
-                'status': 'success',
-                'data': self.get_serializer(snsurl,many=True).data,
-            }, status=status.HTTP_200_OK)
-    
+            'status': 'success',
+            'data': self.get_serializer(snsurl, many=True).data,
+        }, status=status.HTTP_200_OK)

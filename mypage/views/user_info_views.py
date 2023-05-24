@@ -28,6 +28,7 @@ class UserGetApi(APIView):
         operation_id='나의 정보 조회',
         operation_description='''
             마이페이지에 저장된 나의 정보를 조회합니다.<br/>
+            Request시 전달해야 할 파라미터는 없습니다.<br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -74,6 +75,8 @@ class UserUpdateApi(APIView):
         profile_image = serializers.ImageField()
 
     @swagger_auto_schema(
+        request_body=UserUpdateInputSerializer,
+        security=[],
         operation_id='나의 정보를 변경',
         operation_description='''
             마이페이지에 저장된 나의 정보를 변경합니다.<br/>
