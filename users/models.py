@@ -72,12 +72,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=False)
     is_sdp_admin = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
+    introduction = models.TextField(blank=True)
+
 
     # 소셜 계정인 경우, 소셜 ID 프로바이더 값 저장(ex. kakao, naver, google)
     social_provider = models.CharField(max_length=30, blank=True)
 
     follows = models.ManyToManyField(
         "users.User", related_name='followers', blank=True)
+    
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

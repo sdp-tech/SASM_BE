@@ -25,6 +25,10 @@ class UserFollowService:
             source.follows.add(target)
             return True
         
+    def only_unfollow(source :User, target:User) -> bool:
+        source.follows.remove(target)
+        return False
+
 
 class UserInfoService:
     def __init__(self, user: User):

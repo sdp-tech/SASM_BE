@@ -17,21 +17,21 @@ class UserFollowSelector:
         return target.followers.all()
     
     @staticmethod
-    def get_following_with_filter(source_email: str, target_email: str):
+    def get_following_with_filter(search_email: str, target_email: str):
         following = User.objects.all()
-        if source_email:
-            following = User.objects.filter(email__icontains=source_email)
+        if search_email:
+            following = User.objects.filter(email__icontains=search_email)
 
         if target_email:
             following = following.filter(followers__email__icontains=target_email)
 
         return following
     
-    def get_follower_with_filter(source_email: str, target_email: str):
+    def get_follower_with_filter(search_email: str, target_email: str):
         follower = User.objects.all()
 
-        if source_email:
-            follower = follower.filter(email__icontains=source_email)
+        if search_email:
+            follower = follower.filter(email__icontains=search_email)
 
         if target_email:
             follower = follower.filter(follows__email__icontains=target_email)
