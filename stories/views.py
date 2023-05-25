@@ -556,7 +556,7 @@ class GoToMapApi(APIView):
     )
     def get(self, request):
         selector = MapMarkerSelector(user=request.user)
-        place = selector.map(story_id=request.data['id'])
+        place = selector.map(story_id=request.query_params.get('id'))
         serializer = MapMarkerSerializer(place)
 
         return Response({
