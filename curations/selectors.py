@@ -181,24 +181,20 @@ class CuratedStorySelector:
         pass
 
     def detail(story_id_list: list, user: User):
-        concat_like_or_dislike = Story.objects.filter(id__in=story_id_list).values('story_likeuser_set').annotate(
-            like_story=Case(
-                When(story_likeuser_set=Exists(Story.story_likeuser_set.through.objects.filter(
-                    story_id=OuterRef('pk'),
-                    user_id=user.pk
-                )),
-                    then=Value(1)),
-                default=Value(0),
-            )).distinct()
-
-        return Story.objects.filter(id__in=story_id_list).values('id', 'story_review', 'preview', 'writer', 'tag', 'created').annotate(
+        return Story.objects.filter(id__in=story_id_list).values('id', 'story_review', 'preview', 'writer', 'tag', 'created', 'story_likeuser_set').annotate(
             story_id=F('id'),
             place_name=F('place__place_name'),
             place_address=F('place__address'),
             place_category=F('place__category'),
             hashtags=F('tag'),
-            like_story=Subquery(queryset=concat_like_or_dislike.values(
-                'like_story'), output_field=BooleanField()),
+            like_story=Case(
+                When(Exists(Story.story_likeuser_set.through.objects.filter(
+                    story_id=OuterRef('pk'),
+                    user_id=user.pk
+                )),
+                    then=Value(1)),
+                default=Value(0),
+            ),
             rep_photos=GroupConcat('photos__image'),
             nickname=F('writer__nickname'),
             profile_image=Concat(Value(settings.MEDIA_URL),
