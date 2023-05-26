@@ -26,7 +26,7 @@ class UserStoryListGetApi(APIView):
 
     class UserStoryFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
-        filter = serializers.CharField(required=False)
+        filter = serializers.ListField(required=False)
 
     class UserStoryOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
