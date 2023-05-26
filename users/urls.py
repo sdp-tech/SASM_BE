@@ -11,8 +11,6 @@ urlpatterns = [
     # 위 url에 refresh token 넣어서 POST 보내면 access token 갱신 가능
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('kakao/callback/', login_kakao.kakao_callback, name='kakao_callback'),
-    path('kakao/login/finish/', login_kakao.KakaoLogin.as_view(),
-         name='kakao_login_todjango'),
     path('google/callback/', login_google.google_callback, name='google_callback'),
     path('naver/callback/', login_naver.naver_callback, name='naver_callback'),
     path('activate/<str:uid>/<str:token>',

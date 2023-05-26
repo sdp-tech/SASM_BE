@@ -16,6 +16,7 @@ from rest_framework_jwt.settings import api_settings
 
 from users.models import User
 from users.selectors import UserSelector, UserFollowSelector
+from core.exceptions import ApplicationError
 
 JWT_PAYLOAD_HANDLER = api_settings.JWT_PAYLOAD_HANDLER
 JWT_ENCODE_HANDLER = api_settings.JWT_ENCODE_HANDLER
@@ -41,6 +42,10 @@ class UserService:
         user_selector = UserSelector()
 
         user = user_selector.get_user_from_email(email)
+
+        if user.social_provider:
+            raise ApplicationError(
+                user.social_provider + " 소셜 로그인 사용자입니다. 소셜 로그인을 이용해주세요.")
 
         if not user_selector.check_password(user, password):
             raise exceptions.ValidationError(
