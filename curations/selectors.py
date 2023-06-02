@@ -6,7 +6,7 @@ from stories.models import Story
 
 from django.conf import settings
 from django.db.models.functions import Concat, Substr
-from django.db.models import Q, F, Case, When, Value, Exists, OuterRef, CharField, Aggregate
+from django.db.models import Q, F, Case, When, Value, Exists, OuterRef, CharField, BooleanField, Aggregate, Subquery
 
 
 class GroupConcat(Aggregate):
@@ -58,7 +58,8 @@ class CurationSelector:
                 default=Concat(Value(settings.MEDIA_URL),
                                F('photos__image'),
                                output_field=CharField())
-            )
+            ),
+            writer_email=F('writer__email')
         )
 
         return curations
@@ -85,7 +86,12 @@ class CurationSelector:
             ),
             map_image=Concat(Value(settings.MEDIA_URL),
                              F('map_photos__map'),
-                             output_field=CharField())
+                             output_field=CharField()),
+            writer_email=F('writer__email'),
+            nickname=F('writer__nickname'),
+            profile_image=Concat(Value(settings.MEDIA_URL),
+                                 F('writer__profile_image'),
+                                 output_field=CharField())
         )
 
         return curation
@@ -101,13 +107,14 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
+            writer_email=F('writer__email')
         )
 
         return curations
 
     def admin_curation_list(self):
         curations = Curation.objects.filter(
-            is_released=True, writer__is_sdp_admin=True, is_rep=False).annotate(
+            is_released=True, writer__is_sdp_admin=True).annotate(
             rep_pic=Case(
                 When(
                     photos__image=None,
@@ -117,6 +124,7 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
+            writer_email=F('writer__email')
         )
 
         return curations
@@ -133,6 +141,7 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
+            writer_email=F('writer__email')
         )
 
         return curations
@@ -149,7 +158,7 @@ class CuratedStoryCoordinatorSelector:
         self.user = user
 
     def detail(self, curation_id: int):
-        story_id_list = Curation.objects.get(id=curation_id).story.all()
+        story_id_list = Curation.objects.distinct().get(id=curation_id).story.all()
         curated_stories_qs = CuratedStorySelector.detail(
             story_id_list=story_id_list, user=self.user)
 
@@ -172,14 +181,14 @@ class CuratedStorySelector:
         pass
 
     def detail(story_id_list: list, user: User):
-        return Story.objects.filter(id__in=story_id_list).values('id', 'story_review', 'preview', 'writer', 'tag', 'story_likeuser_set', 'created').annotate(
+        return Story.objects.filter(id__in=story_id_list).values('id', 'story_review', 'preview', 'writer', 'tag', 'created').annotate(
             story_id=F('id'),
             place_name=F('place__place_name'),
             place_address=F('place__address'),
             place_category=F('place__category'),
             hashtags=F('tag'),
             like_story=Case(
-                When(story_likeuser_set=Exists(Story.story_likeuser_set.through.objects.filter(
+                When(Exists(Story.story_likeuser_set.through.objects.filter(
                     story_id=OuterRef('pk'),
                     user_id=user.pk
                 )),
@@ -190,15 +199,16 @@ class CuratedStorySelector:
             nickname=F('writer__nickname'),
             profile_image=Concat(Value(settings.MEDIA_URL),
                                  F('writer__profile_image'),
-                                 output_field=CharField())
-        )
+                                 output_field=CharField()),
+            writer_email=F('writer__email')
+        ).distinct()
 
 
 class CurationLikeSelector:
     def __init__(self):
         pass
 
-    @staticmethod
+    @ staticmethod
     def likes(curation: Curation, user: User):
         if curation.likeuser_set.filter(pk=user.pk).exists():
             return True
