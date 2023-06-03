@@ -51,6 +51,8 @@ class Forest(TimeStampedModel):
         'Category', related_name='forests', on_delete=models.CASCADE, null=False, blank=False)
     writer = models.ForeignKey(
         'users.User', related_name='forests', on_delete=models.SET_NULL, null=True, blank=False)
+    likeuser_set = models.ManyToManyField(
+        "users.User", related_name='liked_forests', blank=True)
     like_cnt = models.PositiveIntegerField(default=0)
     view_cnt = models.PositiveIntegerField(default=0)
 
@@ -90,19 +92,6 @@ class ForestPhoto(TimeStampedModel):
 # ref. https://stackoverflow.com/questions/47377172/django-storages-aws-s3-delete-file-from-model-record
 def remove_file_from_s3(sender, instance, using, **kwargs):
     instance.image.delete(save=False)
-
-
-class ForestLike(TimeStampedModel):
-    forest = models.ForeignKey(
-        'Forest', related_name='likes', on_delete=models.CASCADE, null=False, blank=False)
-    user = models.ForeignKey(
-        'users.User', related_name='forest_likes', on_delete=models.SET_NULL, null=True, blank=False)  # 좋아요를 누른 사용자가 삭제되어도 좋아요는 유지
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['forest', 'user'], name='user_can_like_forest_only_once_constraint'),
-        ]
 
 
 class ForestReport(TimeStampedModel):
