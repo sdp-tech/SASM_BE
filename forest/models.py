@@ -63,12 +63,6 @@ class Forest(TimeStampedModel):
         if validate_str_field_length(self.content):
             raise ValidationError('포레스트의 내용은 공백 제외 최소 1글자 이상이어야 합니다.')
 
-    def entire_update(self, title, content, subtitle, keyword):
-        self.title = title
-        self.subtitle = subtitle
-        self.content = content
-        self.keyword = keyword
-
     def like(self):
         self.like_cnt += 1
 
@@ -84,7 +78,7 @@ class ForestPhoto(TimeStampedModel):
     image = models.ImageField(
         upload_to=get_forest_photo_upload_path, default='forest_image.png')
     forest = models.ForeignKey(
-        'Forest', related_name='photos', on_delete=models.CASCADE, null=False, blank=False)
+        'Forest', related_name='photos', on_delete=models.CASCADE, null=True, blank=True)
 
 
 @receiver(models.signals.post_delete, sender=ForestPhoto)
