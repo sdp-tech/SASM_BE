@@ -11,10 +11,10 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from core.views import get_paginated_response
-from .services import ForestCoordinatorService, ForestPhotoService, ForestService
-from .selectors import ForestSelector, CategorySelector
+from .services import ForestCoordinatorService, ForestPhotoService, ForestService, ForestCommentService
+from .selectors import ForestSelector, CategorySelector, ForestCommentSelector
 from .permissions import IsWriter
-from .models import Forest
+from .models import Forest, ForestComment
 
 
 class ForestCreateApi(APIView):
@@ -349,6 +349,7 @@ class ForestListApi(APIView):
         created = serializers.DateTimeField()
 
     @swagger_auto_schema(
+        query_serializer=ForestListFilterSerializer,
         operation_id='포레스트 글 리스트',
         operation_description='''
             전달된 쿼리 파라미터에 부합하는 포레스트 글 리스트를 반환합니다.<br/>
@@ -463,6 +464,7 @@ class SemiCategoryListApi(APIView):
         name = serializers.CharField()
 
     @swagger_auto_schema(
+        query_serializer=SemiCategoryListFilterSerializer,
         operation_id='세미 카테고리 리스트',
         operation_description='''
             사용 가능한 세미 카테고리 리스트를 반환합니다.<br/>
@@ -498,3 +500,228 @@ class SemiCategoryListApi(APIView):
             request=request,
             view=self
         )
+
+
+class ForestCommentListApi(APIView):
+    permission_classes = (AllowAny, )
+
+    class Pagination(PageNumberPagination):
+        page_size = 20
+        page_size_query_param = 'page_size'
+
+    class ForestCommentListOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        content = serializers.CharField()
+        like_cnt = serializers.IntegerField()
+        writer_nickname = serializers.CharField()
+        writer_email = serializers.CharField()
+        writer_profile = serializers.CharField()
+        user_likes = serializers.BooleanField()
+        created = serializers.DateTimeField()
+        updated = serializers.DateTimeField()
+
+    @swagger_auto_schema(
+        operation_id='포레스트 글 댓글 조회',
+        operation_description='''
+            해당 포레스트 글의 하위 댓글을 조회합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'content': '정말 재미있어 보이는 장소네요 ~! 근처에 가게 되면 꼭 한 번 방문해보고 싶네요 ㅎㅎ 저장해두겠습니다 ~~ ',
+                        'like_cnt': 10,
+                        'writer_nickname': 'sdpygl',
+                        'writer_email': 'sdpygl@gmail.com',
+                        'writer_profile': 'https://abc.com/1.jpg',
+                        'user_likes': True,
+                        'created': '2019-08-24T14:15:22Z',
+                        'updated': '2019-08-24T14:15:22Z',
+                    }
+                },
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request, forest_id):
+        forest_comments = ForestCommentSelector.list(
+            forest=get_object_or_404(Forest, pk=forest_id),
+            user=request.user,
+        )
+
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.ForestCommentListOutputSerializer,
+            queryset=forest_comments,
+            request=request,
+            view=self,
+        )
+
+
+class ForestCommentCreateApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    class ForestCommentCreateInputSerializer(serializers.Serializer):
+        content = serializers.CharField()
+
+        class Meta:
+            examples = {
+                'content': '정말 재미있어 보이는 장소네요 ~! 근처에 가게 되면 꼭 한 번 방문해보고 싶네요 ㅎㅎ 저장해두겠습니다 ~~ ',
+            }
+
+    @swagger_auto_schema(
+        request_body=ForestCommentCreateInputSerializer,
+        security=[],
+        operation_id='포레스트 글 댓글 생성',
+        operation_description='''
+            전달된 필드를 기반으로 해당 포레스트 글의 댓글을 생성합니다.<br/>
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"id": 1}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request, forest_id):
+        serializer = self.ForestCommentCreateInputSerializer(
+            data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        forest_comment = ForestCommentService.create(
+            forest=get_object_or_404(Forest, pk=forest_id),
+            content=data.get('content'),
+            writer=request.user
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'id': forest_comment.id},
+        }, status=status.HTTP_201_CREATED)
+
+
+class ForestCommentUpdateApi(APIView):
+    permission_classes = (IsWriter, )
+
+    class ForestCommnetUpdateInputSerializer(serializers.Serializer):
+        content = serializers.CharField()
+
+        class Meta:
+            examples = {
+                'content': '정말 재미있어 보이는 장소네요 ~! 근처에 가게 되면 꼭 한 번 방문해보고 싶네요 ㅎㅎ 저장해두겠습니다 ~~ ',
+            }
+
+    @swagger_auto_schema(
+        request_body=ForestCommnetUpdateInputSerializer,
+        security=[],
+        operation_id='포레스트 글 댓글 수정',
+        operation_description='''
+            전달된 id에 해당하는 댓글을 업데이트합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                    }
+                },
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def put(self, request, forest_id, forest_comment_id):
+        serializers = self.ForestCommnetUpdateInputSerializer(
+            data=request.data)
+        serializers.is_valid(raise_exception=True)
+        data = serializers.validated_data
+
+        ForestCommentService.update(
+            forest_comment=get_object_or_404(
+                ForestComment, pk=forest_comment_id),
+            content=data.get('content'),
+        )
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_200_OK)
+
+
+class ForestCommentDeleteApi(APIView):
+    permission_classes = (IsWriter, )
+
+    @swagger_auto_schema(
+        operation_id='포레스트 글 댓글 삭제',
+        operation_description='''
+            전달받은 id에 해당하는 포레스트 글 댓글을 삭제합니다<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )
+        },
+    )
+    def delete(self, request, forest_id, forest_comment_id):
+        ForestCommentService.delete(
+            forest_comment=get_object_or_404(
+                ForestComment, pk=forest_comment_id),
+        )
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_200_OK)
+
+
+class ForestCommentLikeApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    @swagger_auto_schema(
+        operation_id='포레스트 글 댓글 좋아요 또는 좋아요 취소',
+        operation_description='''
+            입력한 id를 가지는 포레스트 글 댓글에 대한 사용자의 좋아요/좋아요 취소를 수행합니다.<br/>
+            결과로 좋아요 상태(TRUE:좋아요, FALSE:좋아요X)가 반환됩니다.
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"likes": True}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request, forest_id, forest_comment_id):
+        likes = ForestCommentService.like_or_dislike(
+            forest_comment=get_object_or_404(
+                ForestComment, pk=forest_comment_id),
+            user=request.user
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'likes': likes},
+        }, status=status.HTTP_200_OK)

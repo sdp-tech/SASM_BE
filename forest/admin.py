@@ -48,3 +48,11 @@ class ForestReport(admin.ModelAdmin):
     """ """
 
     pass
+
+
+@admin.register(models.ForestComment)
+class ForestComment(admin.ModelAdmin):
+
+    """ """
+
+    pass
