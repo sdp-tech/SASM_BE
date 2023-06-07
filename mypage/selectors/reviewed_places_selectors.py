@@ -8,11 +8,12 @@ from places.models import PlaceVisitorReview, Place
 import traceback
 
 
-class UserReviewedSelector:
+class UserReviewedPlaceSelector:
     def __init__(self, user:User):
         self.user = user
     
     def list(self):
-        reviewedplaces = PlaceVisitorReview.objects.filter(visitor_name__email=self.user)
-
-        return reviewedplaces
+        user_reviews = PlaceVisitorReview.objects.filter(visitor_name__email=self.user)
+        reviewed_places = Place.objects.filter(id__in=user_reviews.values('place'))
+        
+        return reviewed_places
