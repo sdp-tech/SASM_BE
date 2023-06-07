@@ -3,7 +3,7 @@ from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exis
 from django.db.models.functions import Concat, Substr
 
 from users.models import User
-from forest.models import Forest, Category, SemiCategory
+from forest.models import Forest, Category, SemiCategory, ForestComment
 
 
 class GroupConcat(Aggregate):
@@ -153,3 +153,32 @@ class ForestSelector:
     @staticmethod
     def likes(forest: Forest, user: User):
         return forest.likeuser_set.filter(pk=user.pk).exists()
+
+
+class ForestCommentSelector:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def list(forest: Forest, user: User):
+        forest_comments = ForestComment.objects.filter(forest=forest).values('id', 'content', 'like_cnt', 'created', 'updated').annotate(
+            writer_nickname=F('writer__nickname'),
+            writer_email=F('writer__email'),
+            writer_profile=Concat(Value(settings.MEDIA_URL),
+                                  F('writer__profile_image'),
+                                  output_field=CharField()),
+            user_likes=Case(
+                When(Exists(ForestComment.likeuser_set.through.objects.filter(
+                    forestcomment_id=OuterRef('pk'),
+                    user_id=user.pk
+                )),
+                    then=Value(1)),
+                default=Value(0),
+            ),
+        ).order_by('id')
+
+        return forest_comments
+
+    @staticmethod
+    def likes(forest_comment: ForestComment, user: User):
+        return forest_comment.likeuser_set.filter(pk=user.pk).exists()

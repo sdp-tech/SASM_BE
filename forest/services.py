@@ -9,8 +9,8 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.shortcuts import get_object_or_404
 
 from users.models import User
-from forest.models import Forest, ForestPhoto, ForestHashtag, Category, SemiCategory
-from .selectors import ForestSelector
+from forest.models import Forest, ForestPhoto, ForestHashtag, Category, SemiCategory, ForestComment
+from .selectors import ForestSelector, ForestCommentSelector
 from core.exceptions import ApplicationError
 
 
@@ -227,3 +227,53 @@ class ForestHashtagService:
                 hashtag[0].delete()
             else:
                 raise ApplicationError("지원하지 않는 hashtag 연산입니다.")
+
+
+class ForestCommentService:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def create(forest: Forest, content: str, writer: User) -> ForestComment:
+        forest_comment = ForestComment(
+            forest=forest,
+            content=content,
+            writer=writer
+        )
+
+        forest_comment.full_clean()
+        forest_comment.save()
+
+        return forest_comment
+
+    @staticmethod
+    def update(forest_comment: ForestComment, content: str) -> ForestComment:
+        forest_comment.content = content
+
+        forest_comment.full_clean()
+        forest_comment.save()
+
+        return forest_comment
+
+    @staticmethod
+    def delete(forest_comment: ForestComment):
+        forest_comment.delete()
+
+    @staticmethod
+    def like_or_dislike(forest_comment: ForestComment, user: User) -> bool:
+        if ForestCommentSelector.likes(forest_comment=forest_comment, user=user):
+            forest_comment.likeuser_set.remove(user)
+            forest_comment.like_cnt -= 1
+
+            forest_comment.full_clean()
+            forest_comment.save()
+
+            return False
+        else:
+            forest_comment.likeuser_set.add(user)
+            forest_comment.like_cnt += 1
+
+            forest_comment.full_clean()
+            forest_comment.save()
+
+            return True

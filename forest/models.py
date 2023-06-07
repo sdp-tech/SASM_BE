@@ -104,3 +104,15 @@ class ForestReport(TimeStampedModel):
         'Forest', related_name='reports', on_delete=models.CASCADE, null=True, blank=False)
     reporter = models.ForeignKey(
         'users.User', related_name='forest_reports', on_delete=models.SET_NULL, null=True, blank=False)
+
+
+class ForestComment(TimeStampedModel):
+    forest = models.ForeignKey(
+        "Forest", related_name='comments', on_delete=models.CASCADE, null=False, blank=False)
+    content = models.TextField(max_length=1000)
+    # 댓글 writer가 회원 탈퇴해도, 댓글은 유지, writer를 null 설정
+    writer = models.ForeignKey(
+        'users.User', related_name='forest_comments', on_delete=models.SET_NULL, null=True, blank=False)
+    likeuser_set = models.ManyToManyField(
+        "users.User", related_name='liked_forest_comments', blank=True)
+    like_cnt = models.PositiveIntegerField(default=0)
