@@ -192,7 +192,7 @@ class StorySelector:
             q.add(query, q.AND)
 
         order_by_time = {'latest': '-created', 'oldest': 'created'}
-        order_by_likes = {}
+        order_by_likes = {'hot': '-story_like_cnt'}
 
         if order in order_by_time:
             order = order_by_time[order]
