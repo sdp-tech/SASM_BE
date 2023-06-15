@@ -181,7 +181,7 @@ class CuratedStorySelector:
         pass
 
     def detail(story_id_list: list, user: User):
-        return Story.objects.filter(id__in=story_id_list).values('id', 'story_review', 'preview', 'writer', 'tag', 'created', 'story_likeuser_set').annotate(
+        return Story.objects.filter(id__in=story_id_list).values('id', 'story_review', 'preview', 'writer', 'tag', 'created').annotate(
             story_id=F('id'),
             place_name=F('place__place_name'),
             place_address=F('place__address'),

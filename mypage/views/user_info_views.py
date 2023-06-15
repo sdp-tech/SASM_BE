@@ -14,7 +14,6 @@ class UserGetApi(APIView):
 
     class UserGetOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
-        password = serializers.CharField()
         gender = serializers.CharField()
         nickname = serializers.CharField()
         birthdate = serializers.DateField()
@@ -36,7 +35,6 @@ class UserGetApi(APIView):
                 examples={
                     "application/json": {
                         'id': 1,
-                        'password': 'sdpsdp!!',
                         'gender': 'male',
                         'nickname': 'sdpofficial',
                         'birthdate': '2000.03.12',
@@ -60,13 +58,12 @@ class UserGetApi(APIView):
             'status': 'success',
             'data': serializer.data,
         }, status=status.HTTP_200_OK)
-    
+
 
 class UserUpdateApi(APIView):
     permission_classes = (IsAuthenticated, )
 
     class UserUpdateInputSerializer(serializers.Serializer):
-        password = serializers.CharField()
         gender = serializers.CharField()
         nickname = serializers.CharField()
         birthdate = serializers.DateField()
@@ -86,7 +83,6 @@ class UserUpdateApi(APIView):
                 description="OK",
                 examples={
                     "application/json": {
-                        'password': 'sdpsdp!!',
                         'gender': 'male',
                         'nickname': 'sdpofficial',
                         'birthdate': '2000.03.12',
@@ -102,14 +98,14 @@ class UserUpdateApi(APIView):
         },
     )
     def patch(self, request):
-        serializer = self.UserUpdateInputSerializer(data=request.data, partial=True)
+        serializer = self.UserUpdateInputSerializer(
+            data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         service = UserInfoService(user=request.user)
 
         update = service.update(
-            password=data.get('password', None),
             gender=data.get('gender', None),
             nickname=data.get('nickname', None),
             birthdate=data.get('birthdate', None),
