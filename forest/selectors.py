@@ -3,7 +3,7 @@ from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exis
 from django.db.models.functions import Concat, Substr
 
 from users.models import User
-from forest.models import Forest, Category, SemiCategory, ForestComment
+from forest.models import Forest, Category, SemiCategory, ForestComment, ForestPhoto
 
 
 class GroupConcat(Aggregate):
@@ -65,15 +65,30 @@ class ForestSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
-            rep_pic=Case(
-                When(
-                    photos__image=None,
-                    then=None
-                ),
-                default=Concat(Value(settings.MEDIA_URL),
-                               F('photos__image'),
-                               output_field=CharField())
+            rep_pic=Subquery(
+                # TODO 1: filter 대신 get/first 쓸 경우 아래 에러 발생
+                # ValueError: This queryset contains a reference to an outer query and may only be used in a subquery.
+                # => django eager query 찾아보기
+                # TODO 2: get이나 first가 아닌 Filter를 썼는데 list가 아닌 list 중 원소 하나만 반환됨
+                # DB의 attribute는 atomic하다.
+                ForestPhoto.objects.filter(forest=OuterRef('id')).annotate(
+                    _image=Concat(Value(settings.MEDIA_URL),
+                                  F('image'),
+                                  output_field=CharField())
+                ).values('_image')
             ),
+            # TODO:
+            # 아래 코드는 forest 하위 photo가 여러개일 경우 각 photo마다 row가 반환된다. 첫번째 사진에 대한 row가 반환되지 않음
+            # 다른 코드들에 아래와 유사한 코드가 있을 경우 수정 필요
+            # rep_pic=Case(
+            #     When(
+            #         photos__image=None,
+            #         then=None
+            #     ),
+            #     default=Concat(Value(settings.MEDIA_URL),
+            #                    F('photos__image'),
+            #                    output_field=CharField())
+            # ),
             category=F('category__name'),
             semi_categories=Subquery(
                 Forest.objects.filter(id=OuterRef('id')).annotate(
