@@ -268,21 +268,21 @@ class ForestDetailApi(APIView):
         title = serializers.CharField()
         subtitle = serializers.CharField()
         content = serializers.CharField()
-        category = serializers.CharField()
+        category = serializers.DictField()
         semi_categories = serializers.ListField()
         hashtags = serializers.ListField()
-        rep_pic = serializers.CharField()
-        writer_nickname = serializers.CharField()
-        writer_profile = serializers.CharField()
-        writer_is_verified = serializers.BooleanField()
+        photos = serializers.ListField()
+        writer = serializers.DictField()
         user_likes = serializers.BooleanField()
         like_cnt = serializers.IntegerField()
         created = serializers.DateTimeField()
+        updated = serializers.DateTimeField()
 
     @swagger_auto_schema(
         operation_id='포레스트 글 디테일 조회',
         operation_description='''
             전달된 id에 해당하는 포레스트 글 디테일을 조회합니다.<br/>
+            photos 배열 중 0번째 원소가 대표 이미지(rep_pic)입니다.<br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -293,16 +293,31 @@ class ForestDetailApi(APIView):
                         'title': '신재생에너지 종류 “풍력에너지 개념/특징/국내외 현황”',
                         'subtitle': '풍력발전이란? 풍력 발전은 바람이 가진 운동에너지를 변환하여 전기 에너지를 생산',
                         'content': '육상에 설치된 풍력발전기를 육상풍력발전기, 해상에 설치된 풍력발전기를',
-                        'category': '시사',
-                        'semi_categories': ['기업'],
+                        'category': {
+                            'id': 1,
+                            'name': '시사'
+                        },
+                        'semi_categories': [
+                            {
+                                'id': 1,
+                                'name': '테크놀리지'
+                            }
+                        ],
                         'hashtags': ['풍력발전', '신재생에너지'],
-                        'rep_pic': 'https://abc.com/1.jpg',
-                        'writer_is_verified': True,
-                        'writer_nickname': 'sdp_official',
-                        'writer_profile': 'https://abc.com/1.jpg',
+                        'photos': [
+                            "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078027.978057749349c6c5de4fe59771223b9b47e8c8.jpg",
+                            "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078087.49140690310232dc94437786446deb035592ac.jpg"
+                        ],
+                        "writer": {
+                            "id": 1,
+                            "nickname": "sdp_offical",
+                            "profile": "https://sasm-bucket.s3.amazonaws.com/media/profile/20230401/abc.jpg",
+                            "is_verified": False
+                        },
                         'user_likes': True,
                         'like_cnt': 1,
-                        "created": "2023-06-06T23:59:43.595632+09:00",
+                        "created": "2023-06-18T08:49:12+0000",
+                        "updated": "2023-06-18T08:49:12+0000"
                     },
                 }
             ),
@@ -341,18 +356,19 @@ class ForestListApi(APIView):
         title = serializers.CharField()
         subtitle = serializers.CharField()
         preview = serializers.CharField()
-        rep_pic = serializers.CharField()
-        writer_nickname = serializers.CharField()
-        writer_is_verified = serializers.BooleanField()
+        photos = serializers.ListField()
+        writer = serializers.DictField()
         user_likes = serializers.BooleanField()
         like_cnt = serializers.IntegerField()
         created = serializers.DateTimeField()
+        updated = serializers.DateTimeField()
 
     @swagger_auto_schema(
         query_serializer=ForestListFilterSerializer,
         operation_id='포레스트 글 리스트',
         operation_description='''
             전달된 쿼리 파라미터에 부합하는 포레스트 글 리스트를 반환합니다.<br/>
+            photos 배열 중 0번째 원소가 대표 이미지(rep_pic)입니다.<br/>
             <br/>
             search : title, subtitle, content 내 검색어<br/>
             order : 정렬 기준(latest, hot)<br/>
@@ -364,18 +380,35 @@ class ForestListApi(APIView):
                 description="OK",
                 examples={
                     "application/json": {
-                        'id': 1,
-                        'title': '신재생에너지 종류 “풍력에너지 개념/특징/국내외 현황”',
-                        'subtitle': '풍력발전이란? 풍력 발전은 바람이 가진 운동에너지를 변환하여 전기 에너지를 생산',
-                        'preview': '육상에 설치된 풍력발전기를 육상풍력발전기, 해상에 설치된 풍력발전기를',
-                        'rep_pic': 'https://abc.com/1.jpg',
-                        'writer_is_verified': True,
-                        'writer_nickname': 'sdp_official',
-                        'writer_profile': 'https://abc.com/1.jpg',
-                        'user_likes': True,
-                        'like_cnt': 1,
-                        "created": "2023-06-06T23:59:43.595632+09:00",
-                    },
+                        "status": "success",
+                        "data": {
+                            "count": 1,
+                            "next": None,
+                            "previous": None,
+                            "results": [
+                                {
+                                    "id": 1,
+                                    'title': '신재생에너지 종류 “풍력에너지 개념/특징/국내외 현황”',
+                                    'subtitle': '풍력발전이란? 풍력 발전은 바람이 가진 운동에너지를 변환하여 전기 에너지를 생산',
+                                    'preview': '육상에 설치된 풍력발전기를 육상풍력발전기, 해상에 설치된 풍력발전기를',
+                                    "photos": [
+                                        "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078027.978057749349c6c5de4fe59771223b9b47e8c8.jpg",
+                                        "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078087.49140690310232dc94437786446deb035592ac.jpg"
+                                    ],
+                                    "writer": {
+                                        "id": 1,
+                                        "nickname": "sdp_official",
+                                        "profile": 'https://abc.com/1.jpg',
+                                        "is_verified": False
+                                    },
+                                    "user_likes": True,
+                                    "like_cnt": 0,
+                                    "created": "2023-06-18T08:49:12+0000",
+                                    "updated": "2023-06-18T08:49:12+0000"
+                                },
+                            ]
+                        }
+                    }
                 }
             ),
             "400": openapi.Response(
