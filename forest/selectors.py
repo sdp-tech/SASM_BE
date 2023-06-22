@@ -1,6 +1,7 @@
-from django.conf import settings
-from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef, Subquery
+from datetime import datetime
+from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef, ExpressionWrapper, JSONField
 from django.db.models.functions import Concat, Substr
+from dataclasses import dataclass
 
 from users.models import User
 from forest.models import Forest, Category, SemiCategory, ForestComment, ForestPhoto
@@ -45,18 +46,33 @@ class CategorySelector:
         return SemiCategory.objects.filter(category=category).values('id', 'name')
 
 
+@dataclass
+class ForestDto:
+    id: int
+    title: str
+    subtitle: str
+    category: dict
+    semi_categories: list[dict]
+    writer: dict
+    user_likes: bool
+    like_cnt: int
+    created: datetime
+    updated: datetime
+
+    content: str = None  # detail
+    preview: str = None  # list
+
+    hashtags: list[str] = None
+    photos: list[str] = None
+
+
 class ForestSelector:
     def __init__(self):
         pass
 
     @staticmethod
     def detail(forest_id: str, user: User):
-        forest = Forest.objects.values('id', 'title', 'subtitle', 'content', 'like_cnt', 'created').annotate(
-            writer_is_verified=F('writer__is_verified'),
-            writer_nickname=F('writer__nickname'),
-            writer_profile=Concat(Value(settings.MEDIA_URL),
-                                  F('writer__profile_image'),
-                                  output_field=CharField()),
+        forest = Forest.objects.annotate(
             user_likes=Case(
                 When(Exists(Forest.likeuser_set.through.objects.filter(
                     forest_id=OuterRef('pk'),
@@ -65,49 +81,42 @@ class ForestSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
-            rep_pic=Subquery(
-                # TODO: filter 대신 get/first 쓸 경우 아래 에러 발생
-                # ValueError: This queryset contains a reference to an outer query and may only be used in a subquery.
-                # => django eager query 찾아보기
-                ForestPhoto.objects.filter(forest=OuterRef('id')).annotate(
-                    _image=Concat(Value(settings.MEDIA_URL),
-                                  F('image'),
-                                  output_field=CharField())
-                ).values('_image')[:1]
-            ),
-            # TODO:
-            # 아래 코드는 forest 하위 photo가 여러개일 경우 각 photo마다 row가 반환된다. 첫번째 사진에 대한 row가 반환되지 않음
-            # 다른 코드들에 아래와 유사한 코드가 있을 경우 수정 필요
-            # rep_pic=Case(
-            #     When(
-            #         photos__image=None,
-            #         then=None
-            #     ),
-            #     default=Concat(Value(settings.MEDIA_URL),
-            #                    F('photos__image'),
-            #                    output_field=CharField())
-            # ),
-            category=F('category__name'),
-            semi_categories=Subquery(
-                Forest.objects.filter(id=OuterRef('id')).annotate(
-                    _semi_categories=GroupConcat('semicategories__name')
-                ).values('_semi_categories')
-            ),
-            hashtags=Subquery(
-                Forest.objects.filter(id=OuterRef('id')).annotate(
-                    _hashtags=GroupConcat('hashtags__name')
-                ).values('_hashtags')
-            ),
-        ).get(id=forest_id)
+        ).select_related(
+            'category', 'writer'
+        ).prefetch_related(
+            'semicategories', 'hashtags', 'photos'
+        ).get(
+            id=forest_id
+        )
+        forest_dto = ForestDto(
+            id=forest.id,
+            title=forest.title,
+            subtitle=forest.subtitle,
+            content=forest.content,
+            category={
+                'id': forest.category.id,
+                'name': forest.category.name,
+            },
+            semi_categories=[{'id': semi_category.id, 'name': semi_category.name}
+                             for semi_category in forest.semicategories.all()],
+            writer={
+                'id': forest.writer.id,
+                'nickname': forest.writer.nickname,
+                'profile':  forest.writer.profile_image.url,
+                'is_verified': forest.writer.is_verified,
+            },
+            user_likes=forest.user_likes,
+            like_cnt=forest.like_cnt,
+            created=forest.created.strftime('%Y-%m-%dT%H:%M:%S%z'),
+            updated=forest.updated.strftime('%Y-%m-%dT%H:%M:%S%z'),
 
-        forest['hashtags'] = forest['hashtags'].split(
-            ',') if forest['hashtags'] else []
-        forest['semi_categories'] = forest['semi_categories'].split(
-            ',') if forest['semi_categories'] else []
+            hashtags=[hashtag.name for hashtag in forest.hashtags.all()],
+            photos=[photo.image.url for photo in forest.photos.all()],
+        )
 
-        return forest
+        return forest_dto
 
-    @staticmethod
+    @ staticmethod
     def list(search: str,
              order: str,
              category_filter: str,
@@ -134,18 +143,8 @@ class ForestSelector:
                       'oldest': 'created',
                       'hot': '-like_cnt'}
 
-        forests = Forest.objects.distinct().filter(q).values(
-            'id', 'title', 'subtitle', 'like_cnt', 'created').annotate(
+        forests = Forest.objects.distinct().annotate(
             preview=Substr('content', 1, 100),
-            rep_pic=Case(
-                When(
-                    photos__image=None,
-                    then=None
-                ),
-                default=Concat(Value(settings.MEDIA_URL),
-                               F('photos__image'),
-                               output_field=CharField())
-            ),
             user_likes=Case(
                 When(Exists(Forest.likeuser_set.through.objects.filter(
                     forest_id=OuterRef('pk'),
@@ -154,16 +153,41 @@ class ForestSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
-            writer_is_verified=F('writer__is_verified'),
-            writer_nickname=F('writer__nickname'),
-            writer_profile=Concat(Value(settings.MEDIA_URL),
-                                  F('writer__profile_image'),
-                                  output_field=CharField()),
-        ).order_by(order_pair[order])
+        ).select_related(
+            'category', 'writer'
+        ).prefetch_related(
+            'semicategories', 'hashtags', 'photos'
+        ).filter(q).order_by(order_pair[order])
 
-        return forests
+        forest_dtos = [ForestDto(
+            id=forest.id,
+            title=forest.title,
+            subtitle=forest.subtitle,
+            preview=forest.preview,
+            category={
+                'id': forest.category.id,
+                'name': forest.category.name,
+            },
+            semi_categories=[{'id': semi_category.id, 'name': semi_category.name}
+                             for semi_category in forest.semicategories.all()],
+            writer={
+                'id': forest.writer.id,
+                'nickname': forest.writer.nickname,
+                'profile':  forest.writer.profile_image.url,
+                'is_verified': forest.writer.is_verified,
+            },
+            user_likes=forest.user_likes,
+            like_cnt=forest.like_cnt,
+            created=forest.created.strftime('%Y-%m-%dT%H:%M:%S%z'),
+            updated=forest.updated.strftime('%Y-%m-%dT%H:%M:%S%z'),
 
-    @staticmethod
+            hashtags=[hashtag.name for hashtag in forest.hashtags.all()],
+            photos=[photo.image.url for photo in forest.photos.all()],
+        ) for forest in forests]
+
+        return forest_dtos
+
+    @ staticmethod
     def likes(forest: Forest, user: User):
         return forest.likeuser_set.filter(pk=user.pk).exists()
 
@@ -172,7 +196,7 @@ class ForestCommentSelector:
     def __init__(self):
         pass
 
-    @staticmethod
+    @ staticmethod
     def list(forest: Forest, user: User):
         forest_comments = ForestComment.objects.filter(forest=forest).values('id', 'content', 'like_cnt', 'created', 'updated').annotate(
             writer_nickname=F('writer__nickname'),
@@ -192,6 +216,6 @@ class ForestCommentSelector:
 
         return forest_comments
 
-    @staticmethod
+    @ staticmethod
     def likes(forest_comment: ForestComment, user: User):
         return forest_comment.likeuser_set.filter(pk=user.pk).exists()
