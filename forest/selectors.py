@@ -76,7 +76,7 @@ class ForestSelector:
             semi_categories=[{'id': semi_category.id, 'name': semi_category.name}
                              for semi_category in forest.semicategories.all()],
             writer={
-                'id': forest.writer.id,
+                'email': forest.writer.email,
                 'nickname': forest.writer.nickname,
                 'profile':  forest.writer.profile_image.url,
                 'is_verified': forest.writer.is_verified,
@@ -97,6 +97,7 @@ class ForestSelector:
              order: str,
              category_filter: str,
              semi_category_filters: list[str],
+             writer_filter: str,
              user: User):
 
         def extract_preview(content):
@@ -123,6 +124,9 @@ class ForestSelector:
             semi_category_filter_q.add(
                 Q(semicategories__id=semi_category_filter), q.OR)
         q.add(semi_category_filter_q, q.AND)
+
+        if writer_filter:
+            q.add(Q(writer__email__iexact=writer_filter), q.AND)
 
         order_pair = {'latest': '-created',
                       'oldest': 'created',
@@ -155,7 +159,7 @@ class ForestSelector:
             semi_categories=[{'id': semi_category.id, 'name': semi_category.name}
                              for semi_category in forest.semicategories.all()],
             writer={
-                'id': forest.writer.id,
+                'email': forest.writer.email,
                 'nickname': forest.writer.nickname,
                 'profile':  forest.writer.profile_image.url,
                 'is_verified': forest.writer.is_verified,
@@ -210,7 +214,7 @@ class ForestCommentSelector:
             id=comment.id,
             content=comment.content,
             writer={
-                'id': comment.writer.id,
+                'email': comment.writer.email,
                 'nickname': comment.writer.nickname,
                 'profile':  comment.writer.profile_image.url,
                 'is_verified': comment.writer.is_verified,
