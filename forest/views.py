@@ -772,3 +772,55 @@ class ForestCommentLikeApi(APIView):
             'status': 'success',
             'data': {'likes': likes},
         }, status=status.HTTP_200_OK)
+
+
+class ForestReportApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    class ForestReportCreateInputSerializer(serializers.Serializer):
+        category = serializers.CharField()
+
+        class Meta:
+            examples = {
+                'category': '지나친 광고성 컨텐츠입니다.(상업적 홍보)'
+            }
+
+    @swagger_auto_schema(
+        security=[],
+        operation_id='포레스트 게시글 신고',
+        operation_description='''
+            포레스트 게시글을 신고합니다.<br/>
+            category로 가능한 값은 아래와 같습니다.<br/>
+            1. "지나친 광고성 컨텐츠입니다.(상업적 홍보)"
+            2. "욕설이 포함된 컨텐츠입니다."
+            3. "성희롱이 포함된 컨텐츠입니다."
+            <br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request, forest_id):
+        serializer = self.ForestReportCreateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        ForestService.report(
+            forest=get_object_or_404(Forest, pk=forest_id),
+            report_category=data.get('category'),
+            reporter=request.user
+        )
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_201_CREATED)
