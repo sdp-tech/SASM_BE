@@ -1,36 +1,11 @@
+import re
 from datetime import datetime
-from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef, ExpressionWrapper, JSONField
+from django.db.models import Q, F, Value, CharField, Case, When, Exists, OuterRef
 from django.db.models.functions import Concat, Substr
 from dataclasses import dataclass
 
 from users.models import User
-from forest.models import Forest, Category, SemiCategory, ForestComment, ForestPhoto
-
-
-class GroupConcat(Aggregate):
-    # Postgres ArrayAgg similar(not exactly equivalent) for sqlite & mysql
-    # https://stackoverflow.com/questions/10340684/group-concat-equivalent-in-django
-    function = 'GROUP_CONCAT'
-    separator = ','
-
-    def __init__(self, expression, distinct=False, ordering=None, **extra):
-        super(GroupConcat, self).__init__(expression,
-                                          distinct='DISTINCT ' if distinct else '',
-                                          ordering=' ORDER BY %s' % ordering if ordering is not None else '',
-                                          output_field=CharField(),
-                                          **extra)
-
-    def as_mysql(self, compiler, connection, separator=separator):
-        return super().as_sql(compiler,
-                              connection,
-                              template='%(function)s(%(distinct)s%(expressions)s%(ordering)s%(separator)s)',
-                              separator=' SEPARATOR \'%s\'' % separator)
-
-    def as_sql(self, compiler, connection, **extra):
-        return super().as_sql(compiler,
-                              connection,
-                              template='%(function)s(%(distinct)s%(expressions)s%(ordering)s)',
-                              **extra)
+from forest.models import Forest, Category, SemiCategory, ForestComment
 
 
 class CategorySelector:
@@ -122,6 +97,15 @@ class ForestSelector:
              category_filter: str,
              semi_category_filters: list[str],
              user: User):
+
+        def extract_preview(content):
+            # img 태그는 space로 대체
+            # 나머지는 빈 문자열로 대체
+            ret = re.sub(r'<img.*?>', ' ', content)
+            ret = re.sub(r'<.*?>', '', ret)  # FYI: 닫는 태그 <\/.+?>
+            ret = re.sub(r'\s{2,}', ' ', ret)  # space 두개 이상인 경우 하나로
+            return ret[:100]
+
         q = Q()
         q.add(Q(title__icontains=search) |
               Q(subtitle__icontains=search) |
@@ -144,7 +128,6 @@ class ForestSelector:
                       'hot': '-like_cnt'}
 
         forests = Forest.objects.distinct().annotate(
-            preview=Substr('content', 1, 100),
             user_likes=Case(
                 When(Exists(Forest.likeuser_set.through.objects.filter(
                     forest_id=OuterRef('pk'),
@@ -163,7 +146,7 @@ class ForestSelector:
             id=forest.id,
             title=forest.title,
             subtitle=forest.subtitle,
-            preview=forest.preview,
+            preview=extract_preview(forest.content),
             category={
                 'id': forest.category.id,
                 'name': forest.category.name,
