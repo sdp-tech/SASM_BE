@@ -309,7 +309,7 @@ class ForestDetailApi(APIView):
                             "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078087.49140690310232dc94437786446deb035592ac.jpg"
                         ],
                         "writer": {
-                            "id": 1,
+                            "email": "sdpygl@gmail.com",
                             "nickname": "sdp_offical",
                             "profile": "https://sasm-bucket.s3.amazonaws.com/media/profile/20230401/abc.jpg",
                             "is_verified": False
@@ -350,6 +350,7 @@ class ForestListApi(APIView):
         order = serializers.CharField(required=False)
         category_filter = serializers.CharField(required=False)
         semi_category_filters = serializers.ListField(required=False)
+        writer_filter = serializers.CharField(required=False)
 
     class ForestListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -374,6 +375,7 @@ class ForestListApi(APIView):
             order : 정렬 기준(latest, hot)<br/>
             category_filter: 카테고리 id <br/>
             semi_category_filter: 세미 카테고리 id 리스트 <br/>
+            writer_filter: 작성자 email <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -396,7 +398,7 @@ class ForestListApi(APIView):
                                         "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078087.49140690310232dc94437786446deb035592ac.jpg"
                                     ],
                                     "writer": {
-                                        "id": 1,
+                                        "email": "sdpygl@gmail.com",
                                         "nickname": "sdp_official",
                                         "profile": 'https://abc.com/1.jpg',
                                         "is_verified": False
@@ -427,6 +429,7 @@ class ForestListApi(APIView):
             order=filters.get('order', 'latest'),
             category_filter=filters.get('category_filter', ''),
             semi_category_filters=filters.get('semi_category_filters', []),
+            writer_filter=filters.get('writer_filter', ''),
             user=request.user,
         )
 
@@ -572,9 +575,9 @@ class ForestCommentListApi(APIView):
                                     'content': '정말 재미있어 보이는 장소네요 ~! 근처에 가게 되면 꼭 한 번 방문해보고 싶네요 ㅎㅎ 저장해두겠습니다 ~~ ',
                                     'like_cnt': 10,
                                     "writer": {
-                                        "id": 1,
+                                        "email": "sdpygl@gmail.com",
                                         "nickname": "sdpygl",
-                                        "profile": "https://sasm-bucket.s3.amazonaws.com/media/profile/20230401/Zoom_%E1%84%87%E1%85%A2%E1%84%80%E1%85%A7%E1%86%BC.jpg",
+                                        "profile": "https://abc.com/1.jpg",
                                         "is_verified": False
                                     },
                                     "user_likes": True,
