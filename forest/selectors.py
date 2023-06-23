@@ -175,18 +175,24 @@ class ForestSelector:
         return forest.likeuser_set.filter(pk=user.pk).exists()
 
 
+@dataclass
+class ForestCommentDto:
+    id: int
+    content: str
+    writer: dict
+    user_likes: bool
+    like_cnt: int
+    created: datetime
+    updated: datetime
+
+
 class ForestCommentSelector:
     def __init__(self):
         pass
 
     @ staticmethod
     def list(forest: Forest, user: User):
-        forest_comments = ForestComment.objects.filter(forest=forest).values('id', 'content', 'like_cnt', 'created', 'updated').annotate(
-            writer_nickname=F('writer__nickname'),
-            writer_email=F('writer__email'),
-            writer_profile=Concat(Value(settings.MEDIA_URL),
-                                  F('writer__profile_image'),
-                                  output_field=CharField()),
+        forest_comments = ForestComment.objects.distinct().annotate(
             user_likes=Case(
                 When(Exists(ForestComment.likeuser_set.through.objects.filter(
                     forestcomment_id=OuterRef('pk'),
@@ -195,9 +201,26 @@ class ForestCommentSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
-        ).order_by('id')
+        ).select_related(
+            'writer'
+        ).filter(forest=forest).order_by('id')
 
-        return forest_comments
+        forest_comment_dtos = [ForestCommentDto(
+            id=comment.id,
+            content=comment.content,
+            writer={
+                'id': comment.writer.id,
+                'nickname': comment.writer.nickname,
+                'profile':  comment.writer.profile_image.url,
+                'is_verified': comment.writer.is_verified,
+            },
+            user_likes=comment.user_likes,
+            like_cnt=comment.like_cnt,
+            created=comment.created.strftime('%Y-%m-%dT%H:%M:%S%z'),
+            updated=comment.updated.strftime('%Y-%m-%dT%H:%M:%S%z'),
+        ) for comment in forest_comments]
+
+        return forest_comment_dtos
 
     @ staticmethod
     def likes(forest_comment: ForestComment, user: User):
