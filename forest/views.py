@@ -546,9 +546,7 @@ class ForestCommentListApi(APIView):
         id = serializers.IntegerField()
         content = serializers.CharField()
         like_cnt = serializers.IntegerField()
-        writer_nickname = serializers.CharField()
-        writer_email = serializers.CharField()
-        writer_profile = serializers.CharField()
+        writer = serializers.DictField()
         user_likes = serializers.BooleanField()
         created = serializers.DateTimeField()
         updated = serializers.DateTimeField()
@@ -563,15 +561,28 @@ class ForestCommentListApi(APIView):
                 description="OK",
                 examples={
                     "application/json": {
-                        'id': 1,
-                        'content': '정말 재미있어 보이는 장소네요 ~! 근처에 가게 되면 꼭 한 번 방문해보고 싶네요 ㅎㅎ 저장해두겠습니다 ~~ ',
-                        'like_cnt': 10,
-                        'writer_nickname': 'sdpygl',
-                        'writer_email': 'sdpygl@gmail.com',
-                        'writer_profile': 'https://abc.com/1.jpg',
-                        'user_likes': True,
-                        'created': '2019-08-24T14:15:22Z',
-                        'updated': '2019-08-24T14:15:22Z',
+                        "status": "success",
+                        "data": {
+                            "count": 1,
+                            "next": None,
+                            "previous": None,
+                            "results": [
+                                {
+                                    'id': 1,
+                                    'content': '정말 재미있어 보이는 장소네요 ~! 근처에 가게 되면 꼭 한 번 방문해보고 싶네요 ㅎㅎ 저장해두겠습니다 ~~ ',
+                                    'like_cnt': 10,
+                                    "writer": {
+                                        "id": 1,
+                                        "nickname": "sdpygl",
+                                        "profile": "https://sasm-bucket.s3.amazonaws.com/media/profile/20230401/Zoom_%E1%84%87%E1%85%A2%E1%84%80%E1%85%A7%E1%86%BC.jpg",
+                                        "is_verified": False
+                                    },
+                                    "user_likes": True,
+                                    "created": "2023-06-07T13:44:44+0000",
+                                    "updated": "2023-06-07T13:45:31+0000"
+                                }
+                            ]
+                        }
                     }
                 },
             ),
