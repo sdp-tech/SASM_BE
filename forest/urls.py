@@ -5,6 +5,8 @@ urlpatterns = [
     path('create/', ForestCreateApi.as_view(), name="forest_create"),
     path('<int:forest_id>/update/',
          ForestUpdateApi.as_view(), name='forest_update'),
+    path('<int:forest_id>/report/',
+         ForestReportApi.as_view(), name='forest_report'),
     path('photos/create/',
          ForestPhotoCreateApi.as_view(), name='forest_photo_create'),
     path('<int:forest_id>/delete/',
