@@ -533,11 +533,12 @@ class CurationDeleteApi(APIView):
 class CurationLikeApi(APIView):
     permission_classes = (IsAuthenticated, )
 
-    class CurationLikeInputSerializer(serializers.Serializer):
-        curation = serializers.IntegerField()
+    def get_object(self, curation_id):
+        curation = get_object_or_404(Curation, pk=curation_id)
+        self.check_object_permissions(self.request, curation)
+        return curation
 
     @swagger_auto_schema(
-        request_body=CurationLikeInputSerializer,
         operation_id='큐레이션 좋아요/좋아요 취소',
         operation_description='''
             해당 큐레이션에 대해 좋아요/좋아요 취소를 수행합니다.<br/>
@@ -558,13 +559,9 @@ class CurationLikeApi(APIView):
             ),
         },
     )
-    def post(self, request):
-        serializer = self.CurationLikeInputSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
+    def post(self, request, curation_id):
         curation = get_object_or_404(
-            Curation, id=data.get('curation'))
+            Curation, pk=curation_id)
         likes = CurationLikeService.like_or_dislike(
             curation=curation,
             user=request.user
