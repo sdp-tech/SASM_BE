@@ -2,6 +2,7 @@ from datetime import datetime
 from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef, ExpressionWrapper, JSONField
 from django.db.models.functions import Concat, Substr
 from dataclasses import dataclass
+from django.conf import settings
 
 from users.models import User
 from forest.models import Forest, Category, SemiCategory, ForestComment, ForestPhoto
