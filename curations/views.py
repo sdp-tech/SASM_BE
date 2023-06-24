@@ -537,6 +537,7 @@ class CurationLikeApi(APIView):
         curation = serializers.IntegerField()
 
     @swagger_auto_schema(
+        request_body=CurationLikeInputSerializer,
         operation_id='큐레이션 좋아요/좋아요 취소',
         operation_description='''
             해당 큐레이션에 대해 좋아요/좋아요 취소를 수행합니다.<br/>
