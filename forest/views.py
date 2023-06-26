@@ -275,6 +275,7 @@ class ForestDetailApi(APIView):
         writer = serializers.DictField()
         user_likes = serializers.BooleanField()
         like_cnt = serializers.IntegerField()
+        comment_cnt = serializers.IntegerField()
         created = serializers.DateTimeField()
         updated = serializers.DateTimeField()
 
@@ -361,6 +362,7 @@ class ForestListApi(APIView):
         writer = serializers.DictField()
         user_likes = serializers.BooleanField()
         like_cnt = serializers.IntegerField()
+        comment_cnt = serializers.IntegerField()
         created = serializers.DateTimeField()
         updated = serializers.DateTimeField()
 

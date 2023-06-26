@@ -32,6 +32,7 @@ class ForestDto:
     writer: dict
     user_likes: bool
     like_cnt: int
+    comment_cnt: int
     created: datetime
     updated: datetime
 
@@ -60,7 +61,7 @@ class ForestSelector:
         ).select_related(
             'category', 'writer'
         ).prefetch_related(
-            'semicategories', 'hashtags', 'photos'
+            'semicategories', 'hashtags', 'photos', 'comments'
         ).get(
             id=forest_id
         )
@@ -83,6 +84,7 @@ class ForestSelector:
             },
             user_likes=forest.user_likes,
             like_cnt=forest.like_cnt,
+            comment_cnt=len(forest.comments.all()),
             created=forest.created.strftime('%Y-%m-%dT%H:%M:%S%z'),
             updated=forest.updated.strftime('%Y-%m-%dT%H:%M:%S%z'),
 
@@ -144,7 +146,7 @@ class ForestSelector:
         ).select_related(
             'category', 'writer'
         ).prefetch_related(
-            'semicategories', 'hashtags', 'photos'
+            'semicategories', 'hashtags', 'photos', 'comments'
         ).filter(q).order_by(order_pair[order])
 
         forest_dtos = [ForestDto(
@@ -166,6 +168,7 @@ class ForestSelector:
             },
             user_likes=forest.user_likes,
             like_cnt=forest.like_cnt,
+            comment_cnt=len(forest.comments.all()),
             created=forest.created.strftime('%Y-%m-%dT%H:%M:%S%z'),
             updated=forest.updated.strftime('%Y-%m-%dT%H:%M:%S%z'),
 
