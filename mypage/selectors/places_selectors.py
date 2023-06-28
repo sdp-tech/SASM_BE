@@ -39,12 +39,6 @@ class MyPlaceSearchSelector:
                     query = query | Q(category=element)
             q.add(query, q.AND)
 
-        # places = like_place.filter(q).annotate(
-        #     place_name = F('place_name'),
-        #     category=F('category'),
-        #     extra_pics=GroupConcat('photos__image'), 
-        # ).order_by('-created')
-
         places = like_place.filter(q).order_by('-created')
 
 
