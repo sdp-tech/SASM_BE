@@ -152,25 +152,3 @@ class MyPlaceSearchApi(APIView):
             request=request,
             view=self,
         )
-
-        # places = MyPlaceSearchSelector. list(
-        #   search = filters.get('search', ''),
-        #   order = filters.get('order','latest')
-        # )
-
-        # serializer = self.MyPlaceListOutputSerializer(
-        #     places, many = True
-        # )
-
-        # return Response({
-        #     'status': 'success',
-        #     'data' : serializer.data,
-        # }, status=status.HTTP_200_OK)
-    
-        # return get_paginated_response(
-        #     pagination_class=self.Pagination,
-        #     serializer_class=self.MyPlaceListFilterSerializer,
-        #     queryset=place,
-        #     request=request,
-        #     view=self
-        # )
