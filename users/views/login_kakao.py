@@ -14,15 +14,18 @@ from core.exceptions import ApplicationError
 @method_decorator(csrf_exempt)
 @permission_classes([AllowAny])
 def kakao_callback(request):
-    rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
-    code = request.GET.get("code")
-    redirect_uri = 'https://www.sasm.co.kr/auth/kakao/callback/'
+    if 'access_token' not in request.GET:
+        rest_api_key = getattr(settings, 'KAKAO_REST_API_KEY')
+        code = request.GET.get("code")
+        redirect_uri = 'https://www.sasm.co.kr/auth/kakao/callback/'
 
-    # 인가 코드를 이용해 사용자 정보에 접근할 수 있는 엑세스 토큰 받아오기
-    access_token_res = requests.get(
-        f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={rest_api_key}&redirect_uri={redirect_uri}&code={code}"
-    )
-    access_token = access_token_res.json().get("access_token")
+        # 인가 코드를 이용해 사용자 정보에 접근할 수 있는 엑세스 토큰 받아오기
+        access_token_res = requests.get(
+            f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={rest_api_key}&redirect_uri={redirect_uri}&code={code}"
+        )
+        access_token = access_token_res.json().get("access_token")
+    else:
+        access_token = request.GET.get('access_token')
 
     # 받아온 엑세스 토큰으로 사용자 정보 가져오기
     profile_res = requests.get(
