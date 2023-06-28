@@ -89,7 +89,6 @@ class MyPlaceSearchApi(APIView):
 
     class MyPlaceListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
-        # order = serializers.CharField(required=False)
         filter = serializers.ListField(required=False)
     
     class MyPlaceListOutputSerializer(serializers.Serializer):
@@ -98,7 +97,7 @@ class MyPlaceSearchApi(APIView):
         category = serializers.CharField()
         rep_pic = serializers.ImageField()
         address = serializers.CharField()
-        # created = serializers.DateTimeField()
+        created = serializers.DateTimeField()
 
         def get_place_name(self, obj):
             return obj.place.place_name
