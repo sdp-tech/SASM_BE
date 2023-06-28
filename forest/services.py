@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.shortcuts import get_object_or_404
 
 from users.models import User
-from forest.models import Forest, ForestPhoto, ForestHashtag, Category, SemiCategory, ForestComment
+from forest.models import Forest, ForestPhoto, ForestHashtag, Category, SemiCategory, ForestComment, ForestReport
 from .selectors import ForestSelector, ForestCommentSelector
 from core.exceptions import ApplicationError
 
@@ -173,6 +173,20 @@ class ForestService:
         )
 
         return forest
+
+    @staticmethod
+    def report(forest: Forest,
+               report_category: str,
+               reporter: User):
+
+        forest_report = ForestReport(
+            forest=forest,
+            category=report_category,
+            reporter=reporter
+        )
+
+        forest_report.full_clean()
+        forest_report.save()
 
 
 class ForestPhotoService:
