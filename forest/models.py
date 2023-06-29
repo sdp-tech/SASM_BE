@@ -42,6 +42,10 @@ class ForestHashtag(TimeStampedModel):
         ]
 
 
+def get_forest_rep_pic_upload_path(instance, filename):
+    return 'forest/rep_pic/{}'.format(filename)
+
+
 class Forest(TimeStampedModel):
     title = models.CharField(max_length=200)
     subtitle = models.CharField(
@@ -56,6 +60,9 @@ class Forest(TimeStampedModel):
     like_cnt = models.PositiveIntegerField(default=0)
     view_cnt = models.PositiveIntegerField(default=0)
 
+    rep_pic = models.ImageField(
+        upload_to=get_forest_rep_pic_upload_path, default='forest_rep_pic.png')
+
     def clean(self):
         if validate_str_field_length(self.title):
             raise ValidationError('포레스트의 제목은 공백 제외 최소 1글자 이상이어야 합니다.')
@@ -68,6 +75,12 @@ class Forest(TimeStampedModel):
 
     def dislike(self):
         self.like_cnt -= 1
+
+
+@receiver(models.signals.pre_delete, sender=Forest)
+# Forest가 삭제되기 전(pre_delete), S3 media에서 rep_pic 이미지 파일을 삭제하여 orphan 이미지 파일이 남지 않도록 처리
+def remove_forest_rep_pic_from_s3(sender, instance, using, **kwargs):
+    instance.rep_pic.delete(save=False)
 
 
 def get_forest_photo_upload_path(instance, filename):
@@ -84,7 +97,7 @@ class ForestPhoto(TimeStampedModel):
 @receiver(models.signals.post_delete, sender=ForestPhoto)
 # ForestPhoto가 삭제된 후(post_delete), S3 media에서 이미지 파일을 삭제하여 orphan 이미지 파일이 남지 않도록 처리
 # ref. https://stackoverflow.com/questions/47377172/django-storages-aws-s3-delete-file-from-model-record
-def remove_file_from_s3(sender, instance, using, **kwargs):
+def remove_forest_photo_from_s3(sender, instance, using, **kwargs):
     instance.image.delete(save=False)
 
 

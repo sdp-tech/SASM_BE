@@ -26,6 +26,7 @@ class ForestCreateApi(APIView):
         content = serializers.CharField()
         category = serializers.CharField()
         semi_categories = serializers.ListField()
+        rep_pic = serializers.ImageField()
 
         hashtags = serializers.ListField(required=False)
         photos = serializers.ListField(required=False)
@@ -37,6 +38,7 @@ class ForestCreateApi(APIView):
                 'content': '육상에 설치된 풍력발전기를 육상풍력발전기, 해상에 설치된 풍력발전기를',
                 'category': '1',
                 'semi_categories': ["add,1", "add,2"],
+                'rep_pic': '<IMAGE FILE>',
                 'hashtags': ["add,신재생에너지", "add,풍력에너지"],
                 'photos': ["add,https://sasm-bucket.s3.amazonaws.com/media/forest/post/1686065590.jpg", "add,https://sasm-bucket.s3.amazonaws.com/media/forest/post/1686065590.jpg"],
             }
@@ -73,6 +75,7 @@ class ForestCreateApi(APIView):
             content=data.get('content'),
             category=data.get('category'),
             semi_categories=data.get('semi_categories', []),
+            rep_pic=data.get('rep_pic'),
             hashtags=data.get('hashtags', []),
             photos=data.get('photos', []),
             writer=request.user,
@@ -93,6 +96,7 @@ class ForestUpdateApi(APIView):
         content = serializers.CharField()
         category = serializers.CharField()
         semi_categories = serializers.ListField(required=False)
+        rep_pic = serializers.ImageField(required=False)
         hashtags = serializers.ListField(required=False)
         photos = serializers.ListField(required=False)
 
@@ -103,6 +107,7 @@ class ForestUpdateApi(APIView):
                 'content': '육상에 설치된 풍력발전기를 육상풍력발전기, 해상에 설치된 풍력발전기를',
                 'category': '1',
                 'semi_categories': ["remove,2"],
+                'rep_pic': '<IMAGE FILE>',
                 'hashtags': ["remove,풍력에너지", "add,풍력발전"],
                 'photos': ["remove,https://sasm-bucket.s3.amazonaws.com/media/forest/post/1686065590.jpg", "add,https://sasm-bucket.s3.amazonaws.com/media/forest/post/1686065590.jpg"],
             }
@@ -140,6 +145,7 @@ class ForestUpdateApi(APIView):
             content=data.get('content'),
             category=data.get('category'),
             semi_categories=data.get('semi_categories', []),
+            rep_pic=data.get('rep_pic', None),
             hashtags=data.get('hashtags', []),
             photos=data.get('photos', []),
         )
@@ -270,6 +276,7 @@ class ForestDetailApi(APIView):
         content = serializers.CharField()
         category = serializers.DictField()
         semi_categories = serializers.ListField()
+        rep_pic = serializers.CharField()
         hashtags = serializers.ListField()
         photos = serializers.ListField()
         writer = serializers.DictField()
@@ -304,6 +311,7 @@ class ForestDetailApi(APIView):
                                 'name': '테크놀리지'
                             }
                         ],
+                        'rep_pic': "https://sasm-bucket.s3.amazonaws.com/media/forest/rep_pic/abc.jpg",
                         'hashtags': ['풍력발전', '신재생에너지'],
                         'photos': [
                             "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078027.978057749349c6c5de4fe59771223b9b47e8c8.jpg",
@@ -358,6 +366,7 @@ class ForestListApi(APIView):
         title = serializers.CharField()
         subtitle = serializers.CharField()
         preview = serializers.CharField()
+        rep_pic = serializers.CharField()
         photos = serializers.ListField()
         writer = serializers.DictField()
         user_likes = serializers.BooleanField()
@@ -395,6 +404,7 @@ class ForestListApi(APIView):
                                     'title': '신재생에너지 종류 “풍력에너지 개념/특징/국내외 현황”',
                                     'subtitle': '풍력발전이란? 풍력 발전은 바람이 가진 운동에너지를 변환하여 전기 에너지를 생산',
                                     'preview': '육상에 설치된 풍력발전기를 육상풍력발전기, 해상에 설치된 풍력발전기를',
+                                    'rep_pic': "https://sasm-bucket.s3.amazonaws.com/media/forest/rep_pic/abc.jpg",
                                     "photos": [
                                         "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078027.978057749349c6c5de4fe59771223b9b47e8c8.jpg",
                                         "https://sasm-bucket.s3.amazonaws.com/media/forest/post/1687078087.49140690310232dc94437786446deb035592ac.jpg"
