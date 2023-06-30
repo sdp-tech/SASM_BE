@@ -42,13 +42,14 @@ def kakao_callback(request):
         raise ApplicationError("카카오로부터 이메일 또는 닉네임을 가져오지 못했습니다.")
 
     # 유저가 있는 경우 가져오고, 없는 경우 생성
-    if User.objects.filter(email=email, social_provider='kakao').exists():
-        user = User.objects.get(email=email, social_provider='kakao')
+    user_qs = User.objects.filter(email=email)
+    if user_qs.exists() and user_qs.first().social_provider == 'kakao':
+        user = user_qs.first()
+    elif user_qs.exists():  # 해당 이메일이 다른 로그인 방식을 이미 사용 중인 경우
+        user = user_qs.first()
+        raise ApplicationError("다른 로그인 방식을 사용 중인 이메일입니다. {} 로그인 방식을 이용해주세요.".format(
+            user.social_provider if user.social_provider else 'SASM 기본'))
     else:
-        # 해당 이메일이 다른 아이디에서 이미 사용 중인 경우
-        if User.objects.filter(email=email).exists():
-            raise ApplicationError("이미 사용 중인 이메일입니다.")
-
         user = User(
             email=email,
             nickname=nickname,
