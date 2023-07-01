@@ -25,6 +25,7 @@ class ForestCoordinatorService:
                content: str,
                category: str,
                semi_categories: list[str],
+               rep_pic: InMemoryUploadedFile,
                hashtags: list[str],
                photos: list[str],
                writer: User) -> Forest:
@@ -35,6 +36,7 @@ class ForestCoordinatorService:
             content=content,
             category=category,
             semi_categories=semi_categories,
+            rep_pic=rep_pic,
             writer=writer,
         )
 
@@ -55,6 +57,7 @@ class ForestCoordinatorService:
                content: str,
                category: str,
                semi_categories: list[str],
+               rep_pic: InMemoryUploadedFile,
                hashtags: list[str],
                photos: list[str]) -> Forest:
 
@@ -65,6 +68,7 @@ class ForestCoordinatorService:
             content=content,
             category=category,
             semi_categories=semi_categories,
+            rep_pic=rep_pic
         )
 
         # 연관 ForestPhoto와의 연결 업데이트
@@ -131,13 +135,19 @@ class ForestService:
                content: str,
                category: str,
                semi_categories: list[str],
+               rep_pic: InMemoryUploadedFile,
                writer: User) -> Forest:
+
+        ext = rep_pic.name.split(".")[-1]
+        file_path = '{}.{}'.format(str(time.time())+str(uuid.uuid4().hex), ext)
+        rep_pic = ImageFile(io.BytesIO(rep_pic.read()), name=file_path)
 
         forest = Forest(
             title=title,
             subtitle=subtitle,
             content=content,
             category=get_object_or_404(Category, id=category),
+            rep_pic=rep_pic,
             writer=writer
         )
 
@@ -157,12 +167,19 @@ class ForestService:
                subtitle: str,
                content: str,
                category: str,
-               semi_categories: list[str]) -> Forest:
+               semi_categories: list[str],
+               rep_pic: InMemoryUploadedFile) -> Forest:
 
         forest.title = title
         forest.subtitle = subtitle
         forest.content = content
         forest.category = get_object_or_404(Category, id=category)
+        if rep_pic:
+            ext = rep_pic.name.split(".")[-1]
+            file_path = '{}.{}'.format(
+                str(time.time())+str(uuid.uuid4().hex), ext)
+            rep_pic = ImageFile(io.BytesIO(rep_pic.read()), name=file_path)
+            forest.rep_pic = rep_pic
 
         forest.full_clean()
         forest.save()

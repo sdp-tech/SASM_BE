@@ -8,6 +8,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from core.exceptions import ApplicationError
+
 
 @api_view(["GET", "POST"])
 @method_decorator(csrf_exempt)
@@ -41,17 +43,14 @@ def google_callback(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     # 유저가 있는 경우 가져오고, 없는 경우 생성
-    if User.objects.filter(email=email, social_provider='google').exists():
-        user = User.objects.get(email=email, social_provider='google')
+    user_qs = User.objects.filter(email=email)
+    if user_qs.exists() and user_qs.first().social_provider == 'google':
+        user = user_qs.first()
+    elif user_qs.exists():  # 해당 이메일이 다른 로그인 방식을 이미 사용 중인 경우
+        user = user_qs.first()
+        raise ApplicationError("다른 로그인 방식을 사용 중인 이메일입니다. {} 로그인 방식을 이용해주세요.".format(
+            user.social_provider if user.social_provider else 'SASM 기본'))
     else:
-        # 해당 이메일이 다른 아이디에서 이미 사용 중인 경우
-        if User.objects.filter(email=email).exists():
-            return Response({
-                'status': 'error',
-                'message': 'email is already in use',
-                'code': 400
-            }, status=status.HTTP_400_BAD_REQUEST)
-
         user = User(
             email=email,
             nickname=nickname,

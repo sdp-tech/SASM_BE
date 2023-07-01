@@ -3,7 +3,6 @@ from datetime import datetime
 from django.db.models import Q, F, Value, CharField, Case, When, Exists, OuterRef
 from django.db.models.functions import Concat, Substr
 from dataclasses import dataclass
-from django.conf import settings
 
 from users.models import User
 from forest.models import Forest, Category, SemiCategory, ForestComment
@@ -29,6 +28,7 @@ class ForestDto:
     subtitle: str
     category: dict
     semi_categories: list[dict]
+    rep_pic: str
     writer: dict
     user_likes: bool
     like_cnt: int
@@ -76,6 +76,7 @@ class ForestSelector:
             },
             semi_categories=[{'id': semi_category.id, 'name': semi_category.name}
                              for semi_category in forest.semicategories.all()],
+            rep_pic=forest.rep_pic.url,
             writer={
                 'email': forest.writer.email,
                 'nickname': forest.writer.nickname,
@@ -160,6 +161,7 @@ class ForestSelector:
             },
             semi_categories=[{'id': semi_category.id, 'name': semi_category.name}
                              for semi_category in forest.semicategories.all()],
+            rep_pic=forest.rep_pic.url,
             writer={
                 'email': forest.writer.email,
                 'nickname': forest.writer.nickname,

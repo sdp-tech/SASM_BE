@@ -22,6 +22,7 @@ class UserGetApi(APIView):
         profile_image = serializers.ImageField()
         is_sdp_admin = serializers.BooleanField()
         is_verified = serializers.BooleanField()
+        introduction = serializers.CharField()
 
     @swagger_auto_schema(
         operation_id='나의 정보 조회',
@@ -70,6 +71,7 @@ class UserUpdateApi(APIView):
         email = serializers.EmailField()
         address = serializers.CharField()
         profile_image = serializers.ImageField()
+        introduction = serializers.CharField()
 
     @swagger_auto_schema(
         request_body=UserUpdateInputSerializer,
@@ -112,6 +114,7 @@ class UserUpdateApi(APIView):
             email=data.get('email', None),
             address=data.get('address', None),
             profile_image=data.get('profile_image', None),
+            introduction = data.get('introduction',None),
         )
 
         return Response({
