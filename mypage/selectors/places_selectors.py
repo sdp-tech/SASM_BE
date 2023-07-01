@@ -13,7 +13,7 @@ class UserReviewedPlaceSelector:
         self.user = user
     
     def list(self):
-        user_reviews = PlaceVisitorReview.objects.filter(visitor_name__email=self.user)
+        user_reviews = PlaceVisitorReview.objects.filter(visitor_name__email=self.user.email)
         reviewed_places = Place.objects.filter(id__in=user_reviews.values('place'))
         
         return reviewed_places
@@ -32,11 +32,6 @@ class MyPlaceSearchSelector:
         
         if len(filter) > 0:
             query = None
-            for element in filter:
-                if query is None:
-                    query = Q(category=element)
-                else:
-                    query = query | Q(category=element)
             q.add(query, q.AND)
 
         places = like_place.filter(q).order_by('-created')
