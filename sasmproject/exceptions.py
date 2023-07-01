@@ -7,8 +7,11 @@ from rest_framework import status
 from rest_framework.serializers import as_serializer_error
 from rest_framework.response import Response
 import traceback
+import logging
 
 from core.exceptions import ApplicationError
+
+logger = logging.getLogger('django')
 
 
 def custom_exception_handler(exc, ctx):
@@ -21,6 +24,10 @@ def custom_exception_handler(exc, ctx):
         }
     }
     """
+
+    # log out the exception
+    logger.error(traceback.format_exc())
+
     if isinstance(exc, DjangoValidationError):
         exc = exceptions.ValidationError(as_serializer_error(exc))
 
@@ -40,9 +47,8 @@ def custom_exception_handler(exc, ctx):
                 "message": exc.message,
                 "extra": exc.extra
             }
-            return Response(data, status=400)
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
-        print(traceback.format_exc())
         # undefined, unknown error
         return Response({
             "status": "fail",

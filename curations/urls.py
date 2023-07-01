@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RepCurationListApi, AdminCurationListApi, VerifiedUserCurationListApi, CuratedStoryDetailApi, CurationDetailApi, CurationCreateApi, CurationUpdateApi, CurationDeleteApi, CurationListApi
+from .views import CurationLikeApi, RepCurationListApi, AdminCurationListApi, VerifiedUserCurationListApi, CuratedStoryDetailApi, CurationDetailApi, CurationCreateApi, CurationUpdateApi, CurationDeleteApi, CurationListApi
 
 urlpatterns = [
     path('rep_curations/', RepCurationListApi.as_view(), name="rep_curations"),
@@ -17,4 +17,6 @@ urlpatterns = [
          CurationUpdateApi.as_view(), name='curation_update'),
     path('curation_delete/<int:curation_id>/',
          CurationDeleteApi.as_view(), name='curation_delete'),
+    path('curation_like/<int:curation_id>/',
+         CurationLikeApi.as_view(), name='curation_like'),
 ]
