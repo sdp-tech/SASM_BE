@@ -66,7 +66,6 @@ class UserForestListApi(APIView):
                         'id': 1,
                         'title': "신재생 에너지 종류",
                         'preview': '풍력발전이란? 풍력발전은 바람과 ...',
-                        'rep_pic': 'https://abc.com/1.jpg',
                         'user_likes': True,
                     }
                 }
@@ -140,7 +139,6 @@ class UserCreateForestApi(APIView):
                         'id': 1,
                         'title': "신재생 에너지 종류",
                         'preview': '풍력발전이란? 풍력발전은 바람과 ...',
-                        'rep_pic': 'https://abc.com/1.jpg',
                         'user_likes': True,
                     }
                 }
