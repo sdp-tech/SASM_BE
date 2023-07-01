@@ -32,6 +32,11 @@ class MyPlaceSearchSelector:
         
         if len(filter) > 0:
             query = None
+            for element in filter:
+                if query is None:
+                    query = Q(category=element)
+                else:
+                    query = query | Q(category=element)
             q.add(query, q.AND)
 
         places = like_place.filter(q).order_by('-created')
