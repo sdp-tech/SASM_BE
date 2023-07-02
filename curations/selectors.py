@@ -1,12 +1,14 @@
 # from django.db.models import Q, F
 # from users.models import
+from datetime import datetime
 from curations.models import Curation
 from users.models import User
 from stories.models import Story
 
 from django.conf import settings
 from django.db.models.functions import Concat, Substr
-from django.db.models import Q, F, Case, When, Value, Exists, OuterRef, CharField, BooleanField, Aggregate, Subquery
+from django.db.models import Q, F, Case, When, Value, Exists, OuterRef, CharField, BooleanField, Aggregate, Subquery, ExpressionWrapper, JSONField
+from dataclasses import dataclass
 
 
 class GroupConcat(Aggregate):
@@ -33,6 +35,20 @@ class GroupConcat(Aggregate):
                               connection,
                               template='%(function)s(%(distinct)s%(expressions)s%(ordering)s)',
                               **extra)
+
+
+@dataclass
+class CurationDto:
+    title: str
+    contents: str
+    rep_pic: str
+    like_curation: bool
+    writer_email: str
+    nickname: str
+    profile_image: str
+    writer_is_verified: bool
+    created: datetime
+    map_image: str
 
 
 class CurationSelector:
@@ -64,37 +80,36 @@ class CurationSelector:
 
         return curations
 
-    def detail(self, curation_id: int):
-        curation = Curation.objects.filter(id=curation_id).annotate(
+    def detail(self, curation_id: int, user: User):
+        curation = Curation.objects.annotate(
             like_curation=Case(
-                When(likeuser_set=Exists(Curation.likeuser_set.through.objects.filter(
+                When(Exists(Curation.likeuser_set.through.objects.filter(
                     curation_id=OuterRef('pk'),
-                    user_id=self.user.pk
+                    user_id=user.pk
                 )),
                     then=Value(1)),
                 default=Value(0),
-            ),
-            writer_is_verified=F('writer__is_verified'),
-            rep_pic=Case(
-                When(
-                    photos__image=None,
-                    then=None
-                ),
-                default=Concat(Value(settings.MEDIA_URL),
-                               F('photos__image'),
-                               output_field=CharField())
-            ),
-            map_image=Concat(Value(settings.MEDIA_URL),
-                             F('map_photos__map'),
-                             output_field=CharField()),
-            writer_email=F('writer__email'),
-            nickname=F('writer__nickname'),
-            profile_image=Concat(Value(settings.MEDIA_URL),
-                                 F('writer__profile_image'),
-                                 output_field=CharField())
+            )
+        ).select_related(
+            'writer'
+        ).prefetch_related(
+            'photos', 'map_photos'
+        ).get(id=curation_id)
+
+        curation_dto = CurationDto(
+            title=curation.title,
+            contents=curation.contents,
+            like_curation=curation.like_curation,
+            rep_pic=curation.photos.all()[0].image.url,
+            writer_email=curation.writer.email,
+            nickname=curation.writer.nickname,
+            profile_image=curation.writer.profile_image,
+            writer_is_verified=curation.writer.is_verified,
+            created=curation.created,
+            map_image=curation.map_photos.all()[0].map.url
         )
 
-        return curation
+        return curation_dto
 
     def rep_curation_list(self):
         curations = Curation.objects.filter(is_released=True, is_rep=True).annotate(
@@ -165,7 +180,7 @@ class CuratedStoryCoordinatorSelector:
         for story in curated_stories_qs:
             if story['rep_photos'] != None:
                 story['rep_photos'] = list(story['rep_photos'].split(",")[
-                                           :3])  # 업로드 된 사진 중 3개가 대표사진으로 자동 설정
+                    :3])  # 업로드 된 사진 중 3개가 대표사진으로 자동 설정
                 temp_photo_list = []
 
                 for photo in story['rep_photos']:
