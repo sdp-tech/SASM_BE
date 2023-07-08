@@ -100,14 +100,20 @@ class CurationSelector:
             title=curation.title,
             contents=curation.contents,
             like_curation=curation.like_curation,
-            rep_pic=curation.photos.all()[0].image.url,
+            rep_pic=None,
             writer_email=curation.writer.email,
             nickname=curation.writer.nickname,
             profile_image=curation.writer.profile_image,
             writer_is_verified=curation.writer.is_verified,
             created=curation.created,
-            map_image=curation.map_photos.all()[0].map.url
+            map_image=None
         )
+
+        if len(curation.photos.all()) > 0:
+            curation_dto.rep_pic = curation.photos.all()[0].image.url
+
+        if len(curation.map_photos.all()) > 0:
+            curation_dto.map_image = curation.map_photos.all()[0].map.url
 
         return curation_dto
 
