@@ -261,8 +261,8 @@ class CurationDetailApi(APIView):
     )
     def get(self, request, curation_id):
         selector = CurationSelector(user=request.user)
-        curation = selector.detail(curation_id=curation_id)
-        serializer = self.CurationDetailOutputSerializer(curation, many=True)
+        curation = selector.detail(curation_id=curation_id, user=request.user)
+        serializer = self.CurationDetailOutputSerializer(curation)
 
         return Response({
             'status': 'success',
