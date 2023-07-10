@@ -103,7 +103,7 @@ class CurationSelector:
             rep_pic=None,
             writer_email=curation.writer.email,
             nickname=curation.writer.nickname,
-            profile_image=curation.writer.profile_image,
+            profile_image=settings.MEDIA_URL+curation.writer.profile_image.name,
             writer_is_verified=curation.writer.is_verified,
             created=curation.created,
             map_image=None
