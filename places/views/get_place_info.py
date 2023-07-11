@@ -67,7 +67,7 @@ class PlaceListView(viewsets.ModelViewSet):
     '''
         place의 list의 정보를 주는 API
     '''
-    queryset = Place.objects.prefetch_related('place_likeuser_set')
+    queryset = Place.objects.prefetch_related('place_likeuser_set', 'photos')
     serializer_class = PlaceSerializer
     permission_classes = [
         AllowAny,
