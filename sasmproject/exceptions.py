@@ -47,7 +47,7 @@ def custom_exception_handler(exc, ctx):
                 "message": exc.message,
                 "extra": exc.extra
             }
-            return Response(data, status=400)
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
         # undefined, unknown error
         return Response({

@@ -38,29 +38,29 @@ class UserInfoService:
                gender: str,
                nickname: str,
                birthdate: datetime.date,
-               email: str,
-               address: str,
-               profile_image: InMemoryUploadedFile) -> User:
+               profile_image: InMemoryUploadedFile,
+               introduction : str,
+               ) -> User:
+               
 
         if gender is not None:
             self.user.gender = gender
         # 중복된 닉네임 수정 시 reject
         if nickname is not None:
-            if User.objects.filter(nickname=nickname).exists():
+           if nickname.strip() == "":
+                nickname = self.user.nickname
+           elif User.objects.filter(nickname=nickname).exists():
                 raise ApplicationError(
                     message="사용 중인 닉네임 전달", extra={"nickname": "이미 사용 중인 닉네임 입니다."})
-            else:
-                self.user.nickname = nickname
+           self.user.nickname = nickname
+        
         if birthdate is not None:
             self.user.birthdate = birthdate
-        # email 수정 시 reject
-        if email is not None:
-            raise ApplicationError(
-                message="이메일 변경 불가", extra={"email": "이메일은 변경할 수 없습니다."})
-        if address is not None:
-            self.user.address = address
+        
         if profile_image is not None:
             self.user.profile_image = profile_image
+
+        self.user.introduction = introduction
 
         self.user.full_clean()
         self.user.save()
