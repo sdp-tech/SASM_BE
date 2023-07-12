@@ -72,12 +72,6 @@ class PlaceSerializer(serializers.ModelSerializer):
             'distance',
         ]
 
-    # #클래스 변수에 접근해야해서 classmethod 사용
-    # @classmethod
-    # def only_queryset(cls, queryset):
-    #     queryset = queryset.values(*cls.Meta.fields)
-    #     return queryset
-
     def get_distance(self, obj):
         '''
             거리순 정렬을 위해 거리를 계산하는 함수
@@ -93,30 +87,23 @@ class PlaceSerializer(serializers.ModelSerializer):
         '''
         오늘 요일만 보내주기 위한 함수
         '''
-        days = ['mon_hours', 'tues_hours', 'wed_hours',
-                'thurs_hours', 'fri_hours', 'sat_hours', 'sun_hours']
-        a = datetime.datetime.today().weekday()
-        place = Place.objects.filter(id=obj.id).values(days[a])[0]
-        return place[days[a]]
+        open_hours_for_weekday = [obj.mon_hours, obj.tues_hours, obj.wed_hours,
+                                  obj.thurs_hours, obj.fri_hours, obj.sat_hours, obj.sun_hours]
+        weekday_idx = datetime.datetime.today().weekday()  # 0: 월, 1: 화, ... 6: 일
+        return open_hours_for_weekday[weekday_idx]
 
     def get_place_like(self, obj):
         '''
         장소의 좋아요 여부를 알려주기 위한 함수
         '''
-        re_user = self.context['request'].user.id
-        if obj.place_likeuser_set.filter(id=re_user).exists():
+        user = self.context['request'].user
+        if user in obj.place_likeuser_set.all():
             return 'ok'
         else:
             return 'none'
 
     def get_extra_pic(self, obj):
-        photos = PlacePhoto.objects.filter(
-            place=obj).annotate(
-            imageUrls=Concat(Value(settings.MEDIA_URL),
-                             F('image'),
-                             output_field=CharField())
-        ).values_list('imageUrls', flat=True)
-        return photos
+        return [photo.image.url for photo in obj.photos.all()]
 
 
 class PlaceDetailSerializer(serializers.ModelSerializer):
