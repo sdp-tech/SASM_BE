@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import reviewed_places_view, stories_views, user_following, curations_views, user_info_views, forest_views
+from .views import places_view, stories_views, user_following, curations_views, user_info_views, forest_views
 
 urlpatterns = [
      path('follow/', user_following.UserDoUndoFollowApi.as_view(),
@@ -26,6 +26,7 @@ urlpatterns = [
           name='forest_edit_like'),
      path('me/', user_info_views.UserGetApi.as_view(), name='me'),
      path('me/update/', user_info_views.UserUpdateApi.as_view(), name='me_update'),
-     path('my_reviewed_place/',reviewed_places_view.UserReviewedPlaceGetApi.as_view(),
+     path('my_reviewed_place/',places_view.UserReviewedPlaceGetApi.as_view(),
           name='user_reviewed_place'),
+     path('myplace_search/',places_view.MyPlaceSearchApi.as_view(), name = 'myplace_search')
 ]
