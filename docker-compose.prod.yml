@@ -22,3 +22,13 @@ services:
       - "80:80"
     depends_on:
       - web
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: redis-server /usr/local/conf/redis.conf
+    build:
+      context: ./config/redis
+    ports:
+      - 6379:6379
+    depends_on:
+      - web

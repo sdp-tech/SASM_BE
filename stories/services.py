@@ -16,6 +16,9 @@ from places.models import Place
 from .selectors import StoryLikeSelector, StoryCommentSelector, semi_category
 from core.map_image import Marker, get_static_naver_image
 
+# for caching
+from core.caches import delete_cache
+
 
 class StoryCoordinatorService:
     def __init__(self, user: User):
@@ -182,6 +185,7 @@ class StoryService:
 
         return story
 
+    @delete_cache('story:detail:', 'story')
     def update(self,
                story: Story,
                title: str,
@@ -207,6 +211,7 @@ class StoryService:
 
         return story
 
+    @delete_cache('story:detail:', 'story')
     def delete(self, story: Story):
         story.delete()
 
