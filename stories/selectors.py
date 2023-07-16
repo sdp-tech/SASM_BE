@@ -11,6 +11,9 @@ from users.models import User
 import stories as st
 from stories.models import Story, StoryPhoto, StoryComment, StoryMap
 
+# for caching
+from core.caches import get_cache
+
 
 class GroupConcat(Aggregate):
     # Postgres ArrayAgg similar(not exactly equivalent) for sqlite & mysql
@@ -143,6 +146,8 @@ class StorySelector:
     def __init__(self):
         pass
 
+    @staticmethod
+    @get_cache('story:detail:', 'story_id')
     def detail(story_id: int, extra_fields: dict = {}):
         stories = Story.objects.all()
 
@@ -165,6 +170,7 @@ class StorySelector:
             ** extra_fields
         ).get(id=story_id)
 
+    @staticmethod
     def recommend_list(story_id: int):
         story = Story.objects.get(id=story_id)
         q = Q(place__category=story.place.category)
