@@ -1,9 +1,5 @@
 from django.urls import path
-<<<<<<< HEAD
 from .views import places_view, stories_views, user_following, curations_views, user_info_views, forest_views
-=======
-from .views import places_view, stories_views, user_following, curations_views, user_info_views
->>>>>>> 39560dd5343b6c3d9fb6e804080a5fce6afc42a3
 
 urlpatterns = [
      path('follow/', user_following.UserDoUndoFollowApi.as_view(),
