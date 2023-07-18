@@ -29,7 +29,6 @@ class MyCurationListApi(APIView):
         writer_nickname = serializers.CharField()
 
     @swagger_auto_schema(
-        query_serializer=MyCurationSerializer,
         operation_id='마이페이지 내가 작성한 큐레이션 리스트',
         operation_description='''
             내가 작성한 큐레이션을 리스트합니다.<br/>
