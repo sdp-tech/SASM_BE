@@ -64,7 +64,8 @@ PROJECT_APPS = [
     "community.apps.CommunityConfig",
     "curations.apps.CurationsConfig",
     "mypage.apps.MypageConfig",
-    "forest.apps.ForestConfig"
+    "forest.apps.ForestConfig",
+    "report.apps.ReportConfig",
 ]
 THIRD_APPS = [
     'rest_framework',
@@ -94,8 +95,6 @@ AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'silk.middleware.SilkyMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -103,6 +102,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # for performace profiling
+    'silk.middleware.SilkyMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'sasmproject.urls'
