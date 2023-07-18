@@ -19,6 +19,7 @@ urlpatterns = [
     path('curations/', include('curations.urls')),
     path('mypage/', include('mypage.urls')),
     path('forest/', include('forest.urls')),
+    path('report/', include('report.urls')),
 ]
 
 # API 문서에 작성될 소개 내용
