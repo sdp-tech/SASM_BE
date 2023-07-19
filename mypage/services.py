@@ -56,8 +56,8 @@ class UserInfoService:
         
         if profile_image is not None:
             self.user.profile_image = profile_image
-
-        self.user.introduction = introduction        
+        if introduction is not None:
+            self.user.introduction = introduction        
 
         self.user.full_clean()
         self.user.save()
