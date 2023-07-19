@@ -22,6 +22,7 @@ class UserGetApi(APIView):
         profile_image = serializers.ImageField()
         is_sdp_admin = serializers.BooleanField()
         is_verified = serializers.BooleanField()
+        introduction = serializers.CharField()
 
     @swagger_auto_schema(
         operation_id='나의 정보 조회',
@@ -43,6 +44,7 @@ class UserGetApi(APIView):
                         'profile_image': 'https://abc.com/1.jpg',
                         'is_sdp_admin': True,
                         'is_verified': False,
+                        'introduction' : "안녕하세요",
                     },
                 }
             ),
@@ -67,9 +69,8 @@ class UserUpdateApi(APIView):
         gender = serializers.CharField()
         nickname = serializers.CharField()
         birthdate = serializers.DateField()
-        email = serializers.EmailField()
-        address = serializers.CharField()
         profile_image = serializers.ImageField()
+        introduction = serializers.CharField()
 
     @swagger_auto_schema(
         request_body=UserUpdateInputSerializer,
@@ -86,9 +87,8 @@ class UserUpdateApi(APIView):
                         'gender': 'male',
                         'nickname': 'sdpofficial',
                         'birthdate': '2000.03.12',
-                        'email': 'sdptech@gmail.com',
-                        'address': '서대문구 연세로',
                         'profile_image': 'https://abc.com/1.jpg',
+                        'introduction' : '안녕하세요',
                     }
                 }
             ),
@@ -109,12 +109,56 @@ class UserUpdateApi(APIView):
             gender=data.get('gender', None),
             nickname=data.get('nickname', None),
             birthdate=data.get('birthdate', None),
-            email=data.get('email', None),
-            address=data.get('address', None),
             profile_image=data.get('profile_image', None),
+            introduction = data.get('introduction',None),
         )
 
         return Response({
             'status': 'success',
             'data': {'id': update.id},
+        }, status=status.HTTP_200_OK)
+
+
+class UserWithdrawApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    class UserWithdrawInputSerializer(serializers.Serializer):
+        password = serializers.CharField()
+
+    @swagger_auto_schema(
+            request_body=UserWithdrawInputSerializer,
+            security=[],
+            operation_id='회원 탈퇴하기',
+            operation_description='''
+                정보 확인을 위해 비밀번호를 체크한 뒤 회원 탈퇴하기를 진행합니다.
+            ''',
+            responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+
+    def delete(self, request):
+        serializer = self.UserWithdrawInputSerializer(
+            data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+        data=serializer.validated_data
+
+        UserInfoService.withdraw(
+            user=request.user,
+            password=data.get('password'),
+        )
+
+        return Response({
+            'status': 'success',
         }, status=status.HTTP_200_OK)

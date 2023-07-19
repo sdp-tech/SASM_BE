@@ -28,5 +28,6 @@ urlpatterns = [
      path('me/update/', user_info_views.UserUpdateApi.as_view(), name='me_update'),
      path('my_reviewed_place/',places_view.UserReviewedPlaceGetApi.as_view(),
           name='user_reviewed_place'),
+     path('withdraw/', user_info_views.UserWithdrawApi.as_view(), name='withdraw'),
      path('myplace_search/',places_view.MyPlaceSearchApi.as_view(), name = 'myplace_search')
 ]
