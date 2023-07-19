@@ -4,6 +4,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from core.exceptions import ApplicationError
 
 from users.models import User
+from users.selectors import UserSelector
 from mypage.selectors.follow_selectors import UserFollowSelector
 
 JWT_PAYLOAD_HANDLER = api_settings.JWT_PAYLOAD_HANDLER
@@ -66,3 +67,12 @@ class UserInfoService:
         self.user.save()
 
         return self.user
+
+    def withdraw(user: User, password: str):
+        user_selector = UserSelector()
+
+        if not user_selector.check_password(user, password):
+            raise ApplicationError(
+                {'detail': "비밀번호가 올바르지 않습니다."})
+        
+        user.delete()
