@@ -39,12 +39,12 @@ class UserInfoService:
                gender: str,
                nickname: str,
                birthdate: datetime.date,
-               email: str,
-               address: str,
+               introduction : str,
                profile_image: InMemoryUploadedFile) -> User:
 
         if gender is not None:
             self.user.gender = gender
+
         # 중복된 닉네임 수정 시 reject
         if nickname is not None:
             if User.objects.filter(nickname=nickname).exists():
@@ -54,14 +54,11 @@ class UserInfoService:
                 self.user.nickname = nickname
         if birthdate is not None:
             self.user.birthdate = birthdate
-        # email 수정 시 reject
-        if email is not None:
-            raise ApplicationError(
-                message="이메일 변경 불가", extra={"email": "이메일은 변경할 수 없습니다."})
-        if address is not None:
-            self.user.address = address
+        
         if profile_image is not None:
             self.user.profile_image = profile_image
+        if introduction is not None:
+            self.user.introduction = introduction        
 
         self.user.full_clean()
         self.user.save()
