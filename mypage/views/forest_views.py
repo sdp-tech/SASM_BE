@@ -53,7 +53,7 @@ class UserForestListApi(APIView):
             return likes
 
     @swagger_auto_schema(
-        query_serializer=UserForestOutputSerializer,
+        query_serializer=UserForestFilterSerializer,
         operation_id='마이페이지 내가 좋아요한 포레스트 리스트',
         operation_description='''
             내가 좋아요한 포레스트 게시글을 불러옵니다.
@@ -126,7 +126,7 @@ class UserCreateForestApi(APIView):
             return likes
 
     @swagger_auto_schema(
-        query_serializer=UserCreatedForestOutputSerializer,
+        query_serializer=UserCreatedForestFilterSerializer,
         operation_id='마이페이지 내가 작성한 포레스트 리스트',
         operation_description='''
             내가 작성한 포레스트 게시글을 불러옵니다.
@@ -173,7 +173,7 @@ class UserForestLikeApi(APIView):
     permission_classes = (IsAuthenticated, )
 
     @swagger_auto_schema(
-        operation_id='마이페이지 포레스트 좋아요 취소',
+        operation_id='마이페이지 포레스트 좋아요 및 좋아요 취소',
         operation_description='''
             전달된 id를 가지는 저장된 포레스트 게시글에 대한 사용자의 좋아요 취소 또는 좋아요를 진행합니다.<br/>
             결과로 좋아요 상태(TRUE:좋아요, FALSE:좋아요X)가 반환됩니다.

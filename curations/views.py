@@ -15,8 +15,28 @@ from .permissions import IsWriter, IsVerifiedOrSdpAdmin
 from curations.models import Curation
 
 
+def get_paginated_response(*, pagination_class, serializer_class, queryset, request, view):
+    paginator = pagination_class()
+
+    page = paginator.paginate_queryset(queryset, request, view=view)
+
+    if page is not None:
+        serializer = serializer_class(page, many=True)
+    else:
+        serializer = serializer_class(queryset, many=True)
+
+    return Response({
+        'status': 'success',
+        'data': paginator.get_paginated_response(serializer.data).data,
+    }, status=status.HTTP_200_OK)
+
+
 class CurationListApi(APIView):
     permission_classes = (AllowAny, )
+
+    class Pagination(PageNumberPagination):
+        page_size = 10
+        page_size_query_param = 'page_size'
 
     class CurationListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
@@ -65,20 +85,20 @@ class CurationListApi(APIView):
             search=filters.get('search', '')
         )
 
-        serializer = self.CurationListOutputSerializer(
-            curations, many=True)
-
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.CurationListOutputSerializer,
+            queryset=curations,
+            request=request,
+            view=self
+        )
 
 
 class RepCurationListApi(APIView):
     permission_classes = (AllowAny, )
 
     class Pagination(PageNumberPagination):
-        page_size = 10
+        page_size = 4
         page_size_query_param = 'page_size'
 
     class RepCurationListOutputSerializer(serializers.Serializer):
@@ -115,17 +135,22 @@ class RepCurationListApi(APIView):
     )
     def get(self, request):
         curations = CurationSelector.rep_curation_list(self)
-        serializer = self.RepCurationListOutputSerializer(
-            curations, many=True)
 
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.RepCurationListOutputSerializer,
+            queryset=curations,
+            request=request,
+            view=self
+        )
 
 
 class AdminCurationListApi(APIView):
     permission_classes = (AllowAny, )
+
+    class Pagination(PageNumberPagination):
+        page_size = 4
+        page_size_query_param = 'page_size'
 
     class AdminCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -161,17 +186,22 @@ class AdminCurationListApi(APIView):
     )
     def get(self, request):
         curations = CurationSelector.admin_curation_list(self)
-        serializer = self.AdminCurationListOutputSerializer(
-            curations, many=True)
 
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.AdminCurationListOutputSerializer,
+            queryset=curations,
+            request=request,
+            view=self
+        )
 
 
 class VerifiedUserCurationListApi(APIView):
     permission_classes = (AllowAny, )
+
+    class Pagination(PageNumberPagination):
+        page_size = 4
+        page_size_query_param = 'page_size'
 
     class VerifiedUserCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -207,13 +237,14 @@ class VerifiedUserCurationListApi(APIView):
     )
     def get(self, request):
         curations = CurationSelector.verified_user_curation_list(self)
-        serializer = self.VerifiedUserCurationListOutputSerializer(
-            curations, many=True)
 
-        return Response({
-            'status': 'success',
-            'data': serializer.data,
-        }, status=status.HTTP_200_OK)
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.VerifiedUserCurationListOutputSerializer,
+            queryset=curations,
+            request=request,
+            view=self
+        )
 
 
 class CurationDetailApi(APIView):
