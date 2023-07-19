@@ -156,7 +156,8 @@ class UserPlaceLikeApi(APIView):
         place_name = serializers.CharField()
         category = serializers.CharField()
         rep_pic = serializers.ImageField()
-        place_like = serializers.SerializerMethodField()
+        # place_like = serializers.SerializerMethodField()
+        address = serializers.CharField()
 
         def get_place_like(self, obj):
             return 'ok'
