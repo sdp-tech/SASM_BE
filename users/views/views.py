@@ -29,9 +29,10 @@ class UserGetApi(APIView, ApiAuthMixin):
         email = serializers.EmailField()
         address = serializers.CharField()
         profile_image = serializers.ImageField()
+        introduction = serializers.CharField()
         is_sdp_admin = serializers.BooleanField()
         is_verified = serializers.BooleanField()
-
+        
     def get(self, request):
         serializer = self.UserGetOutputSerializer(request.user)
 
