@@ -118,3 +118,26 @@ class UserUpdateApi(APIView):
             'status': 'success',
             'data': {'id': update.id},
         }, status=status.HTTP_200_OK)
+
+
+class UserWithdrawApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    class UserWithdrawInputSerializer(serializers.Serializer):
+        password = serializers.CharField()
+
+    def delete(self, request):
+        serializer = self.UserWithdrawInputSerializer(
+            data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+        data=serializer.validated_data
+
+        UserInfoService.withdraw(
+            user=request.user,
+            password=data.get('password'),
+        )
+
+        return Response({
+            'status': 'success',
+        }, status=status.HTTP_200_OK)
