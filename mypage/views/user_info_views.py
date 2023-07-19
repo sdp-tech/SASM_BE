@@ -126,6 +126,28 @@ class UserWithdrawApi(APIView):
     class UserWithdrawInputSerializer(serializers.Serializer):
         password = serializers.CharField()
 
+    @swagger_auto_schema(
+            request_body=UserWithdrawInputSerializer,
+            security=[],
+            operation_id='회원 탈퇴하기',
+            operation_description='''
+                정보 확인을 위해 비밀번호를 체크한 뒤 회원 탈퇴하기를 진행합니다.
+            ''',
+            responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+
     def delete(self, request):
         serializer = self.UserWithdrawInputSerializer(
             data=request.data
