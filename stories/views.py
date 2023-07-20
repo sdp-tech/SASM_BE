@@ -273,6 +273,8 @@ class StoryDetailApi(APIView):
         tag = serializers.CharField()
         html_content = serializers.CharField()
         story_like = serializers.BooleanField()
+        like_cnt = serializers.IntegerField()
+        comment_cnt = serializers.IntegerField()
         views = serializers.IntegerField()
         place_name = serializers.CharField()
         category = serializers.CharField()
@@ -301,10 +303,12 @@ class StoryDetailApi(APIView):
                         'semi_category': '반려동물 출입 가능, 텀블러 사용 가능, 비건',
                         'tag': '#생명 다양성 #자연 친화 #함께 즐기는',
                         'story_review': '"모두에게 열려있는 도심 속 가장 자연 친화적인 여가공간"',
-                        'story_review': '"서울숲. 가장 도시적인 단어..."',
+                        'preview': '"서울숲. 가장 도시적인 단어..."',
                         'html_content': '서울숲. 가장 도시적인 단어...(최대 150자)',
                         'views': 45,
                         'story_like': True,
+                        'like_cnt': 25,
+                        'comment_cnt': 8,
                         'writer': 'sdptech@gmail.com',
                         'writer_is_verified': True,
                         'nickname': 'sdp_official',
@@ -585,6 +589,8 @@ class StoryCommentListApi(APIView):
         email = serializers.CharField()
         mention = serializers.CharField()
         profile_image = serializers.CharField()
+        user_likes = serializers.BooleanField()
+        like_cnt = serializers.IntegerField()
         created_at = serializers.DateTimeField()
         updated_at = serializers.DateTimeField()
 
@@ -605,6 +611,8 @@ class StoryCommentListApi(APIView):
                         'email': 'sdpygl@gmail.com',
                         'mention': 'sasm@gmail.com',
                         'profile_image': 'https://abc.com/1.jpg',
+                        'user_likes': True,
+                        'like_cnt': 3,
                         'created_at': '2019-08-24T14:15:22Z',
                         'updated_at': '2019-08-24T14:15:22Z',
                     }
@@ -622,7 +630,8 @@ class StoryCommentListApi(APIView):
         filters = filters_serializer.validated_data
         selector = StoryCommentSelector()
         story_comments = selector.list(
-            story_id=filters.get('story')  # story id값 받아서 넣기
+            story_id=filters.get('story'),  # story id값 받아서 넣기
+            user=request.user,
         )
 
         return get_paginated_response(
@@ -632,6 +641,43 @@ class StoryCommentListApi(APIView):
             request=request,
             view=self,
         )
+    
+class StoryCommentLikeApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    @swagger_auto_schema(
+        operation_id='스토리 게시글 내의 댓글 좋아요 또는 좋아요 취소',
+        operation_description='''
+            입력한 id를 가지는 댓글에 대한 사용자의 좋아요 또는 좋아요 취소를 수행합니다.<br/>
+            결과로 좋아요 상태(TRUE: 좋아요, FALSE: 좋아요X)가 반환됩니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"likes": True}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        }
+    )
+    def post(self, request, story_id, story_comment_id):
+        likes = StoryCommentCoordinatorService.like_or_dislike(
+            story_comment=get_object_or_404(
+                StoryComment, pk=story_comment_id
+            ),
+            user=request.user
+        )
+
+        return Response({
+            'status': 'success',
+            'data': {'likes': likes},
+        }, status=status.HTTP_200_OK)
 
 
 class StoryCommentCreateApi(APIView):

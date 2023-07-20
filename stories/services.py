@@ -220,6 +220,27 @@ class StoryCommentCoordinatorService:
     def __init__(self, user: User):
         self.user = user
 
+    def like_or_dislike(story_comment: StoryComment, user: User) -> bool:
+        if StoryCommentSelector.likes(story_comment=story_comment, user=user):
+            # StoryComment의 like_cnt 1 감소
+            story_comment.likeuser_set.remove(user)
+            story_comment.like_cnt -= 1
+
+            story_comment.full_clean()
+            story_comment.save()
+
+            return False
+        
+        else:
+            #StoryComment의 like_cnt 1 증가
+            story_comment.likeuser_set.add(user)
+            story_comment.like_cnt += 1
+
+            story_comment.full_clean()
+            story_comment.save()
+
+            return True
+
     @transaction.atomic
     def create(self, story_id: int, content: str, mentioned_email: str = '') -> StoryComment:
         story = Story.objects.get(id=story_id)

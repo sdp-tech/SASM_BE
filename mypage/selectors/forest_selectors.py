@@ -28,6 +28,7 @@ class UserForestSelector:
 
         forests = like_forest.filter(q).annotate(
             name=F('hashtags__name'),
+            writer_is_verified=F('writer__is_verified'),
         ).order_by('-created')
 
         return forests
@@ -57,6 +58,7 @@ class UserCreatedForestSelector:
 
         forests = user_forest.filter(q).annotate(
             name=F('hashtags__name'),
+            writer_is_verified=F('writer__is_verified'),
         ).order_by('-created')
 
         return forests

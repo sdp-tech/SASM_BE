@@ -39,6 +39,9 @@ class UserForestListApi(APIView):
         title = serializers.CharField()
         preview = serializers.SerializerMethodField()
         forest_like = serializers.SerializerMethodField()
+        rep_pic = serializers.ImageField()
+        writer = serializers.CharField()
+        writer_is_verified = serializers.BooleanField()
 
         def get_preview(self, obj):
             forest = get_object_or_404(Forest, id=obj.id)
@@ -67,6 +70,9 @@ class UserForestListApi(APIView):
                         'title': "신재생 에너지 종류",
                         'preview': '풍력발전이란? 풍력발전은 바람과 ...',
                         'user_likes': True,
+                        'rep_pic': 'https://abc.com/1.jpg',
+                        'writer': 'sdpofficial',
+                        'writer_is_verified': True,
                     }
                 }
             ),
@@ -112,6 +118,9 @@ class UserCreateForestApi(APIView):
         title = serializers.CharField()
         preview = serializers.SerializerMethodField()
         forest_like = serializers.SerializerMethodField()
+        rep_pic = serializers.ImageField()
+        writer = serializers.CharField()
+        writer_is_verified = serializers.BooleanField()
 
         def get_preview(self, obj):
             forest = get_object_or_404(Forest, id=obj.id)
@@ -140,6 +149,9 @@ class UserCreateForestApi(APIView):
                         'title': "신재생 에너지 종류",
                         'preview': '풍력발전이란? 풍력발전은 바람과 ...',
                         'user_likes': True,
+                        'rep_pic': 'https://abc.com/1.jpg',
+                        'writer': 'sdpofficial',
+                        'writer_is_verified': True,
                     }
                 }
             ),
