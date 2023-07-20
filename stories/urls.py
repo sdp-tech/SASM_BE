@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import StoryDetailApi, StoryCreateApi, StoryUpdateApi, StoryDeleteApi, StoryRecommendApi, StoryLikeApi, StoryPhotoCreateApi, StoryListApi, GoToMapApi, StoryCommentListApi, StoryCommentCreateApi, StoryCommentUpdateApi, StoryCommentDeleteApi
+from .views import StoryDetailApi, StoryCreateApi, StoryUpdateApi, StoryDeleteApi, StoryRecommendApi, StoryLikeApi, StoryPhotoCreateApi, StoryListApi, GoToMapApi, StoryCommentListApi, StoryCommentCreateApi, StoryCommentUpdateApi, StoryCommentDeleteApi,  StoryIncludedCurationApi
 
 urlpatterns = [
      path('story_like/',
@@ -19,4 +19,5 @@ urlpatterns = [
      path('comments/update/<int:story_comment_id>/', 
           StoryCommentUpdateApi.as_view(), name='comments_update'),
      path('comments/delete/<int:story_comment_id>/', StoryCommentDeleteApi.as_view(), name='comments_delete'),
+     path('story_included_curation/<int:story_id>/', StoryIncludedCurationApi.as_view(), name="story_included_curation"),
 ]

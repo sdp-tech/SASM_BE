@@ -17,6 +17,8 @@ from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_cate
 from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService, StoryPhotoService
 from core.views import get_paginated_response
 from core.permissions import IsVerifiedOrSdpStaff
+from curations.models import Curation, Curation_Story
+from .selectors import StoryIncludedCurationSelector
 
 from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
@@ -778,4 +780,44 @@ class StoryCommentDeleteApi(APIView):
 
         return Response({
             'status': 'success',
+        }, status=status.HTTP_200_OK)
+    
+
+class StoryIncludedCurationApi(APIView):
+    premission_classes = (AllowAny, )
+
+    class StoryIncludedCurationOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        photos = serializers.CharField()
+
+    @swagger_auto_schema(
+        operation_id='스토리를 포함한 큐레이션 리스트 조회',
+        operation_description='''
+            해당 스토리가 포함된 큐레이션 리스트를 반환합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "appllication/json": {
+                        'id': 1,
+                        'title': '서울 비건카페 탑5',
+                        'photos': 'https://abc.com/1.jpg',
+                    },
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request, story_id):
+        selector=StoryIncludedCurationSelector(user=request.user)
+        curations = selector.list(story_id=story_id)
+        serializer = self.StoryIncludedCurationOutputSerializer(curations, many=True)
+
+        return Response({
+            'status': 'success',
+            'data':serializer.data,
         }, status=status.HTTP_200_OK)
