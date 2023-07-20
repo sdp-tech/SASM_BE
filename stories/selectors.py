@@ -263,10 +263,7 @@ class StoryCommentSelector:
         return StoryComment.objects.get(id=story_comment_id).writer == user
 
     def likes(story_comment: StoryComment, user: User):
-        if story_comment.likeuser_set.filter(pk=user.pk):
-            return True
-        else:
-            return False
+        return story_comment.likeuser_set.filter(pk=user.pk).exists()
 
     @staticmethod
     def list(story_id: int, user: User):
