@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Aggregate, Value, CharField, Case, When
+from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef
 from django.db.models.functions import Concat, Substr
 from users.models import User
 import stories as st
@@ -52,6 +52,8 @@ class StoryDto:
     tag: str
     views: int
     story_like: str
+    like_cnt: str
+    comment_cnt: str
     category: int
     semi_category: str
     writer: str
@@ -91,6 +93,8 @@ class StoryCoordinatorSelector:
             tag=story.tag,
             views=story.views,
             story_like=story_like,
+            like_cnt=story.story_like_cnt,
+            comment_cnt=len(story.comments.all()),
             category=story.category,
             semi_category=semi_cate,
             writer=story.writer,
@@ -100,7 +104,7 @@ class StoryCoordinatorSelector:
             created=story.created,
             map_image=story.map_image,
             rep_pic=story.rep_pic.url,
-            extra_pics=[],
+            extra_pics=[photo.image.url for photo in story.photos.all()[0:2]],
         )
 
         if story.extra_pics is not None:
@@ -258,8 +262,11 @@ class StoryCommentSelector:
     def isWriter(self, story_comment_id: int, user: User):
         return StoryComment.objects.get(id=story_comment_id).writer == user
 
+    def likes(story_comment: StoryComment, user: User):
+        return story_comment.likeuser_set.filter(pk=user.pk).exists()
+
     @staticmethod
-    def list(story_id: int):
+    def list(story_id: int, user: User):
         story = Story.objects.get(id=story_id)
         q = Q(story=story)
 
@@ -269,6 +276,14 @@ class StoryCommentSelector:
             profile_image=Concat(Value(settings.MEDIA_URL),
                                  F('writer__profile_image'),
                                  output_field=CharField()),
+            user_likes=Case(
+                When(Exists(StoryComment.likeuser_set.through.objects.filter(
+                    storycomment_id=OuterRef('id'),
+                    user_id=user.pk
+                )),
+                    then=Value(1)),
+                default=Value(0),
+            ),
         ).values(
             'id',
             'story',
@@ -277,6 +292,8 @@ class StoryCommentSelector:
             'email',
             'mention',
             'profile_image',
+            'user_likes',
+            'like_cnt',
             'created_at',
             'updated_at',
         ).order_by('id')

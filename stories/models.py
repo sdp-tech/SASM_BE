@@ -76,6 +76,10 @@ class StoryComment(core_models.TimeStampedModel):
     mention = models.ForeignKey(
         'users.User', related_name='mentioned_story_comments', on_delete=models.SET_NULL, null=True, blank=True)
 
+    likeuser_set = models.ManyToManyField(
+        "users.User", related_name='liked_story_comments', blank=True)
+    like_cnt = models.PositiveIntegerField(default=0)
+
     # TODO: TimestampedModel 필드와 중복, 삭제 필요
     created_at = models.DateTimeField(auto_now_add=True)
     # TODO: TimestampedModel 필드와 중복, 삭제 필요
