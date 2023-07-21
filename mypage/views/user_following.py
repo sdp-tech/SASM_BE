@@ -8,15 +8,15 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
 from users.mixins import ApiAuthMixin,  ApiAllowAnyMixin
-from mypage.services import  UserFollowService
-from mypage.selectors.follow_selectors import  UserFollowSelector
+from mypage.services import UserFollowService
+from mypage.selectors.follow_selectors import UserFollowSelector
 from users.models import User
 
 from core.views import get_paginated_response
+from core.exceptions import ApplicationError
 
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-
 
 
 class UserDoUndoFollowApi(ApiAuthMixin, APIView):
@@ -49,7 +49,6 @@ class UserDoUndoFollowApi(ApiAuthMixin, APIView):
             ),
         },
     )
-    
     def post(self, request):
         serializer = self.UserFollowInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -57,31 +56,34 @@ class UserDoUndoFollowApi(ApiAuthMixin, APIView):
 
         target_user = get_object_or_404(
             User, email=data.get('targetEmail'))
-        follows = UserFollowService.follow_or_unfollow(
-            source=request.user,
-            target=target_user)
 
-        return Response({
-            'status': 'success',
-            'data': {'follows': follows},
-        }, status=status.HTTP_200_OK)
-    
-    def delete(self,request):
+        if request.user != target_user:
+            follows = UserFollowService.follow_or_unfollow(
+                source=request.user,
+                target=target_user)
+
+            return Response({
+                'status': 'success',
+                'data': {'follows': follows},
+            }, status=status.HTTP_200_OK)
+
+        else:
+            raise ApplicationError("본인을 팔로우할 수 없습니다.")
+
+    def delete(self, request):
         serializer = self.UserFollowInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         target_user = get_object_or_404(
             User, email=data.get('targetEmail'))
-        
-        follows = UserFollowService.only_unfollow(source=request.user, 
-                                                  target= target_user)
+
+        follows = UserFollowService.only_unfollow(source=request.user,
+                                                  target=target_user)
 
         return Response({
-            'status' : 'success',
-            'data': {'follows' : follows},
-        }, status=status.HTTP_200_OK)   
-
-
+            'status': 'success',
+            'data': {'follows': follows},
+        }, status=status.HTTP_200_OK)
 
 
 class UserFollowingListApi(ApiAllowAnyMixin, APIView):
@@ -92,13 +94,13 @@ class UserFollowingListApi(ApiAllowAnyMixin, APIView):
     class UserFollowingListFilterSerializer(serializers.Serializer):
         email = serializers.CharField(required=True)
         page = serializers.IntegerField(required=False)
-        search_email = serializers.CharField(required=True, allow_blank=True) 
-        
+        search_email = serializers.CharField(required=True, allow_blank=True)
+
     class UserFollowingListOutputSerializer(serializers.Serializer):
         email = serializers.CharField()
         nickname = serializers.CharField()
         profile_image = serializers.ImageField()
-    
+
     @swagger_auto_schema(
         operation_id='유저 팔로잉 리스트',
         operation_description='''
@@ -142,6 +144,7 @@ class UserFollowingListApi(ApiAllowAnyMixin, APIView):
             view=self
         )
 
+
 class UserFollowerListApi(ApiAllowAnyMixin, APIView):
     class Pagination(PageNumberPagination):
         page_size = 5
@@ -150,7 +153,7 @@ class UserFollowerListApi(ApiAllowAnyMixin, APIView):
     class UserFollowerListFilterSerializer(serializers.Serializer):
         email = serializers.CharField(required=True)
         page = serializers.IntegerField(required=False)
-        search_email = serializers.CharField(required =True,allow_blank=True)
+        search_email = serializers.CharField(required=True, allow_blank=True)
 
     class UserFollowerListOutputSerializer(serializers.Serializer):
         email = serializers.CharField()
