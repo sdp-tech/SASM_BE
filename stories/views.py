@@ -835,7 +835,7 @@ class StoryIncludedCurationApi(APIView):
     class StoryIncludedCurationOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
-        photos = serializers.CharField()
+        rep_pic = serializers.CharField()
 
     @swagger_auto_schema(
         operation_id='스토리를 포함한 큐레이션 리스트 조회',
@@ -849,7 +849,7 @@ class StoryIncludedCurationApi(APIView):
                     "appllication/json": {
                         'id': 1,
                         'title': '서울 비건카페 탑5',
-                        'photos': 'https://abc.com/1.jpg',
+                        'rep_pic': 'https://abc.com/1.jpg',
                     },
                 }
             ),
