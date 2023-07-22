@@ -307,17 +307,17 @@ class StoryIncludedCurationSelector:
         self.user = user
 
     def list(self, story_id: int):
-        curation_story_objects = Curation_Story.objects.filter(story_id=story_id)
-        included_curation = Curation.objects.filter(short_curations__in=curation_story_objects).annotate(
-            rep_pic=Case(
-                When(
-                    photos__image=None,
-                    then=None
-                ),
-                default=Concat(Value(settings.MEDIA_URL),
-                               F('photos__image'),
-                               output_field=CharField())
+
+        included_curation = Curation.objects.filter(short_curations__story__id=story_id).annotate(
+            rep_pic=Concat(
+                Value(settings.MEDIA_URL),
+                F('photos__image'),
+                output_field=CharField(),
             ),
         )
 
-        return included_curation
+        for curation in included_curation:
+            if len(curation.photos.all()) >0:
+                curation.rep_pic = curation.photos.all()[0].image.url
+
+        return set(included_curation)
