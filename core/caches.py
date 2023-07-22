@@ -40,7 +40,6 @@ def delete_cache(key_prefix, key_suffix_keyword):
         def decorator(*args, **kwargs):
             # cache key full name 구하기
             cache_key = key_prefix + str(kwargs[key_suffix_keyword].id)
-            print(cache_key)
             data = func(*args, **kwargs)
             try:
                 # 주어진 key에 대해 캐시 삭제
