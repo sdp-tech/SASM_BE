@@ -522,12 +522,12 @@ class StoryLikeApi(APIView):
             ),
         },
     )
-    def post(self, request):
+    def post(self, request, story_id):
         service = StoryCoordinatorService(
             user=request.user
         )
         story_like = service.like_or_dislike(
-            story_id=request.data['id'],
+            story = get_object_or_404(Story, pk=story_id)
         )
 
         return Response({
