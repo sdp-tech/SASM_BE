@@ -283,6 +283,7 @@ class StoryDetailApi(APIView):
         profile = serializers.CharField()
         created = serializers.DateTimeField()  # 게시글 생성 날짜
         map_image = serializers.CharField()
+        writer_is_followed = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
@@ -309,6 +310,7 @@ class StoryDetailApi(APIView):
                         'comment_cnt': 8,
                         'writer': 'sdptech@gmail.com',
                         'writer_is_verified': True,
+                        'writer_is_followed' : True,
                         'nickname': 'sdp_official',
                         'profile': 'https://abc.com/1.jpg',
                         "created": "2023-08-24T14:15:22Z",
@@ -328,7 +330,7 @@ class StoryDetailApi(APIView):
         story = selector.detail(story_id=story_id)
 
         serializer = self.StoryDetailOutputSerializer(story)
-
+        print("writer_is_followed (before response):", story.writer_is_followed)
         return Response({
             'status': 'success',
             'data': serializer.data,
