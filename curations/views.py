@@ -247,6 +247,7 @@ class VerifiedUserCurationListApi(APIView):
         )
 
 
+
 class CurationDetailApi(APIView):
     permission_classes = (AllowAny, )
 
@@ -261,6 +262,9 @@ class CurationDetailApi(APIView):
         writer_is_verified = serializers.BooleanField()
         created = serializers.CharField()
         map_image = serializers.CharField()
+        writer_is_followed = serializers.BooleanField()
+
+
 
     @swagger_auto_schema(
         operation_id='큐레이션 디테일 조회',
@@ -282,6 +286,7 @@ class CurationDetailApi(APIView):
                         'profile_image': 'https://abc.com/1.jpg',
                         'writer_is_verified': True,
                         'map_image': 'https://abc.com/1.jpg',
+                        'writer_is_followed' : True
                     },
                 }
             ),

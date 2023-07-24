@@ -81,6 +81,7 @@ class CurationSelector:
         return curations
 
     def detail(self, curation_id: int, user: User):
+
         curation = Curation.objects.annotate(
             like_curation=Case(
                 When(Exists(Curation.likeuser_set.through.objects.filter(
@@ -89,13 +90,19 @@ class CurationSelector:
                 )),
                     then=Value(1)),
                 default=Value(0),
-            )
+            ),
+            is_followed=Exists(
+                user.follows.through.objects.filter(
+                    from_user_id = user.id,
+                      to_user_id = OuterRef('writer')
+                ),
+            ),
         ).select_related(
             'writer'
         ).prefetch_related(
             'photos', 'map_photos'
         ).get(id=curation_id)
-
+       
         curation_dto = CurationDto(
             title=curation.title,
             contents=curation.contents,
@@ -106,8 +113,10 @@ class CurationSelector:
             profile_image=curation.writer.profile_image.url,
             writer_is_verified=curation.writer.is_verified,
             created=curation.created,
-            map_image=None
-        )
+            map_image=None,
+            writer_is_followed = curation.is_followed
+                            )
+
 
         if len(curation.photos.all()) > 0:
             curation_dto.rep_pic = curation.photos.all()[0].image.url
