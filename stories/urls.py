@@ -2,7 +2,7 @@ from django.urls import path
 from .views import StoryDetailApi, StoryCreateApi, StoryUpdateApi, StoryDeleteApi, StoryRecommendApi, StoryLikeApi, StoryPhotoCreateApi, StoryListApi, GoToMapApi, StoryCommentListApi, StoryCommentLikeApi, StoryCommentCreateApi, StoryCommentUpdateApi, StoryCommentDeleteApi,  StoryIncludedCurationApi
 
 urlpatterns = [
-     path('story_like/',
+     path('<int:story_id>/story_like/',
           StoryLikeApi.as_view(), name="story_like"),
      path('story_detail/<int:story_id>/', StoryDetailApi.as_view(), name='story_detail'),
      path('create/', StoryCreateApi.as_view(), name='story_create'),

@@ -24,14 +24,15 @@ class StoryCoordinatorService:
     def __init__(self, user: User):
         self.user = user
 
-    def like_or_dislike(self, story_id: int) -> bool:
-        if StoryLikeSelector.likes(story_id=story_id, user=self.user):
+    @delete_cache('story:detail:', 'story')
+    def like_or_dislike(self, story: Story) -> bool:
+        if StoryLikeSelector.likes(story_id=story.id, user=self.user):
             # Story의 like_cnt 1 감소
-            StoryService.dislike(story_id=story_id, user=self.user)
+            StoryService.dislike(story=story, user=self.user)
             return False
         else:
             # Story의 like_cnt 1 증가
-            StoryService.like(story_id=story_id, user=self.user)
+            StoryService.like(story=story, user=self.user)
             return True
 
     @transaction.atomic
@@ -142,9 +143,7 @@ class StoryService:
         pass
 
     @staticmethod
-    def like(story_id: int, user: User):
-        story = Story.objects.get(id=story_id)
-
+    def like(story: Story, user: User):
         story.story_likeuser_set.add(user)
         story.story_like_cnt += 1
 
@@ -152,9 +151,7 @@ class StoryService:
         story.save()
 
     @staticmethod
-    def dislike(story_id: int, user: User):
-        story = Story.objects.get(id=story_id)
-
+    def dislike(story: Story, user: User):
         story.story_likeuser_set.remove(user)
         story.story_like_cnt -= 1
 

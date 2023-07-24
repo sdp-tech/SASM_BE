@@ -76,6 +76,7 @@ class StoryCoordinatorSelector:
     def __init__(self, user: User):
         self.user = user
 
+    @get_cache('story:detail:', 'story_id')
     def detail(self, story_id: int):
         story = StorySelector.detail(story_id=story_id)
 
@@ -153,7 +154,6 @@ class StorySelector:
         pass
 
     @staticmethod
-    @get_cache('story:detail:', 'story_id')
     def detail(story_id: int, extra_fields: dict = {}):
         stories = Story.objects.all()
 
