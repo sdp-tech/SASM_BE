@@ -58,6 +58,12 @@ class ForestSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
+            is_followed=Exists(
+                user.follows.through.objects.filter(
+                    from_user_id = user.id,
+                      to_user_id = OuterRef('writer')
+                ),
+            ),
         ).select_related(
             'category', 'writer'
         ).prefetch_related(
@@ -65,6 +71,7 @@ class ForestSelector:
         ).get(
             id=forest_id
         )
+
         forest_dto = ForestDto(
             id=forest.id,
             title=forest.title,
@@ -82,8 +89,10 @@ class ForestSelector:
                 'nickname': forest.writer.nickname,
                 'profile':  forest.writer.profile_image.url,
                 'is_verified': forest.writer.is_verified,
+                'writer_is_followed' : forest.is_followed,
             },
             user_likes=forest.user_likes,
+
             like_cnt=forest.like_cnt,
             comment_cnt=len(forest.comments.all()),
             created=forest.created.strftime('%Y-%m-%dT%H:%M:%S%z'),
