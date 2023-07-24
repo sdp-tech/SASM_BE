@@ -330,7 +330,7 @@ class StoryDetailApi(APIView):
         story = selector.detail(story_id=story_id)
 
         serializer = self.StoryDetailOutputSerializer(story)
-        print("writer_is_followed (before response):", story.writer_is_followed)
+       
         return Response({
             'status': 'success',
             'data': serializer.data,

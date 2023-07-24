@@ -82,8 +82,6 @@ class CurationSelector:
 
     def detail(self, curation_id: int, user: User):
 
-        for _user in user.follows.through.objects.all().values():
-            print("- ", _user)
         curation = Curation.objects.annotate(
             like_curation=Case(
                 When(Exists(Curation.likeuser_set.through.objects.filter(
