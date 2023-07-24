@@ -317,7 +317,10 @@ class StoryIncludedCurationSelector:
         )
 
         for curation in included_curation:
-            if len(curation.photos.all()) >0:
-                curation.rep_pic = curation.photos.all()[0].image.url
+            try:
+                first_photo = curation.photos.all()[0]
+                curation.rep_pic = first_photo.image.url
+            except IndexError:
+                curation.rep_pic = None
 
         return set(included_curation)
