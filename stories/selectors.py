@@ -324,3 +324,15 @@ class StoryIncludedCurationSelector:
         )
 
         return included_curation
+    
+class SamePlaceStorySelector:
+    def __init__(self, user:User):
+        self.user = user
+    
+    def list(self, story_id: int):
+        same_place_story = Story.objects.filter(place = Story.objects.get(id=story_id).place).exclude(id=story_id)
+
+        for story in same_place_story:
+            story.rep_pic = story.rep_pic.url
+
+        return same_place_story
