@@ -323,8 +323,4 @@ class StoryIncludedCurationSelector:
             ),
         )
 
-        for curation in included_curation:
-            if len(curation.photos.all()) >0:
-                curation.rep_pic = curation.photos.all()[0].image.url
-
-        return set(included_curation)
+        return included_curation
