@@ -13,12 +13,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
-from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector
+from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector, StoryIncludedCurationSelector, SamePlaceStorySelector
 from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService, StoryPhotoService
 from core.views import get_paginated_response
 from core.permissions import IsVerifiedOrSdpStaff
 from curations.models import Curation, Curation_Story
-from .selectors import StoryIncludedCurationSelector
 
 from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
@@ -867,5 +866,45 @@ class StoryIncludedCurationApi(APIView):
 
         return Response({
             'status': 'success',
+            'data':serializer.data,
+        }, status=status.HTTP_200_OK)
+    
+
+class SamePlaceStory(APIView):
+    permission_classes = (AllowAny, )
+
+    class SamePlaceStoryOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        rep_pic = serializers.CharField()
+
+    @swagger_auto_schema(
+        operation_id='이 장소의 다른 스토리',
+        operation_description='''
+            해당 장소가 포함된 다른 스토리 리스트를 반환합니다<br/>
+        ''',
+        responses={
+            "200":openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'title':'도심 속 모두에게 열려있는 쉼터, 서울숲',
+                        'rep_pic': 'https://abc.com/1.jpg',
+                    },
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request, story_id):
+        selector = SamePlaceStorySelector(user=request.user)
+        story_list = selector.list(story_id=story_id)
+        serializer = self.SamePlaceStoryOutputSerializer(story_list, many=True)
+
+        return Response({
+            'status':'success',
             'data':serializer.data,
         }, status=status.HTTP_200_OK)
