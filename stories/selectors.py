@@ -10,6 +10,8 @@ from django.db.models.functions import Concat, Substr
 from users.models import User
 import stories as st
 from stories.models import Story, StoryPhoto, StoryComment, StoryMap
+from curations.models import Curation, Curation_Story
+
 
 # for caching
 from core.caches import get_cache
@@ -303,3 +305,22 @@ class StoryCommentSelector:
         ).order_by('id')
 
         return story_comments
+
+class StoryIncludedCurationSelector:
+    def __init__(self, user:User):
+        self.user = user
+
+    def list(self, story_id: int):
+        included_curation = Curation.objects.filter(short_curations__story__id=story_id).annotate(
+            rep_pic=Case(
+                When(
+                    photos__image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('photos__image'),
+                               output_field=CharField())
+            ),
+        )
+
+        return included_curation
