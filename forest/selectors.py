@@ -35,6 +35,7 @@ class ForestDto:
     comment_cnt: int
     created: datetime
     updated: datetime
+    writer_is_followed : bool
 
     content: str = None  # detail
     preview: str = None  # list
@@ -89,10 +90,10 @@ class ForestSelector:
                 'nickname': forest.writer.nickname,
                 'profile':  forest.writer.profile_image.url,
                 'is_verified': forest.writer.is_verified,
-                'writer_is_followed' : forest.is_followed,
             },
             user_likes=forest.user_likes,
-
+            writer_is_followed = forest.is_followed,
+           
             like_cnt=forest.like_cnt,
             comment_cnt=len(forest.comments.all()),
             created=forest.created.strftime('%Y-%m-%dT%H:%M:%S%z'),
