@@ -49,7 +49,9 @@ class CurationDto:
     writer_is_verified: bool
     created: datetime
     map_image: str
-
+    writer_is_followed : bool
+ 
+ 
 
 class CurationSelector:
     def __init__(self, user: User):
