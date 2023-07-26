@@ -35,6 +35,7 @@ class ForestDto:
     comment_cnt: int
     created: datetime
     updated: datetime
+    writer_is_followed : bool = None
 
     content: str = None  # detail
     preview: str = None  # list
@@ -58,6 +59,12 @@ class ForestSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
+            is_followed=Exists(
+                user.follows.through.objects.filter(
+                    from_user_id = user.id,
+                      to_user_id = OuterRef('writer')
+                ),
+            ),
         ).select_related(
             'category', 'writer'
         ).prefetch_related(
@@ -65,6 +72,7 @@ class ForestSelector:
         ).get(
             id=forest_id
         )
+
         forest_dto = ForestDto(
             id=forest.id,
             title=forest.title,
@@ -84,6 +92,8 @@ class ForestSelector:
                 'is_verified': forest.writer.is_verified,
             },
             user_likes=forest.user_likes,
+            writer_is_followed = forest.is_followed,
+           
             like_cnt=forest.like_cnt,
             comment_cnt=len(forest.comments.all()),
             created=forest.created.strftime('%Y-%m-%dT%H:%M:%S%z'),

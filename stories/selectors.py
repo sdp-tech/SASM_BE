@@ -10,6 +10,8 @@ from django.db.models.functions import Concat, Substr
 from users.models import User
 import stories as st
 from stories.models import Story, StoryPhoto, StoryComment, StoryMap
+from curations.models import Curation, Curation_Story
+
 
 # for caching
 from core.caches import get_cache
@@ -64,6 +66,7 @@ class StoryDto:
     map_image: str
     rep_pic: str
     extra_pics: list[str]
+    writer_is_followed : bool = None
 
 
 def append_media_url(rest):
@@ -83,7 +86,8 @@ class StoryCoordinatorSelector:
             user=self.user,
         )
         semi_cate = semi_category(story.id)
-
+        writer_is_followed = self.user.follows.filter(pk=story.writer.pk).exists()
+        
         dto = StoryDto(
             id=story.id,
             title=story.title,
@@ -106,9 +110,11 @@ class StoryCoordinatorSelector:
             map_image=story.map_image,
             rep_pic=story.rep_pic.url,
             extra_pics=[photo.image.url for photo in story.photos.all()[0:2]],
+            writer_is_followed=writer_is_followed
         )
 
         if story.extra_pics is not None:
+        
             dto.extra_pics = map(
                 append_media_url, story.extra_pics.split(',')[:3])
 
@@ -299,3 +305,34 @@ class StoryCommentSelector:
         ).order_by('id')
 
         return story_comments
+
+class StoryIncludedCurationSelector:
+    def __init__(self, user:User):
+        self.user = user
+
+    def list(self, story_id: int):
+        included_curation = Curation.objects.filter(short_curations__story__id=story_id).annotate(
+            rep_pic=Case(
+                When(
+                    photos__image=None,
+                    then=None
+                ),
+                default=Concat(Value(settings.MEDIA_URL),
+                               F('photos__image'),
+                               output_field=CharField())
+            ),
+        )
+
+        return included_curation
+    
+class SamePlaceStorySelector:
+    def __init__(self, user:User):
+        self.user = user
+    
+    def list(self, story_id: int):
+        same_place_story = Story.objects.filter(place = Story.objects.get(id=story_id).place).exclude(id=story_id)
+
+        for story in same_place_story:
+            story.rep_pic = story.rep_pic.url
+
+        return same_place_story

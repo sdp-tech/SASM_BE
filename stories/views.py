@@ -13,10 +13,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
-from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector
+from stories.selectors import StoryCoordinatorSelector, StorySelector, semi_category, StoryLikeSelector, MapMarkerSelector, StoryCommentSelector, StoryIncludedCurationSelector, SamePlaceStorySelector
 from stories.services import StoryCoordinatorService, StoryCommentCoordinatorService, StoryPhotoService
 from core.views import get_paginated_response
 from core.permissions import IsVerifiedOrSdpStaff
+from curations.models import Curation, Curation_Story
 
 from .models import Story, StoryComment
 from .selectors import StoryLikeSelector
@@ -283,6 +284,7 @@ class StoryDetailApi(APIView):
         profile = serializers.CharField()
         created = serializers.DateTimeField()  # 게시글 생성 날짜
         map_image = serializers.CharField()
+        writer_is_followed = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
@@ -309,6 +311,7 @@ class StoryDetailApi(APIView):
                         'comment_cnt': 8,
                         'writer': 'sdptech@gmail.com',
                         'writer_is_verified': True,
+                        'writer_is_followed' : True,
                         'nickname': 'sdp_official',
                         'profile': 'https://abc.com/1.jpg',
                         "created": "2023-08-24T14:15:22Z",
@@ -328,7 +331,7 @@ class StoryDetailApi(APIView):
         story = selector.detail(story_id=story_id)
 
         serializer = self.StoryDetailOutputSerializer(story)
-
+       
         return Response({
             'status': 'success',
             'data': serializer.data,
@@ -824,4 +827,84 @@ class StoryCommentDeleteApi(APIView):
 
         return Response({
             'status': 'success',
+        }, status=status.HTTP_200_OK)
+    
+
+class StoryIncludedCurationApi(APIView):
+    premission_classes = (AllowAny, )
+
+    class StoryIncludedCurationOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        rep_pic = serializers.CharField()
+
+    @swagger_auto_schema(
+        operation_id='스토리를 포함한 큐레이션 리스트 조회',
+        operation_description='''
+            해당 스토리가 포함된 큐레이션 리스트를 반환합니다.<br/>
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "appllication/json": {
+                        'id': 1,
+                        'title': '서울 비건카페 탑5',
+                        'rep_pic': 'https://abc.com/1.jpg',
+                    },
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request, story_id):
+        selector=StoryIncludedCurationSelector(user=request.user)
+        curations = selector.list(story_id=story_id)
+        serializer = self.StoryIncludedCurationOutputSerializer(curations, many=True)
+
+        return Response({
+            'status': 'success',
+            'data':serializer.data,
+        }, status=status.HTTP_200_OK)
+    
+
+class SamePlaceStory(APIView):
+    permission_classes = (AllowAny, )
+
+    class SamePlaceStoryOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        title = serializers.CharField()
+        rep_pic = serializers.CharField()
+
+    @swagger_auto_schema(
+        operation_id='이 장소의 다른 스토리',
+        operation_description='''
+            해당 장소가 포함된 다른 스토리 리스트를 반환합니다<br/>
+        ''',
+        responses={
+            "200":openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 1,
+                        'title':'도심 속 모두에게 열려있는 쉼터, 서울숲',
+                        'rep_pic': 'https://abc.com/1.jpg',
+                    },
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request, story_id):
+        selector = SamePlaceStorySelector(user=request.user)
+        story_list = selector.list(story_id=story_id)
+        serializer = self.SamePlaceStoryOutputSerializer(story_list, many=True)
+
+        return Response({
+            'status':'success',
+            'data':serializer.data,
         }, status=status.HTTP_200_OK)

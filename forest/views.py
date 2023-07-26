@@ -285,6 +285,7 @@ class ForestDetailApi(APIView):
         comment_cnt = serializers.IntegerField()
         created = serializers.DateTimeField()
         updated = serializers.DateTimeField()
+        writer_is_followed = serializers.BooleanField()
 
     @swagger_auto_schema(
         operation_id='포레스트 글 디테일 조회',
@@ -321,7 +322,8 @@ class ForestDetailApi(APIView):
                             "email": "sdpygl@gmail.com",
                             "nickname": "sdp_offical",
                             "profile": "https://sasm-bucket.s3.amazonaws.com/media/profile/20230401/abc.jpg",
-                            "is_verified": False
+                            "is_verified": False,
+                            "writer_is_followed" : True, 
                         },
                         'user_likes': True,
                         'like_cnt': 1,
