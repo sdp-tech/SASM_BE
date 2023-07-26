@@ -66,7 +66,7 @@ class StoryDto:
     map_image: str
     rep_pic: str
     extra_pics: list[str]
-    writer_is_followed : bool
+    writer_is_followed : bool = None
 
 
 def append_media_url(rest):

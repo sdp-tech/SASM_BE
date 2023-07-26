@@ -49,7 +49,7 @@ class CurationDto:
     writer_is_verified: bool
     created: datetime
     map_image: str
-    writer_is_followed : bool
+    writer_is_followed : bool = None
  
  
 
