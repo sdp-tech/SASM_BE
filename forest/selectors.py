@@ -35,7 +35,7 @@ class ForestDto:
     comment_cnt: int
     created: datetime
     updated: datetime
-    writer_is_followed : bool
+    writer_is_followed : bool = None
 
     content: str = None  # detail
     preview: str = None  # list
