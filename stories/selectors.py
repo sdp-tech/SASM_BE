@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef
+from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef, Subquery
 from django.db.models.functions import Concat, Substr
 from users.models import User
 import stories as st
@@ -330,9 +330,20 @@ class SamePlaceStorySelector:
         self.user = user
     
     def list(self, story_id: int):
-        same_place_story = Story.objects.filter(place = Story.objects.get(id=story_id).place).exclude(id=story_id)
+        story_place_subquery = Story.objects.filter(
+            id=story_id
+        ).values('place')
+        
+        same_place_story = Story.objects.filter(place=Subquery(story_place_subquery)).exclude(id=story_id).annotate(
+            place_name=F('place__place_name'),
+            writer_is_verified=F('writer__is_verified'),
+            nickname=F('writer__nickname'),
+            extra_pics=GroupConcat('photos__image'))
 
         for story in same_place_story:
             story.rep_pic = story.rep_pic.url
+            if story.extra_pics is not None:
+                story.extra_pics = map(
+                    append_media_url, story.extra_pics.split(',')[:3])
 
         return same_place_story
