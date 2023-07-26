@@ -7,6 +7,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from mypage.services import UserInfoService
+from users.models import User
 
 
 class UserGetApi(APIView):
@@ -122,11 +123,7 @@ class UserUpdateApi(APIView):
 class UserWithdrawApi(APIView):
     permission_classes = (IsAuthenticated, )
 
-    class UserWithdrawInputSerializer(serializers.Serializer):
-        password = serializers.CharField()
-
     @swagger_auto_schema(
-            request_body=UserWithdrawInputSerializer,
             security=[],
             operation_id='회원 탈퇴하기',
             operation_description='''
@@ -148,15 +145,8 @@ class UserWithdrawApi(APIView):
     )
 
     def delete(self, request):
-        serializer = self.UserWithdrawInputSerializer(
-            data=request.data
-        )
-        serializer.is_valid(raise_exception=True)
-        data=serializer.validated_data
-
         UserInfoService.withdraw(
             user=request.user,
-            password=data.get('password'),
         )
 
         return Response({
