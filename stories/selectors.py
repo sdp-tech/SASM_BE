@@ -14,7 +14,7 @@ from curations.models import Curation, Curation_Story
 
 
 # for caching
-from core.caches import get_cache
+# from core.caches import get_cache
 
 
 class GroupConcat(Aggregate):
@@ -77,7 +77,7 @@ class StoryCoordinatorSelector:
     def __init__(self, user: User):
         self.user = user
 
-    @get_cache('story:detail:', 'story_id')
+    # @get_cache('story:detail:', 'story_id')
     def detail(self, story_id: int):
         story = StorySelector.detail(story_id=story_id)
 
