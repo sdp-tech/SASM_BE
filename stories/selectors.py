@@ -330,20 +330,38 @@ class SamePlaceStorySelector:
         self.user = user
     
     def list(self, story_id: int):
-        story_place_subquery = Story.objects.filter(
-            id=story_id
-        ).values('place')
-        
-        same_place_story = Story.objects.filter(place=Subquery(story_place_subquery)).exclude(id=story_id).annotate(
-            place_name=F('place__place_name'),
-            writer_is_verified=F('writer__is_verified'),
-            nickname=F('writer__nickname'),
-            extra_pics=GroupConcat('photos__image'))
+        story_place_subquery = Story.objects.filter(id=story_id).values('place')
 
-        for story in same_place_story:
-            story.rep_pic = story.rep_pic.url
-            if story.extra_pics is not None:
-                story.extra_pics = map(
-                    append_media_url, story.extra_pics.split(',')[:3])
+        same_place_stories = Story.objects.filter(place=Subquery(story_place_subquery)).select_related('writer', 'place').prefetch_related('photos').exclude(id=story_id)
 
-        return same_place_story
+        story_dtos = []
+
+        for story in same_place_stories:
+                extra_pics = [photo.image.url for photo in story.photos.all()[:3]]
+                story_dto = StoryDto(
+                    id=story.id,
+                    title=story.title,
+                    place_name=story.place.place_name,
+                    story_review=None,
+                    preview=story.preview,
+                    html_content=None,
+                    tag=None,
+                    views=None,
+                    story_like=None,
+                    like_cnt=None,
+                    comment_cnt=None,
+                    category=None,
+                    semi_category=None,
+                    writer=story.writer,
+                    writer_is_verified=story.writer.is_verified,
+                    nickname=story.writer.nickname,
+                    profile=None,
+                    created=story.created,
+                    map_image=None,
+                    rep_pic=story.rep_pic.url,
+                    extra_pics=extra_pics,
+                    writer_is_followed=None,
+                )
+                story_dtos.append(story_dto)
+
+        return story_dtos
