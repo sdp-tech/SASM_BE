@@ -17,14 +17,14 @@ from .selectors import StoryLikeSelector, StoryCommentSelector, semi_category
 from core.map_image import Marker, get_static_naver_image
 
 # for caching
-from core.caches import delete_cache
+# from core.caches import delete_cache
 
 
 class StoryCoordinatorService:
     def __init__(self, user: User):
         self.user = user
 
-    @delete_cache('story:detail:', 'story')
+    # @delete_cache('story:detail:', 'story')
     def like_or_dislike(self, story: Story) -> bool:
         if StoryLikeSelector.likes(story_id=story.id, user=self.user):
             # Story의 like_cnt 1 감소
@@ -182,7 +182,7 @@ class StoryService:
 
         return story
 
-    @delete_cache('story:detail:', 'story')
+    # @delete_cache('story:detail:', 'story')
     def update(self,
                story: Story,
                title: str,
@@ -208,7 +208,7 @@ class StoryService:
 
         return story
 
-    @delete_cache('story:detail:', 'story')
+    # @delete_cache('story:detail:', 'story')
     def delete(self, story: Story):
         story.delete()
 

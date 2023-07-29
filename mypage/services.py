@@ -65,11 +65,5 @@ class UserInfoService:
 
         return self.user
 
-    def withdraw(user: User, password: str):
-        user_selector = UserSelector()
-
-        if not user_selector.check_password(user, password):
-            raise ApplicationError(
-                {'detail': "비밀번호가 올바르지 않습니다."})
-        
+    def withdraw(user: User):
         user.delete()
