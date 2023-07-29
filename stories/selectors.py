@@ -68,6 +68,20 @@ class StoryDto:
     extra_pics: list[str]
     writer_is_followed : bool = None
 
+@dataclass
+class SamePlaceStoryDto:
+    id: int
+    title: str
+    place_name:  str
+    preview: str
+    writer: str
+    writer_is_verified: bool
+    nickname: str
+    created: datetime
+    rep_pic: str
+    extra_pics: list[str]
+
+
 
 def append_media_url(rest):
     return settings.MEDIA_URL + rest
@@ -338,29 +352,17 @@ class SamePlaceStorySelector:
 
         for story in same_place_stories:
                 extra_pics = [photo.image.url for photo in story.photos.all()[:3]]
-                story_dto = StoryDto(
+                story_dto = SamePlaceStoryDto(
                     id=story.id,
                     title=story.title,
                     place_name=story.place.place_name,
-                    story_review=None,
                     preview=story.preview,
-                    html_content=None,
-                    tag=None,
-                    views=None,
-                    story_like=None,
-                    like_cnt=None,
-                    comment_cnt=None,
-                    category=None,
-                    semi_category=None,
                     writer=story.writer,
                     writer_is_verified=story.writer.is_verified,
                     nickname=story.writer.nickname,
-                    profile=None,
                     created=story.created,
-                    map_image=None,
                     rep_pic=story.rep_pic.url,
                     extra_pics=extra_pics,
-                    writer_is_followed=None,
                 )
                 story_dtos.append(story_dto)
 
