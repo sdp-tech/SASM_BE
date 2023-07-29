@@ -14,7 +14,7 @@ from curations.models import Curation, Curation_Story
 
 
 # for caching
-from core.caches import get_cache
+# from core.caches import get_cache
 
 
 class GroupConcat(Aggregate):
@@ -66,7 +66,7 @@ class StoryDto:
     map_image: str
     rep_pic: str
     extra_pics: list[str]
-    writer_is_followed : bool
+    writer_is_followed : bool = None
 
 
 def append_media_url(rest):
@@ -77,7 +77,7 @@ class StoryCoordinatorSelector:
     def __init__(self, user: User):
         self.user = user
 
-    @get_cache('story:detail:', 'story_id')
+    # @get_cache('story:detail:', 'story_id')
     def detail(self, story_id: int):
         story = StorySelector.detail(story_id=story_id)
 
