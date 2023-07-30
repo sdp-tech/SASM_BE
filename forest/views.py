@@ -376,6 +376,7 @@ class ForestListApi(APIView):
         comment_cnt = serializers.IntegerField()
         created = serializers.DateTimeField()
         updated = serializers.DateTimeField()
+        semi_categories = serializers.ListField(child=serializers.DictField())
 
     @swagger_auto_schema(
         query_serializer=ForestListFilterSerializer,
@@ -420,7 +421,17 @@ class ForestListApi(APIView):
                                     "user_likes": True,
                                     "like_cnt": 0,
                                     "created": "2023-06-18T08:49:12+0000",
-                                    "updated": "2023-06-18T08:49:12+0000"
+                                    "updated": "2023-06-18T08:49:12+0000",
+                                    "semi_categories": [
+                                        {
+                                            "id": 1, 
+                                            "name": "semi category 1"
+                                        },
+                                        {
+                                            "id": 2, 
+                                            "name": "semi category 2"
+                                        }
+                                    ],                   
                                 },
                             ]
                         }
