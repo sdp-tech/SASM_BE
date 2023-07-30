@@ -876,7 +876,14 @@ class SamePlaceStory(APIView):
     class SamePlaceStoryOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
+        preview = serializers.CharField()
         rep_pic = serializers.CharField()
+        extra_pics = serializers.ListField()
+        place_name = serializers.CharField()
+        writer = serializers.CharField()
+        writer_is_verified = serializers.BooleanField()
+        nickname = serializers.CharField()
+        created = serializers.DateTimeField()
 
     @swagger_auto_schema(
         operation_id='이 장소의 다른 스토리',
@@ -889,8 +896,14 @@ class SamePlaceStory(APIView):
                 examples={
                     "application/json": {
                         'id': 1,
+                        'place_name': '서울숲',
                         'title':'도심 속 모두에게 열려있는 쉼터, 서울숲',
+                        'preview': '서울숲. 가장 도시적인 단어...(최대 150자)',
                         'rep_pic': 'https://abc.com/1.jpg',
+                        'writer': 'sdptech@gmail.com',
+                        'writer_is_verified': True,
+                        'nickname': 'sdp_official',
+                        'created': '2023-08-24T14:15:22Z',
                     },
                 }
             ),
