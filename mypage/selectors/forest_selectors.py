@@ -57,6 +57,6 @@ class UserCreatedForestSelector:
 
         forests = user_forest.filter(q).annotate(
             writer_is_verified=F('writer__is_verified'),
-        ).order_by('-created')
+        ).order_by('-created').prefetch_related('hashtags').distinct()
 
         return forests
