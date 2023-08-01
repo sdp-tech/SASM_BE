@@ -69,7 +69,7 @@ class UserForestListApi(APIView):
                         'id': 1,
                         'title': "신재생 에너지 종류",
                         'preview': '풍력발전이란? 풍력발전은 바람과 ...',
-                        'user_likes': True,
+                        'forest_likes': True,
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer': 'sdpofficial',
                         'writer_is_verified': True,
