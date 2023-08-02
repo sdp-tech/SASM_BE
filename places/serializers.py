@@ -48,6 +48,7 @@ class PlaceSerializer(serializers.ModelSerializer):
     place_like = serializers.SerializerMethodField()
     distance = serializers.SerializerMethodField()
     extra_pic = serializers.SerializerMethodField()
+    has_story = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
@@ -70,6 +71,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             'longitude',
             'place_like',
             'distance',
+            'has_story'
         ]
 
     def get_distance(self, obj):
@@ -104,6 +106,9 @@ class PlaceSerializer(serializers.ModelSerializer):
 
     def get_extra_pic(self, obj):
         return [photo.image.url for photo in obj.photos.all()]
+
+    def get_has_story(self, obj):
+        return obj.stories.all().exists()
 
 
 class PlaceDetailSerializer(serializers.ModelSerializer):
