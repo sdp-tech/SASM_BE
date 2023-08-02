@@ -35,7 +35,7 @@ class CurationListApi(APIView):
     permission_classes = (AllowAny, )
 
     class Pagination(PageNumberPagination):
-        page_size = 10
+        page_size = 8
         page_size_query_param = 'page_size'
 
     class CurationListFilterSerializer(serializers.Serializer):
@@ -247,7 +247,6 @@ class VerifiedUserCurationListApi(APIView):
         )
 
 
-
 class CurationDetailApi(APIView):
     permission_classes = (AllowAny, )
 
@@ -263,8 +262,6 @@ class CurationDetailApi(APIView):
         created = serializers.CharField()
         map_image = serializers.CharField()
         writer_is_followed = serializers.BooleanField()
-
-
 
     @swagger_auto_schema(
         operation_id='큐레이션 디테일 조회',
@@ -286,7 +283,7 @@ class CurationDetailApi(APIView):
                         'profile_image': 'https://abc.com/1.jpg',
                         'writer_is_verified': True,
                         'map_image': 'https://abc.com/1.jpg',
-                        'writer_is_followed' : True
+                        'writer_is_followed': True
                     },
                 }
             ),
