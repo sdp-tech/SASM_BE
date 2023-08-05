@@ -323,6 +323,8 @@ class CuratedStoryDetailApi(APIView):
         nickname = serializers.CharField()
         profile_image = serializers.CharField()
         created = serializers.CharField()
+        writer_is_followed = serializers.BooleanField()
+        
 
     @swagger_auto_schema(
         operation_id='큐레이션 스토리 디테일 조회',
