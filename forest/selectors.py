@@ -119,7 +119,7 @@ class ForestSelector:
             ret = re.sub(r'<img.*?>', ' ', content)
             ret = re.sub(r'<.*?>', '', ret)  # FYI: 닫는 태그 <\/.+?>
             ret = re.sub(r'\s{2,}', ' ', ret)  # space 두개 이상인 경우 하나로
-            return ret[:100]
+            return ret[:150]
 
         q = Q()
         q.add(Q(title__icontains=search) |
