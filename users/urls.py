@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-from .views import email_auth, login_google, login_kakao, login_naver, views
+from .views import email_auth, login_google, login_kakao, login_naver, login_apple, views
 app_name = "users"
 
 urlpatterns = [
@@ -11,6 +11,7 @@ urlpatterns = [
     path('kakao/callback/', login_kakao.kakao_callback, name='kakao_callback'),
     path('google/callback/', login_google.google_callback, name='google_callback'),
     path('naver/callback/', login_naver.naver_callback, name='naver_callback'),
+    path('apple/callback/', login_apple.apple_callback, name='apple_callback'),
     path('activate/<str:uid>/<str:token>',
          email_auth.UserActivateView.as_view(), name='activate'),
     path('login/', views.UserLoginApi.as_view(), name='login'),
