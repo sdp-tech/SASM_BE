@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef
+from django.db.models import Q, F, Aggregate, Value, CharField, Case, When, Exists, OuterRef, Subquery
 from django.db.models.functions import Concat, Substr
 from users.models import User
 import stories as st
@@ -14,7 +14,7 @@ from curations.models import Curation, Curation_Story
 
 
 # for caching
-from core.caches import get_cache
+# from core.caches import get_cache
 
 
 class GroupConcat(Aggregate):
@@ -68,6 +68,20 @@ class StoryDto:
     extra_pics: list[str]
     writer_is_followed : bool = None
 
+@dataclass
+class SamePlaceStoryDto:
+    id: int
+    title: str
+    place_name:  str
+    preview: str
+    writer: str
+    writer_is_verified: bool
+    nickname: str
+    created: datetime
+    rep_pic: str
+    extra_pics: list[str]
+
+
 
 def append_media_url(rest):
     return settings.MEDIA_URL + rest
@@ -77,7 +91,7 @@ class StoryCoordinatorSelector:
     def __init__(self, user: User):
         self.user = user
 
-    @get_cache('story:detail:', 'story_id')
+    # @get_cache('story:detail:', 'story_id')
     def detail(self, story_id: int):
         story = StorySelector.detail(story_id=story_id)
 
@@ -330,9 +344,26 @@ class SamePlaceStorySelector:
         self.user = user
     
     def list(self, story_id: int):
-        same_place_story = Story.objects.filter(place = Story.objects.get(id=story_id).place).exclude(id=story_id)
+        story_place_subquery = Story.objects.filter(id=story_id).values('place')
 
-        for story in same_place_story:
-            story.rep_pic = story.rep_pic.url
+        same_place_stories = Story.objects.filter(place=Subquery(story_place_subquery)).select_related('writer', 'place').prefetch_related('photos').exclude(id=story_id)
 
-        return same_place_story
+        story_dtos = []
+
+        for story in same_place_stories:
+                extra_pics = [photo.image.url for photo in story.photos.all()[:3]]
+                story_dto = SamePlaceStoryDto(
+                    id=story.id,
+                    title=story.title,
+                    place_name=story.place.place_name,
+                    preview=story.preview,
+                    writer=story.writer,
+                    writer_is_verified=story.writer.is_verified,
+                    nickname=story.writer.nickname,
+                    created=story.created,
+                    rep_pic=story.rep_pic.url,
+                    extra_pics=extra_pics,
+                )
+                story_dtos.append(story_dto)
+
+        return story_dtos
