@@ -41,6 +41,7 @@ class UserForestListApi(APIView):
         forest_like = serializers.SerializerMethodField()
         rep_pic = serializers.ImageField()
         writer = serializers.CharField()
+        nickname = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
 
         def get_preview(self, obj):
@@ -72,6 +73,7 @@ class UserForestListApi(APIView):
                         'forest_likes': True,
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer': 'sdpofficial',
+                        'nickname': 'sdpygl',
                         'writer_is_verified': True,
                     }
                 }
@@ -120,6 +122,7 @@ class UserCreateForestApi(APIView):
         forest_like = serializers.SerializerMethodField()
         rep_pic = serializers.ImageField()
         writer = serializers.CharField()
+        nickname = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
 
         def get_preview(self, obj):
@@ -151,6 +154,7 @@ class UserCreateForestApi(APIView):
                         'forest_likes': True,
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer': 'sdpofficial',
+                        'nickname': 'sdpygl',
                         'writer_is_verified': True,
                     }
                 }
