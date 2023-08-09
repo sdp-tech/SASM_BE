@@ -28,6 +28,7 @@ class UserForestSelector:
 
         forests = like_forest.filter(q).annotate(
             writer_is_verified=F('writer__is_verified'),
+            nickname=F('writer__nickname')
         ).order_by('-created').prefetch_related('hashtags').distinct()
 
         return forests
@@ -57,6 +58,7 @@ class UserCreatedForestSelector:
 
         forests = user_forest.filter(q).annotate(
             writer_is_verified=F('writer__is_verified'),
+             nickname=F('writer__nickname')
         ).order_by('-created').prefetch_related('hashtags').distinct()
 
         return forests
