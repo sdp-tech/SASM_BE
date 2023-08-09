@@ -152,6 +152,9 @@ class AdminCurationListApi(APIView):
         page_size = 4
         page_size_query_param = 'page_size'
 
+    class AdminCurationListFilterSerializer(serializers.Serializer):
+        search = serializers.CharField(required=False)
+
     class AdminCurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
         title = serializers.CharField()
@@ -163,8 +166,7 @@ class AdminCurationListApi(APIView):
         operation_id='관리자 큐레이션 리스트',
         operation_description='''
             홈 화면과 모두보기 화면의 관리자 큐레이션을 리스트합니다.<br/>
-            관리자 큐레이션이 모두 반환되며, 이 중에서 is_selected=True인 것만 홈 화면에 노출되어야 합니다.<br/>
-            Request시 전달해야 할 파라미터는 없습니다.
+            search(검색어)의 default값은 ''로, 검색어가 없을 시 모든 관리자 큐레이션이 반환됩니다.<br/>
             ''',
         responses={
             "200": openapi.Response(
@@ -185,7 +187,15 @@ class AdminCurationListApi(APIView):
         },
     )
     def get(self, request):
-        curations = CurationSelector.admin_curation_list(self)
+        filters_serializer = self.AdminCurationListFilterSerializer(
+            data=request.query_params
+        )
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+
+        curations = CurationSelector.admin_curation_list(
+            search=filters.get('search', '')
+        )
 
         return get_paginated_response(
             pagination_class=self.Pagination,
@@ -210,12 +220,14 @@ class VerifiedUserCurationListApi(APIView):
         writer_email = serializers.CharField()
         is_selected = serializers.BooleanField()
 
+    class VerifiedUserCurationListFilterSerializer(serializers.Serializer):
+        search = serializers.CharField(required=False)
+
     @swagger_auto_schema(
         operation_id='인증유저 큐레이션 리스트',
         operation_description='''
             홈 화면과 모두보기 화면의 인증유저 큐레이션을 리스트합니다.<br/>
-            인증유저 큐레이션이 모두 반환되며, 이 중에서 is_selected=True인 것만 홈 화면에 노출되어야 합니다.<br/>
-            Request시 전달해야 할 파라미터는 없습니다.
+            search(검색어)의 default값은 ''로, 검색어가 없을 시 모든 인증유저 큐레이션이 반환됩니다.<br/>
             ''',
         responses={
             "200": openapi.Response(
@@ -236,7 +248,15 @@ class VerifiedUserCurationListApi(APIView):
         },
     )
     def get(self, request):
-        curations = CurationSelector.verified_user_curation_list(self)
+        filters_serializer = self.VerifiedUserCurationListFilterSerializer(
+            data=request.query_params
+        )
+        filters_serializer.is_valid(raise_exception=True)
+        filters = filters_serializer.validated_data
+
+        curations = CurationSelector.verified_user_curation_list(
+            search=filters.get('search', '')
+        )
 
         return get_paginated_response(
             pagination_class=self.Pagination,
@@ -324,7 +344,6 @@ class CuratedStoryDetailApi(APIView):
         profile_image = serializers.CharField()
         created = serializers.CharField()
         writer_is_followed = serializers.BooleanField()
-        
 
     @swagger_auto_schema(
         operation_id='큐레이션 스토리 디테일 조회',

@@ -49,9 +49,8 @@ class CurationDto:
     writer_is_verified: bool
     created: datetime
     map_image: str
-    writer_is_followed : bool = None
- 
- 
+    writer_is_followed: bool = None
+
 
 class CurationSelector:
     def __init__(self, user: User):
@@ -60,6 +59,7 @@ class CurationSelector:
     @staticmethod
     def list(search: str = ''):
         q = Q()
+
         q.add(Q(title__icontains=search) |
               Q(contents__icontains=search) |
               Q(story__title__icontains=search) |
@@ -95,8 +95,8 @@ class CurationSelector:
             ),
             is_followed=Exists(
                 user.follows.through.objects.filter(
-                    from_user_id = user.id,
-                      to_user_id = OuterRef('writer')
+                    from_user_id=user.id,
+                    to_user_id=OuterRef('writer')
                 ),
             ),
         ).select_related(
@@ -104,7 +104,7 @@ class CurationSelector:
         ).prefetch_related(
             'photos', 'map_photos'
         ).get(id=curation_id)
-       
+
         curation_dto = CurationDto(
             title=curation.title,
             contents=curation.contents,
@@ -116,9 +116,8 @@ class CurationSelector:
             writer_is_verified=curation.writer.is_verified,
             created=curation.created,
             map_image=None,
-            writer_is_followed = curation.is_followed
-                            )
-
+            writer_is_followed=curation.is_followed
+        )
 
         if len(curation.photos.all()) > 0:
             curation_dto.rep_pic = curation.photos.all()[0].image.url
@@ -144,9 +143,17 @@ class CurationSelector:
 
         return curations
 
-    def admin_curation_list(self):
-        curations = Curation.objects.filter(
-            is_released=True, writer__is_sdp_admin=True).annotate(
+    def admin_curation_list(search: str = ''):
+        q = Q()
+
+        q.add(Q(title__icontains=search) |
+              Q(contents__icontains=search) |
+              Q(story__title__icontains=search) |
+              Q(story__place__place_name__icontains=search) |  # 스토리 제목 또는 내용 검색
+              Q(story__place__category__icontains=search) |
+              Q(story__tag__icontains=search), q.AND)
+
+        curations = Curation.objects.distinct().filter(q, is_released=True, writer__is_sdp_admin=True).annotate(
             rep_pic=Case(
                 When(
                     photos__image=None,
@@ -161,9 +168,17 @@ class CurationSelector:
 
         return curations
 
-    def verified_user_curation_list(self):
-        curations = Curation.objects.filter(
-            is_released=True, writer__is_verified=True).annotate(
+    def verified_user_curation_list(search: str = ''):
+        q = Q()
+
+        q.add(Q(title__icontains=search) |
+              Q(contents__icontains=search) |
+              Q(story__title__icontains=search) |
+              Q(story__place__place_name__icontains=search) |  # 스토리 제목 또는 내용 검색
+              Q(story__place__category__icontains=search) |
+              Q(story__tag__icontains=search), q.AND)
+
+        curations = Curation.objects.distinct().filter(q, is_released=True, writer__is_verified=True).annotate(
             rep_pic=Case(
                 When(
                     photos__image=None,
