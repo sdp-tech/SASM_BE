@@ -35,7 +35,7 @@ class ForestDto:
     comment_cnt: int
     created: datetime
     updated: datetime
-    writer_is_followed : bool = None
+    writer_is_followed: bool = None
 
     content: str = None  # detail
     preview: str = None  # list
@@ -58,12 +58,6 @@ class ForestSelector:
                 )),
                     then=Value(1)),
                 default=Value(0),
-            ),
-            is_followed=Exists(
-                user.follows.through.objects.filter(
-                    from_user_id = user.id,
-                      to_user_id = OuterRef('writer')
-                ),
             ),
         ).select_related(
             'category', 'writer'
@@ -92,8 +86,8 @@ class ForestSelector:
                 'is_verified': forest.writer.is_verified,
             },
             user_likes=forest.user_likes,
-            writer_is_followed = forest.is_followed,
-           
+            writer_is_followed=(user in forest.writer.followers.all()),
+
             like_cnt=forest.like_cnt,
             comment_cnt=len(forest.comments.all()),
             created=forest.created.strftime('%Y-%m-%dT%H:%M:%S%z'),
@@ -116,9 +110,10 @@ class ForestSelector:
         def extract_preview(content):
             # img 태그는 space로 대체
             # 나머지는 빈 문자열로 대체
-            ret = re.sub(r'<img.*?>', ' ', content)
+            ret = re.sub(r'<img.*?>', '', content)
             ret = re.sub(r'<.*?>', '', ret)  # FYI: 닫는 태그 <\/.+?>
-            ret = re.sub(r'\s{2,}', ' ', ret)  # space 두개 이상인 경우 하나로
+            ret = re.sub('&nbsp;', ' ', ret)  # &nbsp; 지우기
+            ret = re.sub(r'\s{2,}', '', ret)  # space 두개 이상인 경우 하나로
             return ret[:150]
 
         q = Q()
@@ -195,7 +190,7 @@ class ForestSelector:
         return forest.likeuser_set.filter(pk=user.pk).exists()
 
 
-@dataclass
+@ dataclass
 class ForestCommentDto:
     id: int
     content: str
