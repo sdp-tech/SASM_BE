@@ -239,7 +239,7 @@ class CurationMapService:
 
     @staticmethod
     def create(curation: Curation, stories: list[Story]):
-        places = list(map(lambda x: x.address, stories))
+        places = list(map(lambda x: x.place, stories))
 
         # 사진 생성하기
         markers = []
