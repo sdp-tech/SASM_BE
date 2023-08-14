@@ -143,7 +143,7 @@ def semi_category(story_id: int):
     place = story.place
     result = []
     vegan = place.vegan_category
-    if vegan != '':
+    if vegan is not None and vegan != '':
         result.append(vegan)
     tumblur = place.tumblur_category
     if tumblur == True:
