@@ -70,7 +70,7 @@ class UserSelector:
     def filter_story_by_query(filter: List, queryset: QuerySet) -> QuerySet:
         q = Q()
         for category in filter:
-            q.add(Q(address__category=category), q.OR)
+            q.add(Q(place__category=category), q.OR)
 
         return queryset.filter(q)
 
@@ -92,7 +92,7 @@ class UserStorySelector:
         story_filter = [y for x in set(my_story_comments) for y in x]
 
         stories = Story.objects.filter(id__in=story_filter).annotate(
-            place_name=F('address__place_name')
+            place_name=F('place__place_name')
         ).order_by('created')
 
         return stories

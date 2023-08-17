@@ -30,8 +30,10 @@ class GroupConcat(Aggregate):
                               template='%(function)s(%(distinct)s%(expressions)s%(ordering)s)',
                               **extra)
 
+
 def append_media_url(rest):
     return settings.MEDIA_URL + rest
+
 
 class UserStorySelector:
     def __init__(self, user: User):
@@ -45,7 +47,6 @@ class UserStorySelector:
               Q(place__place_name__icontains=search) |
               Q(place__category__icontains=search) |
               Q(tag__icontains=search), q.AND)
-        
         if len(filter) > 0:
             query = None
             for element in filter:
@@ -81,7 +82,7 @@ class UserStorySelector:
         story_filter = [y for x in set(my_story_comments) for y in x]
 
         stories = Story.objects.filter(id__in=story_filter).annotate(
-            place_name=F('address__place_name')
+            place_name=F('place__place_name')
         ).order_by('created')
 
         return stories
@@ -99,7 +100,6 @@ class UserCreatedStorySelector:
               Q(place__place_name__icontains=search) |
               Q(place__category__icontains=search) |
               Q(tag__icontains=search), q.AND)
-        
         if len(filter) > 0:
             query = None
             for element in filter:
@@ -108,7 +108,6 @@ class UserCreatedStorySelector:
                 else:
                     query = query | Q(place__category=element)
             q.add(query, q.AND)
-        
         stories = user_story.filter(q).annotate(
             place_name=F('place__place_name'),
             category=F('place__category'),
@@ -127,5 +126,3 @@ class UserCreatedStorySelector:
                     append_media_url, story.extra_pics.split(',')[:3])
 
         return stories
-        
-        
