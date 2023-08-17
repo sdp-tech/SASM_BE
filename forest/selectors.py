@@ -86,7 +86,7 @@ class ForestSelector:
                 'is_verified': forest.writer.is_verified,
             },
             user_likes=forest.user_likes,
-            writer_is_followed=(user in forest.writer.followers.all()),
+            writer_is_followed = (user in forest.writer.followers.all()) if user.is_authenticated else False,
 
             like_cnt=forest.like_cnt,
             comment_cnt=len(forest.comments.all()),
