@@ -46,6 +46,7 @@ class CurationListApi(APIView):
         title = serializers.CharField()
         rep_pic = serializers.CharField()
         writer_email = serializers.CharField()
+        nickname = serializers.CharField()
         is_selected = serializers.BooleanField()
 
     @swagger_auto_schema(
@@ -65,6 +66,7 @@ class CurationListApi(APIView):
                         'title': '서울 비건카페 탑5',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer_email': 'sdptech@gmail.com',
+                        'nickname':'sdpygl',
                         'is_selected': True,
                     }
                 }
@@ -160,6 +162,7 @@ class AdminCurationListApi(APIView):
         title = serializers.CharField()
         rep_pic = serializers.CharField()
         writer_email = serializers.CharField()
+        nickname=serializers.CharField()
         is_selected = serializers.BooleanField()
 
     @swagger_auto_schema(
@@ -177,6 +180,7 @@ class AdminCurationListApi(APIView):
                         'title': '제로웨이스트',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer_email': 'sdptech@gmail.com',
+                        'nickname':'sdpygl',
                         'is_selected': True,
                     }
                 }
@@ -218,6 +222,7 @@ class VerifiedUserCurationListApi(APIView):
         title = serializers.CharField()
         rep_pic = serializers.CharField()
         writer_email = serializers.CharField()
+        nickname=serializers.CharField()
         is_selected = serializers.BooleanField()
 
     class VerifiedUserCurationListFilterSerializer(serializers.Serializer):
@@ -238,6 +243,7 @@ class VerifiedUserCurationListApi(APIView):
                         'title': '제로웨이스트',
                         'rep_pic': 'https://abc.com/1.jpg',
                         'writer_email': 'sdptech@gmail.com',
+                        'nickname':'sdpygl',
                         'is_selected': True,
                     }
                 }
