@@ -77,7 +77,8 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
-            writer_email=F('writer__email')
+            writer_email=F('writer__email'),
+            nickname = F('writer__nickname'),
         )
 
         return curations
@@ -164,7 +165,8 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
-            writer_email=F('writer__email')
+            writer_email=F('writer__email'),
+            nickname=F('writer__nickname'),
         )
 
         return curations
@@ -189,7 +191,8 @@ class CurationSelector:
                                F('photos__image'),
                                output_field=CharField())
             ),
-            writer_email=F('writer__email')
+            writer_email=F('writer__email'),
+            nickname = F('writer__nickname'),
         )
 
         return curations
