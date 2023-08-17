@@ -100,7 +100,8 @@ class StoryCoordinatorSelector:
             user=self.user,
         )
         semi_cate = semi_category(story.id)
-        writer_is_followed = self.user.follows.filter(pk=story.writer.pk).exists()
+        
+        writer_is_followed = self.user.follows.filter(pk=story.writer.pk).exists() if self.user.is_authenticated else False
         
         dto = StoryDto(
             id=story.id,

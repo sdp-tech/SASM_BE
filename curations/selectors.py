@@ -93,12 +93,13 @@ class CurationSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
-            is_followed=Exists(
-                user.follows.through.objects.filter(
-                    from_user_id=user.id,
-                    to_user_id=OuterRef('writer')
-                ),
-            ),
+            is_followed = Exists(
+            user.follows.through.objects.filter(
+                from_user_id=user.id,
+                to_user_id=OuterRef('writer_id')
+                )
+            ) if user.is_authenticated else Value(False),
+           
         ).select_related(
             'writer'
         ).prefetch_related(
@@ -248,12 +249,12 @@ class CuratedStorySelector:
                                  F('writer__profile_image'),
                                  output_field=CharField()),
             writer_email=F('writer__email'),
-            writer_is_followed=Exists(
-                user.follows.through.objects.filter(
-                    from_user_id=user.id,
-                    to_user_id=OuterRef('writer')
-                ),
-            )
+            writer_is_followed = Exists(
+            user.follows.through.objects.filter(
+                from_user_id=user.id,
+                to_user_id=OuterRef('writer_id')
+                )
+            ) if user.is_authenticated else Value(False),
         ).distinct()
 
 
