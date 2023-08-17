@@ -249,7 +249,7 @@ class CuratedStorySelector:
                                  F('writer__profile_image'),
                                  output_field=CharField()),
             writer_email=F('writer__email'),
-             is_followed = Exists(
+            writer_is_followed = Exists(
             user.follows.through.objects.filter(
                 from_user_id=user.id,
                 to_user_id=OuterRef('writer_id')
