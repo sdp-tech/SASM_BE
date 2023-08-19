@@ -193,6 +193,7 @@ class StoryListApi(APIView):
         nickname = serializers.CharField()
         profile = serializers.CharField()
         created = serializers.DateTimeField()
+        summary = serializers.CharField()
 
         def get_semi_category(self, obj):
             result = semi_category(obj.id)
