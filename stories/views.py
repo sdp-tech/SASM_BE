@@ -831,9 +831,10 @@ class StoryCommentDeleteApi(APIView):
     
 
 class StoryIncludedCurationApi(APIView):
-    premission_classes = (AllowAny, )
-
+    permission_classes = [AllowAny]
+    
     class StoryIncludedCurationOutputSerializer(serializers.Serializer):
+    
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.CharField()
@@ -871,7 +872,7 @@ class StoryIncludedCurationApi(APIView):
     
 
 class SamePlaceStory(APIView):
-    permission_classes = (AllowAny, )
+    permission_classes = [AllowAny]
 
     class SamePlaceStoryOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
