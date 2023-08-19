@@ -230,16 +230,14 @@ class StorySelector:
         if order in order_by_likes:
             order = order_by_likes[order]
 
-        def extract_preview(html_content):
+        def extract_summary(html_content):
             # img 태그는 space로 대체
             # 나머지는 빈 문자열로 대체
             ret = re.sub(r'<img.*?>', '', html_content)
             ret = re.sub(r'<.*?>', '', ret)  # FYI: 닫는 태그 <\/.+?>
-            ret = re.sub('&nbsp;', ' ', ret)  # &nbsp; 지우기
-            ret = re.sub('&lsquo;',' ', ret) # &lsquo; 지우기
-            ret = re.sub("&rsquo;",' ', ret) # &rsquo; 지우기
             ret = re.sub(r'\s{2,}', '', ret)  # space 두개 이상인 경우 하나로
-            return ret[:150]
+            ret = re.sub(r'&\w+;', '', ret) #&로 시작하고 ;로 끝나는 &nbsp; 와 같은 태그 빈 문자열로 대체
+            return ret[:130]
 
         stories = Story.objects.filter(q).annotate(
             place_name=F('place__place_name'),
@@ -253,7 +251,7 @@ class StorySelector:
         ).order_by(order)
 
         for story in stories:
-            story.preview = extract_preview(story.html_content),
+            story.summary = extract_summary(story.html_content)
             story.rep_pic = story.rep_pic.url
             if story.extra_pics is not None:
                 story.extra_pics = map(
