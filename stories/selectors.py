@@ -11,7 +11,7 @@ from users.models import User
 import stories as st
 from stories.models import Story, StoryPhoto, StoryComment, StoryMap
 from curations.models import Curation, Curation_Story
-
+import re
 
 # for caching
 # from core.caches import get_cache
@@ -230,6 +230,17 @@ class StorySelector:
         if order in order_by_likes:
             order = order_by_likes[order]
 
+        def extract_preview(html_content):
+            # img 태그는 space로 대체
+            # 나머지는 빈 문자열로 대체
+            ret = re.sub(r'<img.*?>', '', html_content)
+            ret = re.sub(r'<.*?>', '', ret)  # FYI: 닫는 태그 <\/.+?>
+            ret = re.sub('&nbsp;', ' ', ret)  # &nbsp; 지우기
+            ret = re.sub('&lsquo;',' ', ret) # &lsquo; 지우기
+            ret = re.sub("&rsquo;",' ', ret) # &rsquo; 지우기
+            ret = re.sub(r'\s{2,}', '', ret)  # space 두개 이상인 경우 하나로
+            return ret[:150]
+
         stories = Story.objects.filter(q).annotate(
             place_name=F('place__place_name'),
             category=F('place__category'),
@@ -242,6 +253,7 @@ class StorySelector:
         ).order_by(order)
 
         for story in stories:
+            story.preview = extract_preview(story.html_content),
             story.rep_pic = story.rep_pic.url
             if story.extra_pics is not None:
                 story.extra_pics = map(
