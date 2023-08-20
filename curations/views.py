@@ -288,6 +288,7 @@ class CurationDetailApi(APIView):
         created = serializers.CharField()
         map_image = serializers.CharField()
         writer_is_followed = serializers.BooleanField()
+        like_cnt = serializers.IntegerField()
 
     @swagger_auto_schema(
         operation_id='큐레이션 디테일 조회',
@@ -308,8 +309,10 @@ class CurationDetailApi(APIView):
                         'nickname': '스드프',
                         'profile_image': 'https://abc.com/1.jpg',
                         'writer_is_verified': True,
+                        'created' : "2023-08-20 10:59:09.765298+00:00",
                         'map_image': 'https://abc.com/1.jpg',
-                        'writer_is_followed': True
+                        'writer_is_followed': True,
+                        'liked_cnt' : 0,
                     },
                 }
             ),

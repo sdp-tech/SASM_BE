@@ -7,7 +7,7 @@ from stories.models import Story
 
 from django.conf import settings
 from django.db.models.functions import Concat, Substr
-from django.db.models import Q, F, Case, When, Value, Exists, OuterRef, CharField, BooleanField, Aggregate, Subquery, ExpressionWrapper, JSONField
+from django.db.models import Q, F, Case, When, Value, Exists, OuterRef, CharField, BooleanField, Aggregate, Count
 from dataclasses import dataclass
 
 
@@ -49,8 +49,8 @@ class CurationDto:
     writer_is_verified: bool
     created: datetime
     map_image: str
+    like_cnt: int
     writer_is_followed: bool = None
-
 
 class CurationSelector:
     def __init__(self, user: User):
@@ -94,6 +94,7 @@ class CurationSelector:
                     then=Value(1)),
                 default=Value(0),
             ),
+            like_cnt=Count('likeuser_set'),
             is_followed = Exists(
             user.follows.through.objects.filter(
                 from_user_id=user.id,
@@ -118,7 +119,8 @@ class CurationSelector:
             writer_is_verified=curation.writer.is_verified,
             created=curation.created,
             map_image=None,
-            writer_is_followed=curation.is_followed
+            writer_is_followed=curation.is_followed,
+            like_cnt=curation.like_cnt,
         )
 
         if len(curation.photos.all()) > 0:
