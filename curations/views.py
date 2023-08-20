@@ -286,6 +286,7 @@ class CurationDetailApi(APIView):
         profile_image = serializers.CharField()
         writer_is_verified = serializers.BooleanField()
         created = serializers.CharField()
+        updated = serializers.CharField()
         map_image = serializers.CharField()
         writer_is_followed = serializers.BooleanField()
         like_cnt = serializers.IntegerField()
@@ -310,6 +311,7 @@ class CurationDetailApi(APIView):
                         'profile_image': 'https://abc.com/1.jpg',
                         'writer_is_verified': True,
                         'created' : "2023-08-20 10:59:09.765298+00:00",
+                        "updated": "2023-08-20 11:40:18.412855+00:00",
                         'map_image': 'https://abc.com/1.jpg',
                         'writer_is_followed': True,
                         'liked_cnt' : 0,

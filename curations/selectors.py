@@ -48,6 +48,7 @@ class CurationDto:
     profile_image: str
     writer_is_verified: bool
     created: datetime
+    updated: datetime
     map_image: str
     like_cnt: int
     writer_is_followed: bool = None
@@ -117,6 +118,7 @@ class CurationSelector:
             nickname=curation.writer.nickname,
             profile_image=curation.writer.profile_image.url,
             writer_is_verified=curation.writer.is_verified,
+            updated=curation.updated,
             created=curation.created,
             map_image=None,
             writer_is_followed=curation.is_followed,
