@@ -31,6 +31,8 @@ class Curation(core_models.TimeStampedModel):
     writer = models.ForeignKey(
         'users.User', related_name='curations', on_delete=models.SET_NULL, null=True, blank=False)
 
+    updated = models.DateTimeField(auto_now=True)
+
     is_released = models.BooleanField(
         null=False, blank=False, default=False)  # 공개/심사중
     is_selected = models.BooleanField(
