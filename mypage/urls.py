@@ -2,6 +2,7 @@ from django.urls import path
 from .views import places_view, stories_views, user_following, curations_views, user_info_views, forest_views
 
 urlpatterns = [
+     path('user/',user_info_views.OtherUserGetApi.as_view(),name='other_user_info'),
      path('follow/', user_following.UserDoUndoFollowApi.as_view(),
           name='user_do_undo_follow'),
      path('following/', user_following.UserFollowingListApi.as_view(),
@@ -30,4 +31,5 @@ urlpatterns = [
           name='user_reviewed_place'),
      path('withdraw/', user_info_views.UserWithdrawApi.as_view(), name='withdraw'),
      path('myplace_search/',places_view.MyPlaceSearchApi.as_view(), name = 'myplace_search')
+     
 ]
