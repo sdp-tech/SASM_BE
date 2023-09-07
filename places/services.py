@@ -141,8 +141,6 @@ class PlacePhotoService:
             file_path = '{}-{}.{}'.format(place.id,
                                           str(time.time())+str(uuid.uuid4().hex), ext)
             image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
-
-            # Check if the new image already exists
             if image.url not in existing_urls:
                 photo = PlacePhoto(
                     image=image,
