@@ -184,7 +184,6 @@ class PlaceDetailView(APIView):
         try:
             place = PlaceDetailService.get_place_detail(place_id)
             
-            # Fetch and populate imageList and snsList from the associated PlacePhoto and SNSUrl records
             imageList = PlacePhotoService.get_place_photos(place)
             snsList = PlaceSNSUrlService.get_place_sns_urls(place)
 
