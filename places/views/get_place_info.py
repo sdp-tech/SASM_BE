@@ -16,7 +16,7 @@ from places.models import Place
 from places.serializers import PlaceSerializer, PlaceDetailSerializer
 from places.selectors import PlaceSelector
 from sasmproject.swagger import param_search, param_filter, param_id
-
+from places.services import *
 
 class MapMarkerApi(APIView, ApiAuthMixin):
     class MapMarkerOutputSerializer(serializers.Serializer):
@@ -134,25 +134,109 @@ class PlaceListView(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
 
-class PlaceDetailView(viewsets.ModelViewSet):
-    '''
-        place의 detail 정보를 주는 API
-    '''
-    queryset = Place.objects.select_related('story')
-    serializer_class = PlaceDetailSerializer
-    permission_classes = [
-        AllowAny,
-    ]
+class PlaceDetailView(APIView):
+    permission_classes = [AllowAny]
 
-    @swagger_auto_schema(operation_id='api_places_place_detail_get',
-                         manual_parameters=[param_id], security=[])
-    def get(self, request):
-        '''
-            Place의 detail한 정보를 주는 api
-        '''
-        pk = request.GET.get('id', '')
-        place = self.get_queryset().get(id=pk)
-        return Response({
-            'status': 'success',
-            'data': PlaceDetailSerializer(place, context={'request': request}).data,
-        }, status=status.HTTP_200_OK)
+    class PlaceDetailOutputSerializer(serializers.Serializer):
+        place_name = serializers.CharField()
+        category = serializers.CharField()
+        vegan_category = serializers.CharField(allow_null=True)
+        tumblur_category = serializers.BooleanField(allow_null=True)
+        reusable_con_category = serializers.BooleanField(allow_null=True)
+        pet_category = serializers.BooleanField(allow_null=True)
+        mon_hours = serializers.CharField()
+        tues_hours = serializers.CharField()
+        wed_hours = serializers.CharField()
+        thurs_hours = serializers.CharField()
+        fri_hours = serializers.CharField()
+        sat_hours = serializers.CharField()
+        sun_hours = serializers.CharField()
+        etc_hours = serializers.CharField()
+        place_review = serializers.CharField()
+        address = serializers.CharField()
+        short_cur = serializers.CharField()
+        phone_num = serializers.CharField()
+        rep_pic = serializers.ImageField()
+
+    @swagger_auto_schema(
+        operation_id='',
+        operation_description='''
+            장소에 대한 상세 정보를 제공하는 API
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        'id': 2,
+                        'place_name': '안녕 상점',
+                        'category': '식당 및 카페',
+                        'vegan_category': '비건',
+                        'tumblur_category': True,
+                        'reusable_con_category': True,
+                        'pet_category': True,
+                        'mon_hours': '09:00 ~ 22:00',
+                        'tues_hours': '09:00 ~ 22:00',
+                        'wed_hours': '09:00 ~ 22:00',
+                        'thurs_hours': '09:00 ~ 22:00',
+                        'fri_hours': '09:00 ~ 22:00',
+                        'sat_hours': '09:00 ~ 22:00',
+                        'sun_hours': '09:00 ~ 22:00',
+                        'etc_hours': '공휴일 09:00 ~ 22:00',
+                        'place_review': '\"붉은 벽돌 외관에서의 담소\"',
+                        'address': '서울 서대문구 연희로5길 22',
+                        'short_cur': '연남장(場) 연희동 카페는 공간이 널찍하고 층고가 높습니다.',
+                        'phone_num': '02-3141-7977',
+                        'rep_pic': "https://sasm-bucket.s3.amazonaws.com/media/ss_71d59bda2b768ecfc5b41bda9403c00353367069.1920x1080.jpg",
+                        "latitude": 1.0,
+                        "longitude": 2.0,
+                        'imageList': ["https://sasm-bucket.s3.amazonaws.com/media/places/%ED%99%94%EB%A9%B4_%EC%BA%A1%EC%B2%98_2023-04-12_124409.png"],
+                        'snsList': ['https://instagram.com/abc/', 'https://www.sasm.co.kr/'],
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            )
+        }
+    )
+    def get(self, request, place_id):
+        try:
+            place = PlaceDetailService.get_place_detail(place_id)
+            
+            imageList = PlacePhotoService.get_place_photos(place)
+            snsList = PlaceSNSUrlService.get_place_sns_urls(place)
+
+            data_to_serialize = {
+                'id': place.id,
+                'place_name': place.place_name,
+                'category': place.category or "",
+                'vegan_category': place.vegan_category or None,
+                'tumblur_category': place.tumblur_category or False,
+                'reusable_con_category': place.reusable_con_category or False,
+                'pet_category': place.pet_category or False,
+                'mon_hours': place.mon_hours,
+                'tues_hours': place.tues_hours,
+                'wed_hours': place.wed_hours,
+                'thurs_hours': place.thurs_hours,
+                'fri_hours': place.fri_hours,
+                'sat_hours': place.sat_hours,
+                'sun_hours': place.sun_hours,
+                'etc_hours': place.etc_hours,
+                'place_review': place.place_review,
+                'address': place.address,
+                'short_cur': place.short_cur,
+                'phone_num': place.phone_num,
+                'rep_pic': place.rep_pic.url if place.rep_pic else None,
+                'latitude': place.latitude,
+                'longitude': place.longitude,
+                'imageList': imageList,
+                'snsList': snsList,
+            }
+
+            return Response({
+                'status': 'success',
+                'data': data_to_serialize,
+            }, status=status.HTTP_200_OK)
+        except Place.DoesNotExist as e:
+            return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_404_NOT_FOUND)
