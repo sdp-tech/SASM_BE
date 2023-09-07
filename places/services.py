@@ -175,7 +175,6 @@ class PlaceSNSUrlService:
         for sns_pair in snsList:
             sns_type, url = sns_pair.split(',')
 
-            # Check if the new SNS URL already exists
             if url not in existing_sns_urls:
                 sns_url = SNSUrl(
                     place=place,
