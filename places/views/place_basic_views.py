@@ -125,6 +125,90 @@ class PlaceCreateApi(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class PlaceUpdateApi(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    class PlaceUpdateInputSerializer(serializers.Serializer):
+        place_name = serializers.CharField()
+        category = serializers.CharField()
+        vegan_category = serializers.CharField(allow_null=True)
+        tumblur_category = serializers.BooleanField(allow_null=True)
+        reusable_con_category = serializers.BooleanField(allow_null=True)
+        pet_category = serializers.BooleanField(allow_null=True)
+        mon_hours = serializers.CharField()
+        tues_hours = serializers.CharField()
+        wed_hours = serializers.CharField()
+        thurs_hours = serializers.CharField()
+        fri_hours = serializers.CharField()
+        sat_hours = serializers.CharField()
+        sun_hours = serializers.CharField()
+        etc_hours = serializers.CharField()
+        place_review = serializers.CharField()
+        address = serializers.CharField()
+        short_cur = serializers.CharField()
+        phone_num = serializers.CharField()
+        rep_pic = serializers.ImageField()
+        imageList = serializers.ListField()
+        snsList = serializers.ListField(required=False)
+
+    @swagger_auto_schema(
+        request_body=PlaceUpdateInputSerializer,
+        security=[],
+        operation_id='장소 수정하기',
+        operation_description='일반 유저가 장소 정보를 수정할 수 있는 기능입니다.',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json": {
+                        "status": "success",
+                        "data": {"message": "장소 정보가 업데이트되었습니다."}
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def patch(self, request, place_id):
+        serializer = self.PlaceUpdateInputSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        update_data = {
+            'place_name': data.get('place_name'),
+            'category': data.get('category'),
+            'vegan_category' : (data.get('vegan_category') if data.get('vegan_category') != 'null' else None),
+            'tumblur_category' : data.get('tumblur_category'),
+            'reusable_con_category' : data.get('reusable_con_category'),
+            'pet_category':data.get('pet_category'),
+            'mon_hours':data.get('mon_hours'),
+            'tues_hours':data.get('tues_hours'),
+            'wed_hours':data.get('wed_hours'),
+            'thurs_hours':data.get('thurs_hours'),
+            'fri_hours':data.get('fri_hours'),
+            'sat_hours':data.get('sat_hours'),
+            'sun_hours':data.get('sun_hours'),
+            'etc_hours':data.get('etc_hours'),
+            'place_review':data.get('place_review'),
+            'address':data.get('address'),
+            'short_cur':data.get('short_cur'),
+            'phone_num':data.get('phone_num'),
+            'rep_pic' : data.get('rep_pic'),
+            'imageList': data.get('imageList', []),
+            'snsList':data.get('snsList', []),
+        }
+
+        place_coordinator_service = PlaceCoordinatorService(request.user)
+        try:
+            place_coordinator_service.update_place(place_id, update_data)
+        except Place.DoesNotExist as e:
+            return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({'status': 'success', 'data': {'message': '장소 정보가 업데이트되었습니다.'}})
+
+
 def get_paginated_response(*, pagination_class, serializer_class, queryset, request, view):
     paginator = pagination_class()
 

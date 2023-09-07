@@ -17,6 +17,14 @@ from places.models import Place, PlaceVisitorReview, PlaceVisitorReviewCategory,
 from places.selectors import PlaceReviewSelector
 from places.views.save_place_excel import addr_to_lat_lon
 
+class PlaceDetailService:
+    @staticmethod
+    def get_place_detail(place_id):
+        try:
+            place = Place.objects.select_related('story').get(id=place_id)
+            return place
+        except Place.DoesNotExist:
+            raise Place.DoesNotExist("장소를 찾을 수 없습니다.")
 
 class PlaceCoordinatorService:
     def __init__(self, user):
@@ -40,7 +48,23 @@ class PlaceCoordinatorService:
         PlaceSNSUrlService.create(place=place, snsList=snsList)
 
         return place
+    
+    def update_place(self, place_id, update_data):
+        try:
+            place = Place.objects.get(id=place_id)
+        except Place.DoesNotExist:
+            raise Place.DoesNotExist("장소를 찾을 수 없습니다.")
 
+        for field, value in update_data.items():
+            setattr(place, field, value)
+
+        place.save()
+
+        if 'imageList' in update_data:
+            PlacePhotoService.update_place_photos(place, update_data['imageList'])
+
+        if 'snsList' in update_data:
+            PlaceSNSUrlService.update_place_sns_urls(place, update_data['snsList'])
 
 class PlaceService:
     def __init__(self):
@@ -105,6 +129,27 @@ class PlacePhotoService:
             photo.full_clean()
             photo.save()
 
+    def get_place_photos(place: Place):
+        return [photo.image.url for photo in place.photos.all()]
+    
+    def update_place_photos(place: Place, imageList: list[InMemoryUploadedFile]):
+        existing_photos = place.photos.all()
+        existing_urls = [photo.image.url for photo in existing_photos]
+
+        for image_file in imageList:
+            ext = image_file.name.split(".")[-1]
+            file_path = '{}-{}.{}'.format(place.id,
+                                          str(time.time())+str(uuid.uuid4().hex), ext)
+            image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
+
+            # Check if the new image already exists
+            if image.url not in existing_urls:
+                photo = PlacePhoto(
+                    image=image,
+                    place=place
+                )
+                photo.full_clean()
+                photo.save()
 
 class PlaceSNSUrlService:
     def __init__(self):
@@ -123,6 +168,25 @@ class PlaceSNSUrlService:
             sns_url.full_clean()
             sns_url.save()
 
+    def get_place_sns_urls(place: Place):
+        return [sns.url for sns in place.place_sns_url.all()]
+    
+    def update_place_sns_urls(place: Place, snsList: list[str]):
+        existing_sns_urls = [sns.url for sns in place.place_sns_url.all()]
+
+        for sns_pair in snsList:
+            sns_type, url = sns_pair.split(',')
+
+            # Check if the new SNS URL already exists
+            if url not in existing_sns_urls:
+                sns_url = SNSUrl(
+                    place=place,
+                    snstype=get_object_or_404(SNSType, pk=sns_type),
+                    url=url,
+                )
+
+                sns_url.full_clean()
+                sns_url.save()
 
 class PlaceVisitorReviewCoordinatorService:
     def __init__(self, user: User):
