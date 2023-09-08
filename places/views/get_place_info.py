@@ -191,8 +191,9 @@ class PlaceDetailView(APIView):
                         "latitude": 1.0,
                         "longitude": 2.0,
                         'imageList': ["https://sasm-bucket.s3.amazonaws.com/media/places/%ED%99%94%EB%A9%B4_%EC%BA%A1%EC%B2%98_2023-04-12_124409.png"],
-                        'snsList': ['https://instagram.com/abc/', 'https://www.sasm.co.kr/'],
-                    }
+                        'snsList': [ {"sns_type": 1 , "url" : 'https://instagram.com/abc/'}, 
+                                    {"sns_type": 2, 'url':'https://www.sasm.co.kr/'}],
+                   }
                 }
             ),
             "400": openapi.Response(

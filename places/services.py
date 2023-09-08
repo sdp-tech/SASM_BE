@@ -167,7 +167,13 @@ class PlaceSNSUrlService:
             sns_url.save()
 
     def get_place_sns_urls(place: Place):
-        return [sns.url for sns in place.place_sns_url.all()]
+        sns_list = []
+        for sns in place.place_sns_url.all():
+            sns_list.append({
+                'sns_type': sns.snstype.id,
+                'url': sns.url
+            })
+        return sns_list
     
     def update_place_sns_urls(place: Place, snsList: list[str]):
         existing_sns_urls = [sns.url for sns in place.place_sns_url.all()]
