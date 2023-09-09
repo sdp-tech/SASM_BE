@@ -81,6 +81,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     follows = models.ManyToManyField(
         "users.User", related_name='followers', blank=True)
     
+    semi_categories = models.ManyToManyField("forest.SemiCategory", related_name='semi_category')
+    
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

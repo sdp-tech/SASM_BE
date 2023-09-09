@@ -31,4 +31,6 @@ urlpatterns = [
          ForestCommentDeleteApi.as_view(), name='forest_comment_delete'),
     path('<int:forest_id>/comments/<int:forest_comment_id>/like/',
          ForestCommentLikeApi.as_view(), name='forest_comment_like'),
+     path('user_categories/save/', 
+          ForestUserCategoryApi.as_view(), name='forest_user_categories_create'),
 ]
