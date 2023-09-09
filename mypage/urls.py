@@ -3,6 +3,8 @@ from .views import places_view, stories_views, user_following, curations_views, 
 
 urlpatterns = [
      path('user/',user_info_views.OtherUserGetApi.as_view(),name='other_user_info'),
+     path('user/other_curation/', curations_views.OtherCurationListApi.as_view(),name='other_curtaion'),
+     path('user/other_forest/', forest_views.OtherUserCreateForestApi.as_view(),name='other_forest'),
      path('follow/', user_following.UserDoUndoFollowApi.as_view(),
           name='user_do_undo_follow'),
      path('following/', user_following.UserFollowingListApi.as_view(),
