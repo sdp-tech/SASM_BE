@@ -134,18 +134,15 @@ class PlacePhotoService:
     
     def update_place_photos(place: Place, imageList: list[InMemoryUploadedFile]):
         existing_photos = place.photos.all()
-        existing_urls = [photo.image.url for photo in existing_photos]
+        existing_urls = set(photo.image.url for photo in existing_photos)
 
         for image_file in imageList:
             ext = image_file.name.split(".")[-1]
-            file_path = '{}-{}.{}'.format(place.id,
-                                          str(time.time())+str(uuid.uuid4().hex), ext)
-            image = ImageFile(io.BytesIO(image_file.read()), name=file_path)
+            file_path = '{}-{}.{}'.format(place.id, str(time.time())+str(uuid.uuid4().hex), ext)
+            image = ImageFile(image_file, name=file_path)
+
             if image.url not in existing_urls:
-                photo = PlacePhoto(
-                    image=image,
-                    place=place
-                )
+                photo = PlacePhoto(image=image, place=place)
                 photo.full_clean()
                 photo.save()
 
@@ -167,7 +164,13 @@ class PlaceSNSUrlService:
             sns_url.save()
 
     def get_place_sns_urls(place: Place):
-        return [sns.url for sns in place.place_sns_url.all()]
+        sns_list = []
+        for sns in place.place_sns_url.all():
+            sns_list.append({
+                'sns_type': sns.snstype.id,
+                'url': sns.url
+            })
+        return sns_list
     
     def update_place_sns_urls(place: Place, snsList: list[str]):
         existing_sns_urls = [sns.url for sns in place.place_sns_url.all()]
