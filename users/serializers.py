@@ -39,6 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
             "address",
             "profile_image",
             "is_sdp_admin",
+            "semi_categories"
         )
         read_only_fields = ("id",)
 

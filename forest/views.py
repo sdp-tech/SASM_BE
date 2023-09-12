@@ -11,10 +11,11 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 from core.views import get_paginated_response
-from .services import ForestCoordinatorService, ForestPhotoService, ForestService, ForestCommentService
+from .services import ForestCoordinatorService, ForestPhotoService, ForestService, ForestCommentService, ForestUserCategoryService
 from .selectors import ForestSelector, CategorySelector, ForestCommentSelector
 from .permissions import IsWriter
 from .models import Forest, ForestComment
+from users.serializers import UserSerializer
 
 
 class ForestCreateApi(APIView):
@@ -849,3 +850,66 @@ class ForestReportApi(APIView):
         return Response({
             'status': 'success',
         }, status=status.HTTP_201_CREATED)
+    
+
+class ForestUserCategoryApi(APIView):
+    permission_classes = (IsAuthenticated, )
+
+
+    class ForestUserCategoryInputSerializer(serializers.Serializer):
+        semi_categories = serializers.ListField()
+
+        class Meta:
+            examples ={
+                'semi_categories' : ['1','2','3']
+            }
+
+    @swagger_auto_schema(
+        request_body=ForestUserCategoryInputSerializer,
+        operation_id='나만의 카테고리 저장',
+        operation_description='''
+            전달된 세미카테고리 id 값을 기반으로 유저가 선택한 나만의 카테고리 id 리스트를 저장합니다.
+            ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json":{
+                        "status": 'success',
+                        "id": 1,
+                        "gender": "male",
+                        "nickname": "sdpofficial",
+                        "birthdate": "2000.03.12",
+                        "email": "sdptech@gmail.com",
+                        "address": "서대문구 연세로",
+                        "profile_image": "https://abc.com/1.jpg",
+                        "is_sdp_admin": 'true',
+                        "is_verified": 'false',
+                        "introduction": "안녕하세요",
+                        'semi_categories': ['1','2','3']
+                    }
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def post(self, request):
+         serializer = self.ForestUserCategoryInputSerializer(data = request.data, partial=True)
+         serializer.is_valid(raise_exception=True)
+         data = serializer.validated_data
+
+         service = ForestUserCategoryService(user=request.user)
+
+         semi_category = service.save_usercategory(
+             semi_categories=data.get('semi_categories', None),
+         )
+
+         user_serializer = UserSerializer(semi_category)
+
+         return Response({
+             'status':'success',
+             'data' :  user_serializer.data
+
+         },status=status.HTTP_200_OK)

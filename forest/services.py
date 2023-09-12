@@ -308,3 +308,25 @@ class ForestCommentService:
             forest_comment.save()
 
             return True
+
+class ForestUserCategoryService:
+    def __init__(self, user: User):
+        self.user = user
+
+    def save_usercategory(self, semi_categories:list[str]) -> User:
+
+        self.user.semi_categories.clear()
+        
+        if semi_categories:
+            for category_id_str in semi_categories:
+                try:
+                    category_id = int(category_id_str)
+                    # 'semi_categories'가 many-to-many 필드인 경우, 각 ID를 연결하기 위해 'add'를 사용
+                    self.user.semi_categories.add(category_id)
+                except ValueError:
+                    # 유효하지 않은 ID를 무시하거나 로깅할 수 있습니다.
+                    pass
+
+        self.user.save()
+
+        return self.user
