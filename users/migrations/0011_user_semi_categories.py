@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('forest', '0007_delete_forestusercategory'),
+        # ('forest', '0007_delete_forestusercategory'),
         ('users', '0010_user_introduction'),
     ]
 
