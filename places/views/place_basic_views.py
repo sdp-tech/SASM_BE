@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from rest_framework.views import APIView
 
+from django.shortcuts import get_object_or_404
 from places.models import Place
 from places.services import PlaceCoordinatorService
 from places.selectors import PlaceSnsTypeSelector
@@ -155,7 +156,7 @@ class PlaceUpdateApi(APIView):
         request_body=PlaceUpdateInputSerializer,
         security=[],
         operation_id='장소 수정하기',
-        operation_description='일반 유저가 장소 정보를 수정할 수 있는 기능입니다.',
+        operation_description='일반 유저가 장소 정보를 수정할 수 있는 기능입니다. rep_pic 필드의 경우 변경하려 하지 않을 시 해당 필드를 input데이터에 포함하지 마세요',
         responses={
             "200": openapi.Response(
                 description="OK",
@@ -172,6 +173,8 @@ class PlaceUpdateApi(APIView):
         },
     )
     def patch(self, request, place_id):
+        place = get_object_or_404(Place, id=place_id)
+
         serializer = self.PlaceUpdateInputSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -195,7 +198,7 @@ class PlaceUpdateApi(APIView):
             'address':data.get('address'),
             'short_cur':data.get('short_cur'),
             'phone_num':data.get('phone_num'),
-            'rep_pic' : data.get('rep_pic'),
+            'rep_pic': data.get('rep_pic') or place.rep_pic,
             'imageList': data.get('imageList', []),
             'snsList':data.get('snsList', []),
         }
