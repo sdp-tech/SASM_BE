@@ -32,5 +32,7 @@ urlpatterns = [
     path('<int:forest_id>/comments/<int:forest_comment_id>/like/',
          ForestCommentLikeApi.as_view(), name='forest_comment_like'),
      path('user_categories/save/', 
-          ForestUserCategoryApi.as_view(), name='forest_user_categories_create'),
+          ForestUserCategorySaveApi.as_view(), name='forest_user_categories_save'),
+     path('user_categories/get/',
+          ForestUserCategoryGetApi.as_view(),name='forest_user_categories_get')
 ]

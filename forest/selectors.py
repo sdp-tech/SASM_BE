@@ -240,3 +240,13 @@ class ForestCommentSelector:
     @ staticmethod
     def likes(forest_comment: ForestComment, user: User):
         return forest_comment.likeuser_set.filter(pk=user.pk).exists()
+
+class ForestUserCategorySelector:
+    def __init__(self, user:User):
+        self.user = user
+
+    def list(self):
+        #유저의 세미 카테고리 id 리스트 받아오기
+        semi_categories = self.user.semi_categories.all()
+        #그 id에 맞춰서 세미 카테고리 id-이름 객체
+        return semi_categories.values('id','name')
