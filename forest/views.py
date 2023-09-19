@@ -12,7 +12,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from core.views import get_paginated_response
 from .services import ForestCoordinatorService, ForestPhotoService, ForestService, ForestCommentService, ForestUserCategoryService
-from .selectors import ForestSelector, CategorySelector, ForestCommentSelector
+from .selectors import ForestSelector, CategorySelector, ForestCommentSelector, ForestUserCategorySelector
 from .permissions import IsWriter
 from .models import Forest, ForestComment
 from users.serializers import UserSerializer
@@ -852,7 +852,7 @@ class ForestReportApi(APIView):
         }, status=status.HTTP_201_CREATED)
     
 
-class ForestUserCategoryApi(APIView):
+class ForestUserCategorySaveApi(APIView):
     permission_classes = (IsAuthenticated, )
 
 
@@ -913,3 +913,44 @@ class ForestUserCategoryApi(APIView):
              'data' :  user_serializer.data
 
          },status=status.HTTP_200_OK)
+    
+class ForestUserCategoryGetApi(APIView):
+    class Pagination(PageNumberPagination):
+        page_size = 10
+        page_size_query_param = 'page_size'
+
+    class ForestUserCategoryOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        name = serializers.CharField()
+
+    @swagger_auto_schema(
+        operation_id='나만의 카테고리 리스트 불러오기',
+        operation_description = '''
+            사용자가 선택한 세미 카테고리 리스트를 반환합니다.
+        ''',
+        responses={
+            "200": openapi.Response(
+                description="OK",
+                examples={
+                    "application/json":{
+                        'id': 1,
+                        'name': '테크놀로지',
+                    },
+                }
+            ),
+            "400": openapi.Response(
+                description="Bad Request",
+            ),
+        },
+    )
+    def get(self, request):
+        selector = ForestUserCategorySelector(user = request.user)
+        semi_categories = selector.list()
+    
+        return get_paginated_response(
+                pagination_class=self.Pagination,
+                serializer_class=self.ForestUserCategoryOutputSerializer,
+                queryset=semi_categories,
+                request=request,
+                view=self
+            )
