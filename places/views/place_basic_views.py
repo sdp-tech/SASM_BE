@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from places.models import Place
 from places.services import PlaceCoordinatorService
-from places.selectors import PlaceSnsTypeSelector
+from places.selectors import PlaceSnsTypeSelector, PlaceAddressOverlapCheckSelector
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
@@ -269,3 +269,14 @@ class PlaceSnsTypeListApi(APIView):
             request=request,
             view=self
         )
+
+class PlaceAddressOverlapCheckApi(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        overlap = PlaceAddressOverlapCheckSelector.check(request = request)
+
+        return Response({
+            'status': 'success',
+            'data': {'overlap':overlap},
+        }, status = status.HTTP_200_OK)

@@ -155,3 +155,13 @@ class PlaceSnsTypeSelector:
     @staticmethod
     def list():
         return SNSType.objects.all()
+
+class PlaceAddressOverlapCheckSelector:
+    def __init__(self):
+        pass
+
+    def check(request):
+        place_address = request.GET['place_address']
+        overlap = Place.objects.filter(address = place_address).exists()
+
+        return overlap
