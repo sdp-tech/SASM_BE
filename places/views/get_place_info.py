@@ -10,6 +10,7 @@ from rest_framework import serializers
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.shortcuts import get_object_or_404
 
 from places.mixins import ApiAuthMixin
 from places.models import Place
@@ -193,6 +194,7 @@ class PlaceDetailView(APIView):
                         'imageList': ["https://sasm-bucket.s3.amazonaws.com/media/places/%ED%99%94%EB%A9%B4_%EC%BA%A1%EC%B2%98_2023-04-12_124409.png"],
                         'snsList': [ {"sns_type": 1 , "url" : 'https://instagram.com/abc/'}, 
                                     {"sns_type": 2, 'url':'https://www.sasm.co.kr/'}],
+                        "user_liked": True,
                    }
                 }
             ),
@@ -204,6 +206,10 @@ class PlaceDetailView(APIView):
     def get(self, request, place_id):
         try:
             place = PlaceDetailService.get_place_detail(place_id)
+            
+            user_liked = False
+            if request.user.is_authenticated:
+                user_liked = place.place_likeuser_set.filter(pk=request.user.pk).exists()
             
             imageList = PlacePhotoService.get_place_photos(place)
             snsList = PlaceSNSUrlService.get_place_sns_urls(place)
@@ -233,6 +239,7 @@ class PlaceDetailView(APIView):
                 'longitude': place.longitude,
                 'imageList': imageList,
                 'snsList': snsList,
+                'user_liked': user_liked,
             }
 
             return Response({
