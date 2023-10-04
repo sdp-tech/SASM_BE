@@ -226,7 +226,7 @@ class OtherCreatedStoryApi(APIView):
         security=[],
         operation_id='다른 사용자가 작성한 스토리 조회',
         operation_description='''
-            다른 사용자가 작성한 스토리를 조회합니다.<br/>
+            email을 받아 해당 유저가 작성한 스토리를 조회합니다.<br/>
         ''',
         responses={
             "200": openapi.Response(
