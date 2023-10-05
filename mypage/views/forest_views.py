@@ -140,9 +140,9 @@ class OtherUserCreateForestApi(APIView):
 
     @swagger_auto_schema(
         query_serializer=OtherUserCreatedForestFilterSerializer,
-        operation_id='마이페이지 내가 작성한 포레스트 리스트',
+        operation_id='다른 사용자가 작성한 포레스트 리스트',
         operation_description='''
-            내가 작성한 포레스트 게시글을 불러옵니다.
+            email을 받아 해당 유저가 작성한 포레스트 게시글을 불러옵니다.
         ''',
         responses={
             "200": openapi.Response(

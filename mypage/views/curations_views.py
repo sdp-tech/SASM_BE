@@ -30,7 +30,7 @@ class OtherCurationListApi(APIView):
         writer_nickname = serializers.CharField()
 
     @swagger_auto_schema(
-        operation_id='타유저가 작성한 큐레이션 리스트',
+        operation_id='다른 사용자가 작성한 큐레이션 리스트',
         operation_description='''
             email을 받아 해당 유저가 작성한 큐레이션을 리스트합니다.<br/>
             ''',

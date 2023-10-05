@@ -60,8 +60,9 @@ class PlaceCreateApi(APIView):
                 'address': '서울 서대문구 연희로5길 22',
                 'short_cur': '연남장(場) 연희동 카페는 공간이 널찍하고 층고가 높습니다.',
                 'phone_num': '02-3141-7977',
-                'rep_pic': '< IMAGE FILE BINARY >',
-                'imageList': ['<IMAGE FILE BINARY>', '<IMAGE FILE BINARY>'],
+                'rep_pic': 'https://example.com/path/to/rep_pic.jpg',
+                'imageList': ['https://example.com/path/to/image1.jpg', 'https://example.com/path/to/image2.jpg'],
+
                 'snsList': ['1,https://instagram.com/abc/', '2,https://www.sasm.co.kr/'],
             }
 
