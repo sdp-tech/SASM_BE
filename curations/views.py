@@ -349,6 +349,7 @@ class CuratedStoryDetailApi(APIView):
         like_story = serializers.BooleanField()
         hashtags = serializers.CharField()
         rep_photos = serializers.ListField(required=False)
+        rep_pic = serializers.CharField()
 
         writer_email = serializers.CharField()
         nickname = serializers.CharField()
@@ -378,7 +379,8 @@ class CuratedStoryDetailApi(APIView):
                         'writer_email': 'sdp.tech@gmail.com',
                         'nickname': '스드프',
                         'profile_image': 'https://abc.com/1.jpg',
-                        'created': '2022-08-24T14:15:22Z'
+                        'created': '2022-08-24T14:15:22Z',
+                        'rep_pic': 'https://sasm-bucket.s3.amazonaws.com/media/stories/img/pic01.jpg',
                     },
                 }
             ),
