@@ -14,6 +14,7 @@ from rest_framework import exceptions
 
 from users.models import User
 from places.models import Place, PlaceVisitorReview, PlaceVisitorReviewCategory, PlaceVisitorReviewPhoto, CategoryContent, SNSUrl, PlacePhoto, SNSType
+from stories.models import Story
 from places.selectors import PlaceReviewSelector
 from places.views.save_place_excel import addr_to_lat_lon
 
@@ -26,6 +27,14 @@ class PlaceDetailService:
         except Place.DoesNotExist:
             raise Place.DoesNotExist("장소를 찾을 수 없습니다.")
 
+    @staticmethod
+    def get_has_story(place_id):
+        try:
+            has_story = Story.objects.filter(place_id=place_id).exists()
+            return has_story
+        except Story.DoesNotExist:
+            return False
+        
 class PlaceCoordinatorService:
     def __init__(self, user):
         self.user = user
