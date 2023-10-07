@@ -10,6 +10,7 @@ from rest_framework import serializers
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.shortcuts import get_object_or_404
 
 from places.mixins import ApiAuthMixin
 from places.models import Place
@@ -207,6 +208,11 @@ class PlaceDetailView(APIView):
     def get(self, request, place_id):
         try:
             place = PlaceDetailService.get_place_detail(place_id)
+            
+            user_liked = False
+            if request.user.is_authenticated:
+                user_liked = place.place_likeuser_set.filter(pk=request.user.pk).exists()
+            
             has_story = PlaceDetailService.get_has_story(place_id)
 
             imageList = PlacePhotoService.get_place_photos(place)
@@ -238,6 +244,7 @@ class PlaceDetailView(APIView):
                 'imageList': imageList,
                 'snsList': snsList,
                 'has_story': has_story,
+                'user_liked': user_liked,
             }
 
             return Response({
