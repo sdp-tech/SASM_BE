@@ -195,6 +195,7 @@ class PlaceDetailView(APIView):
                         'snsList': [ {"sns_type": 1 , "url" : 'https://instagram.com/abc/'}, 
                                     {"sns_type": 2, 'url':'https://www.sasm.co.kr/'}],
                         'has_story' : True,
+                        "user_liked": True,
                    }
                 }
             ),
