@@ -34,6 +34,20 @@ class PlaceDetailService:
             return has_story
         except Story.DoesNotExist:
             return False
+    
+    @staticmethod
+    def get_story_ids(place_ids):
+        if not isinstance(place_ids, list):
+            place_ids = [place_ids]
+
+        story_ids = []
+
+        for place_id in place_ids:
+            stories = Story.objects.filter(place_id=place_id) 
+            story_ids.extend(story.id for story in stories)  
+
+        return story_ids 
+    
         
 class PlaceCoordinatorService:
     def __init__(self, user):
