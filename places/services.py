@@ -34,6 +34,16 @@ class PlaceDetailService:
             return has_story
         except Story.DoesNotExist:
             return False
+    
+    @staticmethod
+    def get_story_id(place_id):
+        try:
+            story = Story.objects.get(place_id=place_id) 
+            story_id = story.id  
+            return story_id
+        except Story.DoesNotExist:
+            return None    
+    
         
 class PlaceCoordinatorService:
     def __init__(self, user):
