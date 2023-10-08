@@ -158,7 +158,6 @@ class PlaceDetailView(APIView):
         short_cur = serializers.CharField()
         phone_num = serializers.CharField()
         rep_pic = serializers.ImageField()
-        has_story = serializers.BooleanField()
         story_id = serializers.IntegerField()
 
     @swagger_auto_schema(
@@ -196,7 +195,6 @@ class PlaceDetailView(APIView):
                         'imageList': ["https://sasm-bucket.s3.amazonaws.com/media/places/%ED%99%94%EB%A9%B4_%EC%BA%A1%EC%B2%98_2023-04-12_124409.png"],
                         'snsList': [ {"sns_type": 1 , "url" : 'https://instagram.com/abc/'}, 
                                     {"sns_type": 2, 'url':'https://www.sasm.co.kr/'}],
-                        'has_story' : True,
                         'story_id' : 1,
                         "user_liked": True,
                    }
@@ -215,7 +213,6 @@ class PlaceDetailView(APIView):
             if request.user.is_authenticated:
                 user_liked = place.place_likeuser_set.filter(pk=request.user.pk).exists()
             
-            has_story = PlaceDetailService.get_has_story(place_id)
             story_id = PlaceDetailService.get_story_id(place_id)
 
             imageList = PlacePhotoService.get_place_photos(place)
@@ -246,7 +243,6 @@ class PlaceDetailView(APIView):
                 'longitude': place.longitude,
                 'imageList': imageList,
                 'snsList': snsList,
-                'has_story': has_story,
                 'story_id' : story_id,
                 'user_liked': user_liked,
             }
