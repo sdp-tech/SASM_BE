@@ -326,6 +326,8 @@ class ForestUserCategoryService:
                 except ValueError:
                     # 유효하지 않은 ID를 무시하거나 로깅할 수 있습니다.
                     pass
+            if len(semi_categories) > 9:
+                raise ValueError("semi_categories는 8개까지만 저장가능합니다.")
 
         self.user.save()
 
