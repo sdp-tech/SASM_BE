@@ -40,6 +40,7 @@ class CurationListApi(APIView):
 
     class CurationListFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
+        order = serializers.CharField(required=False)
 
     class CurationListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField()
@@ -55,6 +56,7 @@ class CurationListApi(APIView):
         operation_description='''
             큐레이션의 검색 결과를 리스트합니다.<br/>
             search(검색어)의 default값은 ''로, 검색어가 없을 시 모든 큐레이션이 반환됩니다.
+            order(정렬)은 latest 또는 oldest로 최신순 정렬 여부를 결정합니다.
             반환되는 정보는 대표/관리자/인증유저 큐레이션 <b>모두보기 레이아웃</b>에서 볼 수 있는 것과 같습니다.
             ''',
         responses={
@@ -84,7 +86,8 @@ class CurationListApi(APIView):
         filters = filters_serializer.validated_data
 
         curations = CurationSelector.list(
-            search=filters.get('search', '')
+            search=filters.get('search', ''),
+            order = filters.get('order', '')
         )
 
         return get_paginated_response(
