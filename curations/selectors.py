@@ -72,6 +72,8 @@ class CurationSelector:
 
         if order in order_by_time:
             order = order_by_time[order]
+        else:
+            order = 'created'
 
         curations = Curation.objects.distinct().filter(q, is_released=True).annotate(
             rep_pic=Case(
