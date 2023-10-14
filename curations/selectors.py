@@ -58,7 +58,7 @@ class CurationSelector:
         self.user = user
 
     @staticmethod
-    def list(search: str = ''):
+    def list(search: str = '', order: str=''):
         q = Q()
 
         q.add(Q(title__icontains=search) |
@@ -67,6 +67,11 @@ class CurationSelector:
               Q(story__place__place_name__icontains=search) |  # 스토리 제목 또는 내용 검색
               Q(story__place__category__icontains=search) |
               Q(story__tag__icontains=search), q.AND)
+        
+        order_by_time = {'latest': '-created', 'oldest': 'created'}
+
+        if order in order_by_time:
+            order = order_by_time[order]
 
         curations = Curation.objects.distinct().filter(q, is_released=True).annotate(
             rep_pic=Case(
@@ -80,7 +85,7 @@ class CurationSelector:
             ),
             writer_email=F('writer__email'),
             nickname = F('writer__nickname'),
-        )
+        ).order_by(order)
 
         return curations
 
