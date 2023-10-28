@@ -835,10 +835,10 @@ class StoryIncludedCurationApi(APIView):
     permission_classes = [AllowAny]
     
     class StoryIncludedCurationOutputSerializer(serializers.Serializer):
-    
         id = serializers.IntegerField()
         title = serializers.CharField()
         rep_pic = serializers.CharField()
+        updated = serializers.DateTimeField()
 
     @swagger_auto_schema(
         operation_id='스토리를 포함한 큐레이션 리스트 조회',
