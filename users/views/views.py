@@ -455,7 +455,7 @@ class SignUpApi(APIView):
         email = serializers.EmailField()
         password = serializers.CharField()
         nickname = serializers.CharField()
-        birthdate = serializers.DateField()
+        # birthdate = serializers.DateField()
 
     def post(self, request):
         serializer = self.SignUpInputSerializer(
@@ -467,7 +467,7 @@ class SignUpApi(APIView):
             email=data.get('email'),
             password=data.get('password'),
             nickname=data.get('nickname'),
-            birthdate=data.get('birthdate'),
+            # birthdate=data.get('birthdate'),
         )
 
         return Response({

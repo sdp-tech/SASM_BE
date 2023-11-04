@@ -94,12 +94,11 @@ class UserService:
             return '사용 가능한 닉네임입니다'
 
     @staticmethod
-    def sign_up(email: str, password: str, nickname: str, birthdate: datetime.date):
+    def sign_up(email: str, password: str, nickname: str):
         user = User(
             email=email,
             nickname=nickname,
             password=password,
-            birthdate=birthdate
         )
         user.set_password(password)
         user.is_active = False
