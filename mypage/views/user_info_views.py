@@ -29,8 +29,7 @@ class UserGetApi(APIView):
     @swagger_auto_schema(
         operation_id='나의 정보 조회',
         operation_description='''
-            마이페이지에 저장된 나의 정보를 조회합니다.<br/>
-            Request시 전달해야 할 파라미터는 없습니다.<br/>
+            마이페이지에 저장된 나의 정보를 조회합니다. 쿼리 파라미터 : 없음 <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -180,8 +179,7 @@ class OtherUserGetApi(APIView):
     @swagger_auto_schema(
         operation_id='다른 사용자 정보 조회',
         operation_description='''
-            다른 사용자의 정보를 조회합니다.<br/>
-            Request시 전달해야 할 파라미터는 다른 사용자의 이메일입니다.<br/>
+            다른 사용자의 정보를 조회합니다. 쿼리 파라미터 : email <br/>
         ''',
         responses={
             "200": openapi.Response(

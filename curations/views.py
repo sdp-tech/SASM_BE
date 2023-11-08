@@ -116,9 +116,8 @@ class RepCurationListApi(APIView):
     @swagger_auto_schema(
         operation_id='대표큐레이션 리스트',
         operation_description='''
-            홈 화면과 모두보기 화면의 대표큐레이션을 리스트합니다.<br/>
+            홈 화면과 모두보기 화면의 대표큐레이션을 리스트합니다. 쿼리 파라미터 : 없음 <br/>
             대표큐레이션이 모두 반환되며, 이 중에서 is_selected=True인 것만 홈 화면에 노출되어야 합니다.<br/>
-            Request시 전달해야 할 파라미터는 없습니다.
             ''',
         responses={
             "200": openapi.Response(
@@ -171,7 +170,7 @@ class AdminCurationListApi(APIView):
     @swagger_auto_schema(
         operation_id='관리자 큐레이션 리스트',
         operation_description='''
-            홈 화면과 모두보기 화면의 관리자 큐레이션을 리스트합니다.<br/>
+            홈 화면과 모두보기 화면의 관리자 큐레이션을 리스트합니다. 쿼리 파라미터 : search <br/>
             search(검색어)의 default값은 ''로, 검색어가 없을 시 모든 관리자 큐레이션이 반환됩니다.<br/>
             ''',
         responses={
@@ -234,7 +233,7 @@ class VerifiedUserCurationListApi(APIView):
     @swagger_auto_schema(
         operation_id='인증유저 큐레이션 리스트',
         operation_description='''
-            홈 화면과 모두보기 화면의 인증유저 큐레이션을 리스트합니다.<br/>
+            홈 화면과 모두보기 화면의 인증유저 큐레이션을 리스트합니다. 쿼리 파라미터 : search <br/>
             search(검색어)의 default값은 ''로, 검색어가 없을 시 모든 인증유저 큐레이션이 반환됩니다.<br/>
             ''',
         responses={
@@ -297,7 +296,7 @@ class CurationDetailApi(APIView):
     @swagger_auto_schema(
         operation_id='큐레이션 디테일 조회',
         operation_description='''
-            큐레이션 디테일을 조회합니다.<br/>
+            큐레이션 디테일을 조회합니다. 쿼리 파라미터 : 없음 <br/>
             큐레이션 상세페이지 상단에 해당하는, 스토리를 제외한 큐레이션의 기본 정보를 반환합니다.
         ''',
         responses={
@@ -363,7 +362,7 @@ class CuratedStoryDetailApi(APIView):
     @swagger_auto_schema(
         operation_id='큐레이션 스토리 디테일 조회',
         operation_description='''
-            큐레이션 내 스토리 정보를 반환합니다.<br/>
+            큐레이션 내 스토리 정보를 반환합니다. 쿼리 파라미터 : 없음 <br/>
         ''',
         responses={
             "200": openapi.Response(

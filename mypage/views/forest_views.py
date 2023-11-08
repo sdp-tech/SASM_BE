@@ -61,7 +61,7 @@ class UserForestListApi(APIView):
         query_serializer=UserForestFilterSerializer,
         operation_id='마이페이지 내가 좋아요한 포레스트 리스트',
         operation_description='''
-            내가 좋아요한 포레스트 게시글을 불러옵니다.
+            내가 좋아요한 포레스트 게시글을 불러옵니다. 쿼리 파라미터 : 없음
         ''',
         responses={
             "200": openapi.Response(
@@ -142,7 +142,7 @@ class OtherUserCreateForestApi(APIView):
         query_serializer=OtherUserCreatedForestFilterSerializer,
         operation_id='다른 사용자가 작성한 포레스트 리스트',
         operation_description='''
-            email을 받아 해당 유저가 작성한 포레스트 게시글을 불러옵니다.
+            email을 받아 해당 유저가 작성한 포레스트 게시글을 불러옵니다. 쿼리 파라미터 : email
         ''',
         responses={
             "200": openapi.Response(
@@ -234,7 +234,7 @@ class UserCreateForestApi(APIView):
         query_serializer=UserCreatedForestFilterSerializer,
         operation_id='마이페이지 내가 작성한 포레스트 리스트',
         operation_description='''
-            내가 작성한 포레스트 게시글을 불러옵니다.
+            내가 작성한 포레스트 게시글을 불러옵니다. 쿼리 파라미터 : search, category_filter
         ''',
         responses={
             "200": openapi.Response(
