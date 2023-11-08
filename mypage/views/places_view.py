@@ -41,9 +41,9 @@ class UserReviewedPlaceGetApi(APIView):
             fields = ['id', 'place_name','category','rep_pic','address']
 
     @swagger_auto_schema(
-        operation_id='리뷰 작성한 장소 조회',
+        operation_id='내가 리뷰 작성한 장소 조회',
         operation_description='''
-                유저가 리뷰 작성한 장소를 조회합니다.<br/>
+                내가 리뷰 작성한 장소를 조회합니다. 쿼리 파라미터 : 없음 <br/>
             ''',
         responses={
             "200": openapi.Response(
@@ -100,9 +100,9 @@ class OtherUserReviewedPlaceGetApi(APIView):
             fields = ['id', 'place_name','category','rep_pic','address']
 
     @swagger_auto_schema(
-        operation_id='리뷰 작성한 장소 조회',
+        operation_id='타유저가 리뷰 작성한 장소 조회',
         operation_description='''
-                유저가 리뷰 작성한 장소를 조회합니다. 쿼리 파라메터로 'email' 필요(타겟 유저의 이메일)<br/>
+                타유저가 리뷰 작성한 장소를 조회합니다. 쿼리 파라메터로 'email' 필요(타겟 유저의 이메일)<br/>
             ''',
         responses={
             "200": openapi.Response(
@@ -178,7 +178,7 @@ class MyPlaceSearchApi(APIView):
     @swagger_auto_schema(
         operation_id='마이 플레이스 서치',
         operation_description='''
-            전달된 쿼리 파라미터에 부합하는 장소 리스트를 반환합니다.<br/>
+            전달된 쿼리 파라미터에 부합하는 장소 리스트를 반환합니다. 쿼리 파라미터 : search, filter <br/>
             ''',
         query_serializer=MyPlaceListFilterSerializer,
         responses={

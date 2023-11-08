@@ -291,7 +291,7 @@ class ForestDetailApi(APIView):
     @swagger_auto_schema(
         operation_id='포레스트 글 디테일 조회',
         operation_description='''
-            전달된 id에 해당하는 포레스트 글 디테일을 조회합니다.<br/>
+            전달된 id에 해당하는 포레스트 글 디테일을 조회합니다. 쿼리 파라미터 : 없음 <br/>
             photos 배열 중 0번째 원소가 대표 이미지(rep_pic)입니다.<br/>
         ''',
         responses={
@@ -383,14 +383,14 @@ class ForestListApi(APIView):
         query_serializer=ForestListFilterSerializer,
         operation_id='포레스트 글 리스트',
         operation_description='''
-            전달된 쿼리 파라미터에 부합하는 포레스트 글 리스트를 반환합니다.<br/>
+            전달된 쿼리 파라미터에 부합하는 포레스트 글 리스트를 반환합니다. 쿼리 파라미터 : search, order, category_filter, semi_category_filter, writer_filter <br/>
             photos 배열 중 0번째 원소가 대표 이미지(rep_pic)입니다.<br/>
             <br/>
             search : title, subtitle, content 내 검색어<br/>
             order : 정렬 기준(latest, hot)<br/>
             category_filter: 카테고리 id <br/>
             semi_category_filter: 세미 카테고리 id 리스트 <br/>
-            writer_filter: 작성자 email <br/>
+            writer_filter: 작성자 email <br/>  
         ''',
         responses={
             "200": openapi.Response(
@@ -482,7 +482,7 @@ class CategoryListApi(APIView):
     @swagger_auto_schema(
         operation_id='카테고리 리스트',
         operation_description='''
-            사용 가능한 카테고리 리스트를 반환합니다.<br/>
+            사용 가능한 카테고리 리스트를 반환합니다. 쿼리 파라미터 : 없음 <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -529,7 +529,7 @@ class SemiCategoryListApi(APIView):
         query_serializer=SemiCategoryListFilterSerializer,
         operation_id='세미 카테고리 리스트',
         operation_description='''
-            사용 가능한 세미 카테고리 리스트를 반환합니다.<br/>
+            사용 가능한 세미 카테고리 리스트를 반환합니다. 쿼리 파라미터 : category <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -583,7 +583,7 @@ class ForestCommentListApi(APIView):
     @swagger_auto_schema(
         operation_id='포레스트 글 댓글 조회',
         operation_description='''
-            해당 포레스트 글의 하위 댓글을 조회합니다.<br/>
+            해당 포레스트 글의 하위 댓글을 조회합니다. 쿼리 파라미터 : 없음 <br/>
         ''',
         responses={
             "200": openapi.Response(
