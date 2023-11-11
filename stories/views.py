@@ -207,7 +207,7 @@ class StoryListApi(APIView):
     @swagger_auto_schema(
         operation_id='스토리 리스트',
         operation_description='''
-            전달된 쿼리 파라미터에 부합하는 게시글 리스트를 반환합니다.<br/>
+            전달된 쿼리 파라미터에 부합하는 게시글 리스트를 반환합니다. 쿼리 파라미터 : search, latest, array <br/>
             <br/>
             search : 제목 혹은 장소 검색어<br/>
             latest : 최신순 정렬 여부 (ex: true)</br>
@@ -290,7 +290,7 @@ class StoryDetailApi(APIView):
     @swagger_auto_schema(
         operation_id='스토리 글 조회',
         operation_description='''
-            전달된 id에 해당하는 스토리 디테일을 조회합니다.<br/>
+            전달된 id에 해당하는 스토리 디테일을 조회합니다. 쿼리 파라미터 : 없음 <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -464,7 +464,7 @@ class StoryRecommendApi(APIView):
     @swagger_auto_schema(
         operation_id='story의 category와 같은 스토리 추천 리스트',
         operation_description='''
-            해당 스토리의 category와 같은 스토리 리스트를 반환합니다.<br/>
+            해당 스토리의 category와 같은 스토리 리스트를 반환합니다. 쿼리 파라미터 : id <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -551,7 +551,7 @@ class GoToMapApi(APIView):
     @swagger_auto_schema(
         operation_id='스토리의 해당 장소로 Map 연결',
         operation_description='''
-            전달받은 id에 해당하는 스토리의 장소로 Map을 연결해준다<br/>
+            전달받은 id에 해당하는 스토리의 장소로 Map을 연결해줍니다. 쿼리 파라미터 : id <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -599,7 +599,7 @@ class StoryCommentListApi(APIView):
     @swagger_auto_schema(
         operation_id='스토리 댓글 조회',
         operation_description='''
-            해당 story의 하위 댓글을 조회합니다.<br/>
+            해당 story의 하위 댓글을 조회합니다. 쿼리 파라미터 : story <br/>
         ''',
         query_serializer=StoryCommentListFilterSerializer,
         responses={
@@ -843,7 +843,7 @@ class StoryIncludedCurationApi(APIView):
     @swagger_auto_schema(
         operation_id='스토리를 포함한 큐레이션 리스트 조회',
         operation_description='''
-            해당 스토리가 포함된 큐레이션 리스트를 반환합니다.<br/>
+            해당 스토리가 포함된 큐레이션 리스트를 반환합니다. 쿼리 파라미터 : 없음 <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -890,7 +890,7 @@ class SamePlaceStory(APIView):
     @swagger_auto_schema(
         operation_id='이 장소의 다른 스토리',
         operation_description='''
-            해당 장소가 포함된 다른 스토리 리스트를 반환합니다<br/>
+            해당 장소가 포함된 다른 스토리 리스트를 반환합니다. 쿼리 파라미터 : 없음 <br/>
         ''',
         responses={
             "200":openapi.Response(

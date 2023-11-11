@@ -55,7 +55,7 @@ class UserStoryListGetApi(APIView):
     @swagger_auto_schema(
         operation_id='마이페이지 좋아요한 스토리 조회',
         operation_description='''
-            마이페이지에서 좋아요한 스토리를 조회합니다.<br/>
+            마이페이지에서 좋아요한 스토리를 조회합니다. 쿼리 파라미터 : search, filter <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -140,7 +140,7 @@ class UserCreatedStoryApi(APIView):
         security=[],
         operation_id='사용자가 작성한 스토리 조회',
         operation_description='''
-            사용자가 작성한 스토리를 조회합니다.<br/>
+            사용자가 작성한 스토리를 조회합니다. 쿼리 파라미터 : search, filter <br/>
         ''',
         responses={
             "200": openapi.Response(
@@ -226,7 +226,7 @@ class OtherCreatedStoryApi(APIView):
         security=[],
         operation_id='다른 사용자가 작성한 스토리 조회',
         operation_description='''
-            email을 받아 해당 유저가 작성한 스토리를 조회합니다.<br/>
+            다른 유저가 작성한 스토리를 조회합니다. 쿼리 파라미터 : email, search, filter <br/>
         ''',
         responses={
             "200": openapi.Response(
