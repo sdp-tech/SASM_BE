@@ -686,7 +686,7 @@ class TotalSearchApi(APIView):
             10. 유저 좋아요 여부 user_likes
 
             ''',
-        response={
+        responses={
             "200": openapi.Response(
                 description="OK",
                 examples={
