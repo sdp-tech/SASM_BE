@@ -644,10 +644,6 @@ class CurationLikeApi(APIView):
 class TotalSearchApi(APIView):
     permission_classes=(AllowAny, )
 
-    class Pagination(PageNumberPagination):
-        page_size = 8
-        page_size_query_param = 'page_size'
-
     class TotalSearchFilterSerializer(serializers.Serializer):
         search = serializers.CharField(required=False)
         order = serializers.CharField(required=False)
@@ -670,7 +666,7 @@ class TotalSearchApi(APIView):
         query_serializer=TotalSearchFilterSerializer,
         operation_id='통합 검색 결과 리스트',
         operation_description='''
-            통합 검색 결과를 리스트합니다.</br>
+            통합 검색 결과를 리스트합니다.(각 모델마다 객체의 수 또한 리턴합니다.)</br>
             search(검색어)의 default값은 ''로, 검색어가 없을 시 아무것도 반환되지 않습니다.
             order(정렬)은 latest 또는 oldest로 최신순 정렬 여루블 결정합니다.
             반환되는 정보는</br>
@@ -691,6 +687,7 @@ class TotalSearchApi(APIView):
                 description="OK",
                 examples={
                     "application/json":{
+
                         'id':1,
                         'model': 'Curation',
                         'title': '서울 비건카페',
@@ -722,10 +719,11 @@ class TotalSearchApi(APIView):
             order = filters.get('order', ''),
             user=request.user
         )
-        return get_paginated_response(
-            pagination_class=self.Pagination,
-            serializer_class=self.TotalSearchOutputSerializer,
-            queryset=results,
-            request=request,
-            view=self
-        )
+
+        return Response({
+            'status': 'success',
+            'curation_count':results['curation_count'],
+            'forest_count':results['forest_count'],
+            'story_count':results['story_count'],
+            'data': results['result_data'],
+        }, status= status.HTTP_200_OK)
