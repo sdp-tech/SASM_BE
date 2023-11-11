@@ -431,6 +431,17 @@ class TotalSearchSelector:
                          } for s in stories]
 
         #세개의 데이터를 체인으로 연결
-        result = list(chain(curations_data, forests_data, stories_data))
+        result_data = list(chain(curations_data, forests_data, stories_data))
 
+        #모델 유형별 객체 수를 저장
+        curation_count = curations.count()
+        forest_count = forests.count()
+        story_count = stories.count()
+
+        result = {
+            'curation_count': curation_count,
+            'forest_count':forest_count,
+            'story_count': story_count,
+            'result_data': result_data,
+        }
         return result
