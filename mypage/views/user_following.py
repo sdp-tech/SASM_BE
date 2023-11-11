@@ -104,7 +104,7 @@ class UserFollowingListApi(ApiAllowAnyMixin, APIView):
     @swagger_auto_schema(
         operation_id='유저 팔로잉 리스트',
         operation_description='''
-            유저가 팔로우한 유저의 리스트를 반환합니다.<br/>
+            유저가 팔로우한 유저의 리스트를 반환합니다. 쿼리 파라미터 : email, page, search_email <br/>
         ''',
         query_serializer=UserFollowingListFilterSerializer,
         responses={
@@ -163,7 +163,7 @@ class UserFollowerListApi(ApiAllowAnyMixin, APIView):
     @swagger_auto_schema(
         operation_id='유저 팔로워 리스트',
         operation_description='''
-            유저를 팔로우한 유저의 리스트를 반환합니다.<br/>
+            유저를 팔로우한 유저의 리스트를 반환합니다. 쿼리 파라미터 : email, page, saerch_email <br/>
         ''',
         query_serializer=UserFollowerListFilterSerializer,
         responses={

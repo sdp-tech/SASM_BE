@@ -32,8 +32,8 @@ class OtherCurationListApi(APIView):
     @swagger_auto_schema(
         operation_id='다른 사용자가 작성한 큐레이션 리스트',
         operation_description='''
-            email을 받아 해당 유저가 작성한 큐레이션을 리스트합니다.<br/>
-            ''',
+            email을 받아 해당 유저가 작성한 큐레이션을 리스트합니다. 쿼리 파라미터 : email <br/>
+           ''',
         responses={
             "200": openapi.Response(
                 description="OK",
@@ -88,8 +88,7 @@ class MyCurationListApi(APIView):
     @swagger_auto_schema(
         operation_id='마이페이지 내가 작성한 큐레이션 리스트',
         operation_description='''
-            내가 작성한 큐레이션을 리스트합니다.<br/>
-            request시 전달해야 할 파라미터는 없습니다.
+            내가 작성한 큐레이션을 리스트합니다. 쿼리 파라미터 : 없음 <br/>
             ''',
         responses={
             "200": openapi.Response(
@@ -133,7 +132,7 @@ class MyLikedCurationListApi(APIView):
         query_serializer=MyLikedCurationListFilterSerializer,
         operation_id='마이페이지 큐레이션 검색 결과 리스트',
         operation_description='''
-            유저가 좋아요 한 큐레이션의 검색 결과를 리스트합니다.<br/>
+            유저(자신 포함)가 좋아요 한 큐레이션의 검색 결과를 리스트합니다. 쿼리 파라미터 : search <br/>
             search(검색어)의 default값은 ''로, 검색어가 없을 시 좋아요 한 모든 큐레이션이 반환됩니다.
             ''',
         responses={
